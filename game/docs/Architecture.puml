@@ -1,0 +1,102 @@
+@startuml
+allowmixing
+
+Package "Game model" {
+    class World {
+        width
+        height
+        'buildings
+        buildingUseCounts
+        addBuilding(building)
+        tickBuildings()
+        getBuilding(id)
+        doesBuildingOverlap(id)
+        calculateScore()
+    }
+    class GridUtils {
+        getRawGridCoords(x, y)
+        getGridCoords()
+    }
+
+    class Building {
+        x
+        y
+        gridX
+        gridY
+        width
+        height
+        initialBuildTime
+        timeUntilBuilt
+        placed
+        built
+        buildingType
+        bounds
+        spritePath
+        unbuiltSpritePath
+        tick(deltaTime)
+        place()
+        'Note that these are still included, they just shouldn't have been in this diagram
+        'setCenter()
+        'getBounds()
+        'getRawGridCoords()
+        'getGridCoords()
+        makeCopy()
+        snapToGrid()
+    }
+    class GymBuilding
+    class HallsBuilding
+    class LectureHallBuilding
+    class OfficeBuilding
+    class PiazzaBuilding
+
+    class EventManager {
+        processEvents(deltaTime)
+    }
+    class GameEvent {
+        title
+        description
+        rarity
+        modifiers
+    }
+
+    class AchievementManager {
+        assignAchievementListener()
+    }
+    class Achievement {
+        title
+        description
+    }
+}
+
+Package "Interface" {
+    class Main {
+        render()
+        input()
+        drawBuildings()
+        drawGrid()
+    }
+}
+
+Package "LibGDX" {
+    component "LibGDX input handling"
+    component "LibGDX rendering functions"
+ }
+
+Main -- World
+"LibGDX" -- Main
+
+World -- GridUtils
+World -- Building
+World -- EventManager
+World -- AchievementManager
+
+GameEvent -- EventManager
+Achievement -- AchievementManager
+
+Building -- GymBuilding
+Building -- HallsBuilding
+Building -- LectureHallBuilding
+Building -- OfficeBuilding
+Building -- PiazzaBuilding
+
+@enduml
