@@ -38,13 +38,14 @@ public class World {
      * @param building Building to add to the world
      * @return true if the placement was successful
      */
-    public boolean addBuilding(Building building) {
-        if (doesBuildingOverlap(building)) {
-            return false;
+    public void addBuilding(Building building) {
+        if (!doesBuildingOverlap(building)) {
+            buildings.add(building);
+            building.place();
+            for (Building.Use use : building.getUses()) {
+                buildingUseCounts.put(use, buildingUseCounts.get(use) + 1);
+            }
         }
-        buildings.add(building);
-        building.place();
-        return true;
     }
 
     /**
@@ -52,13 +53,7 @@ public class World {
      * and update the counts for buildings of each use.
      */
     public void tickBuildings(float deltaTime) {
-
-        for (Building.Use use : Building.Use.values()) {
-            buildingUseCounts.put(use, 0);
-        }
-
         for (Building building : buildings) {
-            buildingUseCounts.put(building.getBuildingUse(), buildingUseCounts.get(building.getBuildingUse()) + 1);
             building.tick(deltaTime);
         }
     }

@@ -158,7 +158,7 @@ public class GameScreen implements Screen {
         draggableBuildings.add(new GymBuilding(660, 40, true));
         draggableBuildings.add(new HallsBuilding(720, 40, true));
         draggableBuildings.add(new LectureHallBuilding(780, 40, true));
-        draggableBuildings.add(new OfficeBuilding(840, 40, true));
+        draggableBuildings.add(new Pub(840, 40, true));
         draggableBuildings.add(new PiazzaBuilding(900, 40, true));
 
         gameTimer = 0f;
