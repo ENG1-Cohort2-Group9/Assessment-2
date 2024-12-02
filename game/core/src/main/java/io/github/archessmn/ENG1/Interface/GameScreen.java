@@ -23,9 +23,6 @@ import io.github.archessmn.ENG1.GameModel.Buildings.*;
 import java.util.HashMap;
 import static java.lang.Math.floorDiv;
 
-/**
- * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms.
- */
 public class GameScreen implements Screen {
     public static final Integer VIEWPORT_WIDTH = 960;
     public static final Integer VIEWPORT_HEIGHT = 540;
