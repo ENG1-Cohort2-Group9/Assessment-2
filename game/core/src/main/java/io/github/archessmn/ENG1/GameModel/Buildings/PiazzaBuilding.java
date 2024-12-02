@@ -1,4 +1,4 @@
-package io.github.archessmn.ENG1.GameModel;
+package io.github.archessmn.ENG1.GameModel.Buildings;
 
 /**
  * Wrapper of {@link Building} that creates a building with the PIAZZA type.

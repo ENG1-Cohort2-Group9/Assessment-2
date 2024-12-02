@@ -3,8 +3,8 @@ package io.github.archessmn.ENG1.GameModel;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
-import static io.github.archessmn.ENG1.Interface.Main.VIEWPORT_HEIGHT;
-import static io.github.archessmn.ENG1.Interface.Main.VIEWPORT_WIDTH;
+import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_HEIGHT;
+import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_WIDTH;
 
 /**
  * Utilities to assist with usage of the world grid.
