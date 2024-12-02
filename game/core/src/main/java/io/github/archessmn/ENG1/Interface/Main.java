@@ -227,7 +227,9 @@ public class Main extends ApplicationAdapter {
                 }
             }
         } else if (!isClicked && buildingClicked != null) { // Click released
-            world.addBuilding(buildingClicked); // Places the building if it passes all checks
+            if (unprojectedTouchPos.x <= VIEWPORT_WIDTH - 300) {
+                world.addBuilding(buildingClicked); // Places the building if it passes all checks
+            }
 
             buildingClicked = null;
         }
