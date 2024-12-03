@@ -1,7 +1,9 @@
-package io.github.archessmn.ENG1.GameModel;
+package io.github.archessmn.ENG1.GameModel.Buildings;
 
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import io.github.archessmn.ENG1.GameModel.GridCoordTuple;
+import io.github.archessmn.ENG1.GameModel.GridUtils;
 
 /**
  * Base class for each building type ({@link Building.Type}),

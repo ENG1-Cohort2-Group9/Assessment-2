@@ -1,4 +1,4 @@
-package io.github.archessmn.ENG1.GameModel;
+package io.github.archessmn.ENG1.GameModel.Buildings;
 
 
 /**
