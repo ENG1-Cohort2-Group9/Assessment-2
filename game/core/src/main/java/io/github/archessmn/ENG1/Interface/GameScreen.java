@@ -319,6 +319,9 @@ public class GameScreen implements Screen {
         for (Building building : world.buildings) {
             drawBuilding(batch, assetManager, building);
         }
+        if (buildingClicked != null) {
+            drawBuilding(batch, assetManager, buildingClicked);
+        }
     }
 
     private static void drawBuilding(Batch batch, AssetManager assetManager, Building building) {
