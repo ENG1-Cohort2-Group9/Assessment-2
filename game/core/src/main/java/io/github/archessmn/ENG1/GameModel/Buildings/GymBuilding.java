@@ -7,7 +7,7 @@ import com.badlogic.gdx.utils.Array;
  */
 public class GymBuilding extends Building {
 
-    public GymBuilding(float x, float y, boolean built) {
-        super(x, y, 60, 60, 10f, built, new Use[] {Use.RECREATION}, "gym.png");
+    public GymBuilding(float x, float y, float currentTime, boolean built) {
+        super(x, y, 60, 60, 10f, currentTime, built, new Use[] {Use.RECREATION}, "gym.png");
     }
 }

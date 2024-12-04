@@ -16,6 +16,8 @@ public class World {
 
     public HashMap<Building.Use, Integer> buildingUseCounts = new HashMap<>();
 
+    private float currentTime;
+
     /**
      * Initialises an empty world and loads assets.
      * @param worldWidth Width to use for the usable world space
@@ -42,20 +44,32 @@ public class World {
         if (!doesBuildingOverlap(building)) {
             buildings.add(building);
             building.place();
-            for (Building.Use use : building.getUses()) {
-                buildingUseCounts.put(use, buildingUseCounts.get(use) + 1);
+        }
+    }
+
+    /**
+     * Update all buildings' states
+     */
+    public void updateBuildings(float deltaTime) {
+        for (Building building : buildings) {
+            if (building.placed && !building.built && currentTime > building.buildingCompletionTime) {
+                // This will only trigger once (see '&& !building.built')
+                building.built = true;
+
+                for (Building.Use use : building.getUses()) {
+                    buildingUseCounts.put(use, buildingUseCounts.get(use) + 1);
+                }
             }
         }
     }
 
     /**
-     * Run the tick() method on each building in the world building store
-     * and update the counts for buildings of each use.
+     * Keeps the world running, updating its internal clock and buildings
+     * @param deltaTime time since the last frame in seconds
      */
-    public void tickBuildings(float deltaTime) {
-        for (Building building : buildings) {
-            building.tick(deltaTime);
-        }
+    public void worldProcess(float deltaTime) {
+        currentTime += deltaTime;
+        updateBuildings(deltaTime);
     }
 
     /**
@@ -75,5 +89,9 @@ public class World {
             }
         }
         return false;
+    }
+
+    public float getCurrentTime() {
+        return currentTime;
     }
 }

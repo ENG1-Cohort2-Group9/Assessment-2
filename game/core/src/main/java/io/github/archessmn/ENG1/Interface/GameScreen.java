@@ -155,11 +155,11 @@ public class GameScreen implements Screen {
 
 
 
-        draggableBuildings.add(new GymBuilding(660, 40, true));
-        draggableBuildings.add(new HallsBuilding(720, 40, true));
-        draggableBuildings.add(new LectureHallBuilding(780, 40, true));
-        draggableBuildings.add(new Pub(840, 40, true));
-        draggableBuildings.add(new PiazzaBuilding(900, 40, true));
+        draggableBuildings.add(new GymBuilding(660, 40, 0, true));
+        draggableBuildings.add(new HallsBuilding(720, 40, 0, true));
+        draggableBuildings.add(new LectureHallBuilding(780, 40, 0, true));
+        draggableBuildings.add(new Pub(840, 40, 0, true));
+        draggableBuildings.add(new PiazzaBuilding(900, 40, 0, true));
 
         gameTimer = 0f;
 
@@ -209,7 +209,11 @@ public class GameScreen implements Screen {
                 Building building = draggableBuildings.get(i);
 
                 if (building.getBounds().contains(unprojectedTouchPos)) {
-                    clickedBuilding = building.makeCopy();
+
+                    //buildingClicked = building.makeCopy(world.getCurrentTime());
+
+                    clickedBuilding = building.makeCopy(world.getCurrentTime());
+
                     break;
                 }
             }
@@ -231,11 +235,12 @@ public class GameScreen implements Screen {
 
         float delta = Gdx.graphics.getDeltaTime();
 
-        world.tickBuildings(delta);
+        world.worldProcess(delta);
 
         gameTimer += delta;
 
-        // Ends the game when the timer exceeds 5 minutes
+        // Ends the game when the timer exceeds 5 minutes.
+        // This should probably be moved from this class to World, it already has a timer
         if (gameTimer >= 300) {
             gameEnded = true;
         }
@@ -326,7 +331,7 @@ public class GameScreen implements Screen {
 
     private static void drawBuilding(Batch batch, AssetManager assetManager, Building building) {
         Sprite sprite = null;
-        if (building.timeUntilBuilt > 0 && !building.built) {
+        if (!building.built) {
             sprite = new Sprite(assetManager.get(building.unbuiltSpriteName, Texture.class));
         }
         else {

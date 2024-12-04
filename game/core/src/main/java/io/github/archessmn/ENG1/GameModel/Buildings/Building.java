@@ -25,9 +25,9 @@ public class Building {
     public String unbuiltSpriteName;
 
     public float initialBuildTime;
-    public float timeUntilBuilt;
+    public float buildingCompletionTime;
 
-    private boolean placed = false;
+    public boolean placed = false;
 
     public Rectangle bounds;
 
@@ -47,12 +47,12 @@ public class Building {
      * @param y The Y coordinate to place the building at.
      * @param width Width of the building.
      * @param height Height of the building.
-     * @param timeUntilBuilt Time until the building is marked as built.
+     * @param buildingConstructionDuration How long construction takes
      * @param built Whether the building should be marked as built upon creation.
      * @param uses The use the building has, used for updating building counters.
      * @param spriteName The file name of the buildings' sprite.
      */
-    public Building(float x, float y, float width, float height, float timeUntilBuilt, boolean built, Use[] uses, String spriteName) {
+    public Building(float x, float y, float width, float height, float buildingConstructionDuration, float initialBuildTime, boolean built, Use[] uses, String spriteName) {
 
         this.x = x;
         this.y = y;
@@ -60,30 +60,18 @@ public class Building {
         this.width = width;
         this.height = height;
 
-        this.initialBuildTime = timeUntilBuilt;
-        this.timeUntilBuilt = timeUntilBuilt;
+        this.initialBuildTime = initialBuildTime;
+        this.buildingCompletionTime = initialBuildTime + buildingConstructionDuration;
 
         this.built = built;
         this.uses = uses;
         this.spriteName = spriteName;
 
-        if (timeUntilBuilt > 0) {
+        if (!built) {
             this.unbuiltSpriteName = "construction.png";
         }
 
         this.bounds = new Rectangle(this.x, this.y, this.width, this.height);
-    }
-
-    /**
-     * Usually called once per frame to run any updates the building may need,
-     * such as reducing time until built.
-     * @param deltaTime The amount of time to advance by.
-     */
-    public void tick(float deltaTime) {
-        if (placed && timeUntilBuilt >= 0)
-            this.timeUntilBuilt -= deltaTime;
-        if (timeUntilBuilt <= 0)
-            built = true;
     }
 
     /**
@@ -137,8 +125,8 @@ public class Building {
      * Makes an un-built copy of the current building type
      * @return A copy of the building.
      */
-    public Building makeCopy() {
-        return new Building(this.x, this.y + 60, this.width, this.height, this.initialBuildTime, false, this.uses, this.spriteName);
+    public Building makeCopy(float currentTime) {
+        return new Building(this.x, this.y + 60, this.width, this.height, currentTime, this.buildingCompletionTime - this.initialBuildTime, false, this.uses, this.spriteName);
     }
 
     /**
