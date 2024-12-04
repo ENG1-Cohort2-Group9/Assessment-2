@@ -212,7 +212,7 @@ public class GameScreen implements Screen {
 
                     //buildingClicked = building.makeCopy(world.getCurrentTime());
 
-                    clickedBuilding = building.makeCopy();
+                    clickedBuilding = building.makeCopy(world.getCurrentTime());
 
                     break;
                 }
