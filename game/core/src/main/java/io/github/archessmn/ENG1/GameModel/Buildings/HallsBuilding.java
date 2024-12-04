@@ -5,6 +5,6 @@ package io.github.archessmn.ENG1.GameModel.Buildings;
  */
 public class HallsBuilding extends Building {
     public HallsBuilding(float x, float y, boolean built) {
-        super(Type.HALLS, x, y, 60, 60, 10f, built);
+        super(x, y, 60, 60, 10f, built, new Use[] {Use.ACCOMMODATION}, "halls.png");
     }
 }

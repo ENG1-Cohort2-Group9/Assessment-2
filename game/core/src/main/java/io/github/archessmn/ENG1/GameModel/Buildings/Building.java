@@ -6,7 +6,7 @@ import io.github.archessmn.ENG1.GameModel.GridCoordTuple;
 import io.github.archessmn.ENG1.GameModel.GridUtils;
 
 /**
- * Base class for each building type ({@link Building.Type}),
+ * Base class for each building type,
  * stores information about the building and provides utility classes for interacting with it.
  */
 public class Building {
@@ -29,39 +29,30 @@ public class Building {
 
     private boolean placed = false;
 
-
-    /**
-     * Defines the type and, by inference, the {@link Use}
-     * and sprite of a building.
-     */
-    public enum Type {
-        GYM, HALLS, LECTURE_HALL, OFFICES, PIAZZA
-    }
-
-    /**
-     * The use of a building, inferred from its {@link Type}
-     */
-    public enum Use {
-        SLEEP, LEARN, EAT, RECREATION
-    }
-
-    public Type buildingType;
-
     public Rectangle bounds;
 
+    public final Use[] uses;
+
+    /**
+     * The use of a building
+     */
+    public enum Use {
+        TEACHING, ACCOMMODATION, CAFETERIA, RECREATION
+    }
 
 
     /**
      * Initialises a new building.
-     * @param buildingType The {@link Type} of the building.
      * @param x The X coordinate to place the building at.
      * @param y The Y coordinate to place the building at.
      * @param width Width of the building.
      * @param height Height of the building.
      * @param timeUntilBuilt Time until the building is marked as built.
      * @param built Whether the building should be marked as built upon creation.
+     * @param uses The use the building has, used for updating building counters.
+     * @param spriteName The file name of the buildings' sprite.
      */
-    public Building(Type buildingType, float x, float y, float width, float height, float timeUntilBuilt, boolean built) {
+    public Building(float x, float y, float width, float height, float timeUntilBuilt, boolean built, Use[] uses, String spriteName) {
 
         this.x = x;
         this.y = y;
@@ -73,20 +64,12 @@ public class Building {
         this.timeUntilBuilt = timeUntilBuilt;
 
         this.built = built;
+        this.uses = uses;
+        this.spriteName = spriteName;
 
         if (timeUntilBuilt > 0) {
             this.unbuiltSpriteName = "construction.png";
         }
-
-        spriteName = switch (buildingType) {
-            case GYM -> "gym.png";
-            case HALLS -> "halls.png";
-            case LECTURE_HALL -> "lecturehall.png";
-            case OFFICES -> "offices.png";
-            case PIAZZA -> "piazza.png";
-        };
-
-        this.buildingType = buildingType;
 
         this.bounds = new Rectangle(this.x, this.y, this.width, this.height);
     }
@@ -155,7 +138,15 @@ public class Building {
      * @return A copy of the building.
      */
     public Building makeCopy() {
-        return new Building(this.buildingType, this.x, this.y + 60, this.width, this.height, this.initialBuildTime, false);
+        return new Building(this.x, this.y + 60, this.width, this.height, this.initialBuildTime, false, this.uses, this.spriteName);
+    }
+
+    /**
+     * Get the uses for the building
+     * @return the array of uses the building has.
+     */
+    public Use[] getUses() {
+        return uses;
     }
 
     /**
@@ -186,16 +177,5 @@ public class Building {
         this.setCenter(gridCoords.x, gridCoords.y);
     }
 
-    /**
-     * Get the use of the building, inferred from its {@link Type}.
-     * @return The {@link Use} of the building.
-     */
-    public Use getBuildingUse() {
-        return switch (buildingType) {
-            case GYM -> Use.RECREATION;
-            case HALLS -> Use.SLEEP;
-            case LECTURE_HALL, OFFICES -> Use.LEARN;
-            case PIAZZA -> Use.EAT;
-        };
-    }
+
 }

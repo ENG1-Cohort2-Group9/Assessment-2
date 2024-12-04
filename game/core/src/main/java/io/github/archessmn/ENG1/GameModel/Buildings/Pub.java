@@ -1,0 +1,13 @@
+package io.github.archessmn.ENG1.GameModel.Buildings;
+
+
+import com.badlogic.gdx.utils.Array;
+
+/**
+ * Wrapper of {@link Building} that creates a building with the Pub type.
+ */
+public class Pub extends Building {
+    public Pub(float x, float y, boolean built) {
+        super(x, y, 60, 60, 10f, built, new Use[] {Use.RECREATION, Use.CAFETERIA}, "offices.png");
+    }
+}
