@@ -52,7 +52,7 @@ public class GameScreen implements Screen {
     Rectangle buildingRectangle;
     BitmapFont font;
     Boolean isClicked = false;
-    Building buildingClicked = null;
+    Building clickedBuilding = null;
 
     Boolean paused = true;
     Boolean gameEnded = false;
@@ -195,7 +195,7 @@ public class GameScreen implements Screen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) paused = !paused;
 
         if (gameEnded) {
-            buildingClicked = null;
+            clickedBuilding = null;
             return;
         }
 
@@ -209,18 +209,20 @@ public class GameScreen implements Screen {
                 Building building = draggableBuildings.get(i);
 
                 if (building.getBounds().contains(unprojectedTouchPos)) {
-                    buildingClicked = building.makeCopy();
+                    clickedBuilding = building.makeCopy();
                     break;
                 }
             }
-        } else if (!isClicked && buildingClicked != null) { // Click released
-            world.addBuilding(buildingClicked); // Places the building if it passes all checks
+        } else if (!isClicked && clickedBuilding != null) { // Click released
+            if (unprojectedTouchPos.x <= VIEWPORT_WIDTH - 300) {
+                world.addBuilding(clickedBuilding); // Places the building if it passes all checks
+            }
 
-            buildingClicked = null;
+            clickedBuilding = null;
         }
 
-        if (buildingClicked != null) { // Track building to mouse position for drag
-            buildingClicked.setCenter(touchPos.x, touchPos.y);
+        if (clickedBuilding != null) { // Track building to mouse position for drag
+            clickedBuilding.setCenter(touchPos.x, touchPos.y);
         }
     }
 
@@ -250,15 +252,15 @@ public class GameScreen implements Screen {
         drawGrid(shapeRenderer);
 
         // Draw red outline for where the logo will snap to
-        if (buildingClicked != null) {
-            if (world.doesBuildingOverlap(buildingClicked)) {
+        if (clickedBuilding != null) {
+            if (world.doesBuildingOverlap(clickedBuilding)) {
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             } else {
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
             }
             shapeRenderer.setColor(Color.RED);
-            Vector2 buildingCoords = buildingClicked.getRawGridCoords();
-            shapeRenderer.rect(buildingCoords.x - (buildingClicked.width / 2), buildingCoords.y - (buildingClicked.height / 2), buildingClicked.width, buildingClicked.height);
+            Vector2 buildingCoords = clickedBuilding.getRawGridCoords();
+            shapeRenderer.rect(buildingCoords.x - (clickedBuilding.width / 2), buildingCoords.y - (clickedBuilding.height / 2), clickedBuilding.width, clickedBuilding.height);
             shapeRenderer.end();
         }
 
@@ -285,8 +287,8 @@ public class GameScreen implements Screen {
         }
 
         timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTimer / 60) + 1, (int) ((gameTimer % 60) / (60 / (double) 365)) + 1));
-        if (buildingClicked != null) {
-            if (world.doesBuildingOverlap(buildingClicked)) {
+        if (clickedBuilding != null) {
+            if (world.doesBuildingOverlap(clickedBuilding)) {
                 font.draw(batch, "Buildings overlap", 20, 520);
             }
         }
@@ -316,6 +318,9 @@ public class GameScreen implements Screen {
         }
         for (Building building : world.buildings) {
             drawBuilding(batch, assetManager, building);
+        }
+        if (clickedBuilding != null) {
+            drawBuilding(batch, assetManager, clickedBuilding);
         }
     }
 
