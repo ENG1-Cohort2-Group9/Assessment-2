@@ -2,6 +2,7 @@ package io.github.archessmn.ENG1.GameModel;
 
 import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Buildings.Building;
+import io.github.archessmn.ENG1.GameModel.Buildings.*;
 
 import java.util.HashMap;
 
@@ -14,7 +15,29 @@ public class World {
 
     public Array<Building> buildings;
 
-    public HashMap<Building.Use, Integer> buildingUseCounts = new HashMap<>();
+    public HashMap<Use, Integer> buildingUseCounts = new HashMap<>();
+
+    // Between 0 and 100 percent
+    // There are n factors to the score:
+    // Average building distances (40%) average distance for each pair of building types
+    // Completion (10%) Each counter being > 0 gives 2.5%
+    // Having a total number in the buildings counters, will unlock the full satisfactionScore
+    // For example, having 1 of each building counter may multiply the score by 0.1
+    // Whereas having 5 of each building counter may multiply the score by 1.
+    // Events (30%) Events will each have separate effects on this portion of satisfactionScore
+    // Building values (20%) Different buildings will have different values,
+    // e.g. rent price, this allows for more buildings to be implemented,
+    // and gives them a clear difference in how they effect satisfaction score.
+    // In other words, this is why a user may place accommodation building y,
+    // instead of accommodation building x.
+    public float satisfactionScore;
+
+
+
+
+    // This 2D array stores the average distance between a pair of building types,
+    // For example, you may set averageDistances[Use.RECREATION.ordinal()][Use.TEACHING.ordinal()] to 0
+    public int[][] averageDistances = new int[Use.values().length][Use.values().length];
 
     private float currentTime;
 
@@ -28,8 +51,17 @@ public class World {
         this.height = worldHeight;
 
 
-        for (Building.Use use : Building.Use.values()) {
+        for (Use use : Use.values()) {
             buildingUseCounts.put(use, 0);
+        }
+
+
+        satisfactionScore = 0;
+        // Creates an adjacency matrix for each building use pair
+        for (Use use1 : Use.values()) {
+            for (Use use2 : Use.values()) {
+                averageDistances[use1.ordinal()][use2.ordinal()] = 0;
+            }
         }
 
         buildings = new Array<>();
@@ -56,7 +88,7 @@ public class World {
                 // This will only trigger once (see '&& !building.built')
                 building.built = true;
 
-                for (Building.Use use : building.getUses()) {
+                for (Use use : building.getUses()) {
                     buildingUseCounts.put(use, buildingUseCounts.get(use) + 1);
                 }
             }
@@ -89,6 +121,11 @@ public class World {
             }
         }
         return false;
+    }
+
+    public float calculatesatisfaction() {
+
+        return satisfactionScore;
     }
 
     public float getCurrentTime() {
