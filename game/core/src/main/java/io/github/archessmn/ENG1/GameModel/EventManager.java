@@ -13,6 +13,7 @@ public class EventManager {
     private Random random = new Random();
     private float maxRandomVal = 0f;
     private float anyEventChancePerMin = 1f; // Probability of any event occurring this minute
+    private final float numberOfEventsThisGame = random.nextFloat(3, GameEvent.values().length);
 
     /**
      * Assigns the GameEventListener
@@ -30,12 +31,11 @@ public class EventManager {
     }
 
     /**
-     * Run this inside the main process loop. Raises events at random intervals determined by
-     * the rarity of said event.
-     * @param delta time in seconds since the last frame
+     * Run this inside the main process loop. Raises events at jittered random intervals
+     * @param currentTime world time in seconds since the last frame
      */
-    public void processEvents(float delta) {
-        float framePercentOfMinute = delta / 60f; // Used to adjust probabilities based on how long the last frame took for consistent chances
+    public void processEvents(float currentTime) {
+
 
         if (random.nextFloat() < anyEventChancePerMin * framePercentOfMinute) { // Calculate whether to raise an event
             float randomValue = random.nextFloat(0, maxRandomVal);

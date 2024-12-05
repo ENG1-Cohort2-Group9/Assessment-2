@@ -47,7 +47,6 @@ public class GameScreen implements Screen {
 
     Array<Building> draggableBuildings;
 
-    float gameTimer;
 
     Rectangle buildingRectangle;
     BitmapFont font;
@@ -161,8 +160,6 @@ public class GameScreen implements Screen {
         draggableBuildings.add(new Pub(840, 40, 0, true));
         draggableBuildings.add(new PiazzaBuilding(900, 40, 0, true));
 
-        gameTimer = 0f;
-
         blockRenderer = new ShapeRenderer();
 
         buildingRectangle = new Rectangle();
@@ -237,13 +234,9 @@ public class GameScreen implements Screen {
 
         world.worldProcess(delta);
 
-        gameTimer += delta;
-
         // Ends the game when the timer exceeds 5 minutes.
         // This should probably be moved from this class to World, it already has a timer
-        if (gameTimer >= 300) {
-            gameEnded = true;
-        }
+        gameEnded = world.getGameEnded();
 
         stage.act(delta);
     }
@@ -284,14 +277,15 @@ public class GameScreen implements Screen {
         // Draws a 5-minute countdown timer for the games length
         // If it's a whole minute, it displays :00 for the seconds
         // Otherwise it gets the remainder of gameTimer divided by 60 for the seconds.
-        if (60 - (int) gameTimer % 60 == 60) {
-            countDownLabel.setText(floorDiv(300 - (int) gameTimer, 60) + ":00");
+        float gameTime = world.getCurrentTime();
+        if (60 - (int) gameTime % 60 == 60) {
+            countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":00");
         }
         else {
-            countDownLabel.setText(floorDiv(300 - (int) gameTimer, 60) + ":" + String.format("%02d", 60 - (int) gameTimer % 60));
+            countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":" + String.format("%02d", 60 - (int) gameTime % 60));
         }
 
-        timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTimer / 60) + 1, (int) ((gameTimer % 60) / (60 / (double) 365)) + 1));
+        timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTime / 60) + 1, (int) ((gameTime % 60) / (60 / (double) 365)) + 1));
         if (clickedBuilding != null) {
             if (world.doesBuildingOverlap(clickedBuilding)) {
                 font.draw(batch, "Buildings overlap", 20, 520);

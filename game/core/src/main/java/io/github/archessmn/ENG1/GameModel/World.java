@@ -11,6 +11,7 @@ import java.util.HashMap;
 public class World {
 
     public Integer width, height;
+    public final int GAME_LENGTH_SECONDS = 300;
 
     public Array<Building> buildings;
 
@@ -91,6 +92,10 @@ public class World {
             }
         }
         return false;
+    }
+
+    public boolean getGameEnded() {
+        return currentTime >= GAME_LENGTH_SECONDS;
     }
 
     public float getCurrentTime() {
