@@ -9,16 +9,16 @@ public enum GameEvent {
     LongBoiSighting("Long boi sighting", "LONG BOI HAS BEEN SPOTTED!!!", 0.02f),
     TreeHype("Tree hype!", "The latest trend is studying near trees!", 0.4f),
     RockClimbing("Rock climbing", "Rock climbing is the sport of the year!", 0.1f),
-    LectureLake("A pleasant view","Students want to look at water while \"focusing\" in lectures", 0.7f),
+    LectureLake("A pleasant view","Students want nice scenery to look at while \"focusing\" in lectures", 0.7f),
     GooseAttack("Goose attack", "A student has been attacked by a goose!", 0.02f);
 
     public final String title;
     public final String description;
-    public final float rarity;
+    public final float chancePerMin;
 
-    private GameEvent(String title, String description, float rarity) {
+    private GameEvent(String title, String description, float chancePerMin) {
         this.title = title;
         this.description = description;
-        this.rarity = rarity;
+        this.chancePerMin = chancePerMin;
     }
 }

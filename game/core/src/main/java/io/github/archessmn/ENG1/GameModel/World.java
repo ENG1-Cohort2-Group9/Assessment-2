@@ -17,6 +17,7 @@ public class World {
     public HashMap<Building.Use, Integer> buildingUseCounts = new HashMap<>();
 
     private float currentTime;
+    private EventManager eventManager = new EventManager(new GameEventListener(this::handleEvent));
 
     /**
      * Initialises an empty world and loads assets.
@@ -70,6 +71,7 @@ public class World {
     public void worldProcess(float deltaTime) {
         currentTime += deltaTime;
         updateBuildings(deltaTime);
+        eventManager.processEvents(deltaTime);
     }
 
     /**
@@ -93,5 +95,9 @@ public class World {
 
     public float getCurrentTime() {
         return currentTime;
+    }
+
+    public void handleEvent(GameEvent event) {
+        System.out.println(event.title);
     }
 }
