@@ -40,7 +40,6 @@ public class Building {
         TEACHING, ACCOMMODATION, CAFETERIA, RECREATION
     }
 
-
     /**
      * Initialises a new building.
      * @param x The X coordinate to place the building at.

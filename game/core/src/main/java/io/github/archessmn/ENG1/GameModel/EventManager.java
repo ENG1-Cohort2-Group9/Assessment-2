@@ -3,7 +3,8 @@ package io.github.archessmn.ENG1.GameModel;
 import java.util.ArrayList;
 
 public class EventManager {
-    ArrayList<GameEvent> eventList = new ArrayList<GameEvent>();
+    ArrayList<GameEvent> occurredEventList = new ArrayList<GameEvent>();
+    ArrayList<GameEvent> totalEventList = new ArrayList<GameEvent>();
     GameEventListener listener;
 
     /**
@@ -12,6 +13,11 @@ public class EventManager {
      */
     public EventManager(GameEventListener listener) {
         this.listener = listener;
+        loadEvents();
+    }
+
+    public void loadEvents() {
+
     }
 
     /**
@@ -21,7 +27,7 @@ public class EventManager {
      */
     public void processEvents(float delta) {
         if (false) { // Calculate whether to raise an event
-            listener.raiseEvent(eventList.get(0));
+            listener.raiseEvent(occurredEventList.get(0));
         }
     }
 }
