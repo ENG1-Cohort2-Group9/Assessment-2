@@ -14,11 +14,11 @@ public enum GameEvent {
 
     public final String title;
     public final String description;
-    public final float chancePerMin;
+    public final float chance; // Relative chance of occurring compared with all other events. Total chance of all events can be any value > 0
 
-    private GameEvent(String title, String description, float chancePerMin) {
+    private GameEvent(String title, String description, float chance) {
         this.title = title;
         this.description = description;
-        this.chancePerMin = chancePerMin;
+        this.chance = chance;
     }
 }

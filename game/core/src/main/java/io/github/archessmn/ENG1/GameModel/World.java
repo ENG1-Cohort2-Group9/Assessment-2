@@ -11,14 +11,14 @@ import java.util.HashMap;
 public class World {
 
     public Integer width, height;
-    public final int GAME_LENGTH_SECONDS = 300;
+    public final float GAME_LENGTH_SECONDS = 300;
 
     public Array<Building> buildings;
 
     public HashMap<Building.Use, Integer> buildingUseCounts = new HashMap<>();
 
     private float currentTime;
-    private EventManager eventManager = new EventManager(new GameEventListener(this::handleEvent));
+    private EventManager eventManager = new EventManager(new GameEventListener(this::handleEvent), GAME_LENGTH_SECONDS);
 
     /**
      * Initialises an empty world and loads assets.
@@ -72,7 +72,7 @@ public class World {
     public void worldProcess(float deltaTime) {
         currentTime += deltaTime;
         updateBuildings(deltaTime);
-        eventManager.processEvents(deltaTime);
+        eventManager.processEvents(currentTime);
     }
 
     /**
