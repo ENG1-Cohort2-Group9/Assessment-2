@@ -18,7 +18,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.archessmn.ENG1.GameModel.*;
-import io.github.archessmn.ENG1.GameModel.Buildings.*;
+import io.github.archessmn.ENG1.GameModel.Objects.*;
 
 import java.util.HashMap;
 import static java.lang.Math.floorDiv;
@@ -130,6 +130,8 @@ public class GameScreen implements Screen {
         assetManager.load("lecturehall.png", Texture.class);
         assetManager.load("offices.png", Texture.class);
         assetManager.load("piazza.png", Texture.class);
+        assetManager.load("lake.jpg", Texture.class);
+        assetManager.load("rock.png", Texture.class);
         assetManager.load("construction.png", Texture.class);
         assetManager.load("missing_texture.png", Texture.class);
 

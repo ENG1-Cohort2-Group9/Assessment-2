@@ -1,6 +1,4 @@
-package io.github.archessmn.ENG1.GameModel.Buildings;
-
-import com.badlogic.gdx.utils.Array;
+package io.github.archessmn.ENG1.GameModel.Objects;
 
 /**
  * Wrapper of {@link Building} that creates a building with the GYM type.
