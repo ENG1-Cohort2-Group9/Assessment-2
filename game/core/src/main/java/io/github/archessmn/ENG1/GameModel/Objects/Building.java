@@ -1,4 +1,4 @@
-package io.github.archessmn.ENG1.GameModel.Buildings;
+package io.github.archessmn.ENG1.GameModel.Objects;
 
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -37,7 +37,7 @@ public class Building {
      * The use of a building
      */
     public enum Use {
-        TEACHING, ACCOMMODATION, CAFETERIA, RECREATION
+        TEACHING, ACCOMMODATION, CAFETERIA, RECREATION, TERRAIN
     }
 
 
@@ -164,6 +164,4 @@ public class Building {
         Vector2 gridCoords = getRawGridCoords();
         this.setCenter(gridCoords.x, gridCoords.y);
     }
-
-
 }

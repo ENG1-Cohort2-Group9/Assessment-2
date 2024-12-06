@@ -1,9 +1,12 @@
 package io.github.archessmn.ENG1.GameModel;
 
 import com.badlogic.gdx.utils.Array;
-import io.github.archessmn.ENG1.GameModel.Buildings.Building;
+import io.github.archessmn.ENG1.GameModel.Objects.Building;
+import io.github.archessmn.ENG1.GameModel.Objects.TerrainAsset;
+import io.github.archessmn.ENG1.OpenSimplexNoise;
 
 import java.util.HashMap;
+import java.util.Random;
 
 /**
  * Class used to store information about the world and the buildings in it.
@@ -33,6 +36,39 @@ public class World {
         }
 
         buildings = new Array<>();
+
+        createWorldAssets();
+    }
+
+    public void createWorldAssets() {
+        generateTerrainFeatures(TerrainAsset.Feature.LAKE, 0.7f, 100f);
+        generateTerrainFeatures(TerrainAsset.Feature.ROCK, 0.65f, 200f);
+
+        boolean terrainAssetsPlaced = false;
+        for (Building building : buildings) {
+            if (building.uses[0] == Building.Use.TERRAIN) {terrainAssetsPlaced = true;}
+        }
+
+        if (!terrainAssetsPlaced) {
+            TerrainAsset asset = new TerrainAsset(new Random().nextInt(0, width), new Random().nextInt(0, height), 0, true, TerrainAsset.Feature.LAKE);
+            if (!doesBuildingOverlap(asset)) {addBuilding(asset);}
+        }
+    }
+
+    private void generateTerrainFeatures(TerrainAsset.Feature feature, float acceptedValue, float frequency) {
+        OpenSimplexNoise noise = new OpenSimplexNoise();
+        int seed = new Random().nextInt(0, 100000);
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width - 60; x++) {
+                double value = noise.eval(x / frequency, y / frequency, seed);
+
+                if (value > acceptedValue) {
+                    TerrainAsset asset = new TerrainAsset(x, y, 0, true, feature);
+                    if (!doesBuildingOverlap(asset)) {addBuilding(asset);}
+                }
+            }
+        }
     }
 
     /**
