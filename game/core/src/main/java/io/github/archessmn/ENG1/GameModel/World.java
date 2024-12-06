@@ -80,7 +80,7 @@ public class World {
 
         boolean terrainAssetsPlaced = false;
         for (Building building : buildings) {
-            if (building.uses[0] == Building.Use.TERRAIN) {terrainAssetsPlaced = true;}
+            if (building.uses[0] == Use.TERRAIN) {terrainAssetsPlaced = true;}
         }
 
         if (!terrainAssetsPlaced) {
