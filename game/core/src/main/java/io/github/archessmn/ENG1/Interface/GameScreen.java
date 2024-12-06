@@ -63,8 +63,11 @@ public class GameScreen implements Screen {
     private Label timerLabel;
     private final HashMap<Use, Label> buildingUseCountLabels = new HashMap<>();
     private final HashMap<Use, Label> buildingUseNameLabels = new HashMap<>();
+    private float timeEventShownAt = -10f;
+    private GameEvent currentEvent = null;
 
     final ScreenManager game;
+    final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
 
 
 
@@ -76,7 +79,7 @@ public class GameScreen implements Screen {
     public void show() {
         viewport = new FitViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
         // 300 here represents the pixel width of the UI on the right hand side
-        world = new World(VIEWPORT_WIDTH - 300, VIEWPORT_HEIGHT);
+        world = new World(VIEWPORT_WIDTH - 300, VIEWPORT_HEIGHT, new GameEventListener(this::showEventPopup));
 
         atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
@@ -294,6 +297,12 @@ public class GameScreen implements Screen {
             }
         }
 
+        // Show event text (if there is one)
+        if (currentEvent != null && world.getCurrentTime() < timeEventShownAt + EVENT_NOTIFICATION_TIME) {
+            font.draw(batch, currentEvent.title, 20, 525);
+            font.draw(batch, currentEvent.description, 20, 495);
+        }
+
         if (paused) {
             font.draw(batch, "Paused, press P to resume", 20, 460);
             font.draw(batch, "Building icons from macrovector on Freepik", 0, 25);
@@ -318,6 +327,9 @@ public class GameScreen implements Screen {
             drawBuilding(batch, assetManager, building);
         }
         for (Building building : world.buildings) {
+            drawBuilding(batch, assetManager, building);
+        }
+        for (Building building : world.terrain) {
             drawBuilding(batch, assetManager, building);
         }
         if (clickedBuilding != null) {
@@ -361,6 +373,11 @@ public class GameScreen implements Screen {
 
         gridRenderer.end();
 
+    }
+
+    public void showEventPopup(GameEvent event) {
+        currentEvent = event;
+        timeEventShownAt = world.getCurrentTime();
     }
 
     @Override

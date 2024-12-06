@@ -51,12 +51,8 @@ public class World {
     private EventManager eventManager;
     private Random random = new Random();
 
-    /**
-     * Initialises the game world
-     * @param worldWidth Width to use for the usable world space
-     * @param worldHeight Height to use for the usable world space
-     */
-    public World(int worldWidth, int worldHeight) {
+
+    private void setUpWorld(int worldWidth, int worldHeight) {
         this.width = worldWidth;
         this.height = worldHeight;
 
@@ -75,9 +71,20 @@ public class World {
         }
 
         buildings = new Array<>();
+        terrain = new Array<>();
         gridLookup = new Building[width][height];
 
         createWorldAssets();
+    }
+
+    /**
+     * Initialises the game world
+     * @param worldWidth Width to use for the usable world space
+     * @param worldHeight Height to use for the usable world space
+     */
+    public World(int worldWidth, int worldHeight) {
+        setUpWorld(worldWidth, worldHeight);
+
         eventManager = new EventManager(new GameEventListener[] { new GameEventListener(this::handleEvent) }, GAME_LENGTH_SECONDS);
     }
 
@@ -88,27 +95,7 @@ public class World {
      * @param additionalEventListener an extra event listener for event handling outside of this class. Can be used for rendering effects
      */
     public World(int worldWidth, int worldHeight, GameEventListener additionalEventListener) {
-        this.width = worldWidth;
-        this.height = worldHeight;
-
-
-        for (Use use : Use.values()) {
-            buildingUseCounts.put(use, 0);
-        }
-
-
-        satisfactionScore = 0;
-        // Creates an adjacency matrix for each building use pair
-        for (Use use1 : Use.values()) {
-            for (Use use2 : Use.values()) {
-                averageDistances[use1.ordinal()][use2.ordinal()] = 0;
-            }
-        }
-
-        buildings = new Array<>();
-        gridLookup = new Building[width][height];
-
-        createWorldAssets();
+        setUpWorld(worldWidth, worldHeight);
 
         eventManager = new EventManager(new GameEventListener[] { new GameEventListener(this::handleEvent), additionalEventListener }, GAME_LENGTH_SECONDS);
     }
@@ -216,6 +203,13 @@ public class World {
                 }
             }
         }
+        for (Building building : terrain) {
+            if (!building.equals(overlapBuilding)) {
+                if (building.gridX == gridCoords.x && building.gridY == gridCoords.y) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -251,10 +245,14 @@ public class World {
                 }
                 break;
             case Smelly:
-                modifyEfficiency(getRandomBuilding(buildings), 1.2f, GAME_LENGTH_SECONDS + 1);
+                if (buildings.size > 0) {
+                    modifyEfficiency(getRandomBuilding(buildings), 1.2f, GAME_LENGTH_SECONDS + 1);
+                }
                 break;
             case Seagull:
-                closeBuilding(getRandomBuilding(buildings));
+                if (buildings.size > 0) {
+                    closeBuilding(getRandomBuilding(buildings));
+                }
                 break;
             case TreeHype:
                 addActiveEvent(GameEvent.TreeHype, 120);
@@ -274,11 +272,9 @@ public class World {
                         }
                     }
                 }
-                if (buildingsNearTrees.isEmpty()) {
-                    throw new RuntimeException("No buildings are near trees");
+                if (buildingsNearTrees.size > 0) {
+                    destroyBuilding(getRandomBuilding(buildingsNearTrees));
                 }
-
-                destroyBuilding(getRandomBuilding(buildingsNearTrees));
                 break;
             case AColdWinter:
                 addActiveEvent(GameEvent.AColdWinter, 45);
@@ -327,6 +323,8 @@ public class World {
     }
 
     public Building getRandomBuilding(Array<Building> buildings) {
+        if (buildings.size == 0)
+            return null;
         return buildings.get(random.nextInt(buildings.size));
     }
 
