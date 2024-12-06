@@ -110,11 +110,13 @@ public class World {
      * @param building Building to add to the world
      * @return true if the placement was successful
      */
-    public void addBuilding(Building building) {
+    public boolean addBuilding(Building building) {
         if (!doesBuildingOverlap(building)) {
             buildings.add(building);
             building.place();
+            return true;
         }
+        return false;
     }
 
     /**
