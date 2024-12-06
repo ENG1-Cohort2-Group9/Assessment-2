@@ -7,7 +7,7 @@ import java.util.Random;
 public class EventManager {
     ArrayList<GameEvent> occurredEventList = new ArrayList<GameEvent>();
     ArrayList<GameEvent> possibleEvents;
-    GameEventListener listener;
+    GameEventListener[] listeners;
 
     private Random random = new Random();
     private float maxRandomVal = 0f;
@@ -21,10 +21,10 @@ public class EventManager {
 
     /**
      * Assigns the GameEventListener
-     * @param listener The listener that can process the event
+     * @param listeners The listeners that will react to events
      */
-    public EventManager(GameEventListener listener, float gameLengthSeconds) {
-        this.listener = listener;
+    public EventManager(GameEventListener[] listeners, float gameLengthSeconds) {
+        this.listeners = listeners;
         // Possible events will be pruned when events occur to prevent duplicate events
         possibleEvents = new ArrayList<GameEvent>(Arrays.asList(GameEvent.values()));
         for (GameEvent event : possibleEvents) {
@@ -66,7 +66,9 @@ public class EventManager {
             occurredEventList.add(event);
             maxRandomVal -= event.chance;
 
-            listener.raiseEvent(event);
+            for (GameEventListener listener : listeners) {
+                listener.raiseEvent(event);
+            }
         }
     }
 }

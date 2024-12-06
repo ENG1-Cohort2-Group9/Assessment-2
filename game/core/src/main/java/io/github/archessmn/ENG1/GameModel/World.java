@@ -14,44 +14,49 @@ import java.util.Random;
  */
 public class World {
 
-    public Integer width, height;
+    public int width, height;
     public final float GAME_LENGTH_SECONDS = 300;
 
     public Array<Building> buildings;
+    public Array<TerrainAsset> terrain;
+    public Building[][] gridLookup; // Stores pointers to the buildings and terrain on the grid so that squares can be queried
 
     public HashMap<Use, Integer> buildingUseCounts = new HashMap<>();
 
     // Between 0 and 100 percent
+    //
     // There are n factors to the score:
-    // Average building distances (40%) average distance for each pair of building types
-    // Completion (10%) Each counter being > 0 gives 2.5%
-    // Having a total number in the buildings counters, will unlock the full satisfactionScore
-    // For example, having 1 of each building counter may multiply the score by 0.1
-    // Whereas having 5 of each building counter may multiply the score by 1.
-    // Events (30%) Events will each have separate effects on this portion of satisfactionScore
-    // Building values (20%) Different buildings will have different values,
-    // e.g. rent price, this allows for more buildings to be implemented,
-    // and gives them a clear difference in how they effect satisfaction score.
-    // In other words, this is why a user may place accommodation building y,
-    // instead of accommodation building x.
+    // * Average building distances (40%) average distance for each pair of building types
+    // * Completion (10%) Each counter being > 0 gives 2.5%
+    // * Having a total number in the buildings counters, will unlock the full satisfactionScore
+    //    For example, having 1 of each building counter may multiply the score by 0.1
+    //    Whereas having 5 of each building counter may multiply the score by 1.
+    // * Events (30%) Events will each have separate effects on this portion of satisfactionScore
+    // * Building values (20%) Different buildings will have different values,
+    //    e.g. rent price, this allows for more buildings to be implemented,
+    //    and gives them a clear difference in how they effect satisfaction score.
+    //    In other words, this is why a user may place accommodation building y,
+    //    instead of accommodation building x.
     public float satisfactionScore;
 
 
-
+    // Stores events that have prolonged effects. Indices are preset for quicker lookup, even though instantaneous events are never stored here so the array can never be full.
+    GameEvent[] activeEvents = new GameEvent[GameEvent.values().length];
 
     // This 2D array stores the average distance between a pair of building types,
     // For example, you may set averageDistances[Use.RECREATION.ordinal()][Use.TEACHING.ordinal()] to 0
     public int[][] averageDistances = new int[Use.values().length][Use.values().length];
 
     private float currentTime;
-    private EventManager eventManager = new EventManager(new GameEventListener(this::handleEvent), GAME_LENGTH_SECONDS);
+    private EventManager eventManager;
+    private Random random = new Random();
 
     /**
-     * Initialises an empty world and loads assets.
+     * Initialises the game world
      * @param worldWidth Width to use for the usable world space
      * @param worldHeight Height to use for the usable world space
      */
-    public World(Integer worldWidth, Integer worldHeight) {
+    public World(int worldWidth, int worldHeight) {
         this.width = worldWidth;
         this.height = worldHeight;
 
@@ -70,8 +75,42 @@ public class World {
         }
 
         buildings = new Array<>();
+        gridLookup = new Building[width][height];
 
         createWorldAssets();
+        eventManager = new EventManager(new GameEventListener[] { new GameEventListener(this::handleEvent) }, GAME_LENGTH_SECONDS);
+    }
+
+    /**
+     * Initialises the game world with an extra event listener for event handling outside of this class
+     * @param worldWidth Width to use for the usable world space
+     * @param worldHeight Height to use for the usable world space
+     * @param additionalEventListener an extra event listener for event handling outside of this class. Can be used for rendering effects
+     */
+    public World(int worldWidth, int worldHeight, GameEventListener additionalEventListener) {
+        this.width = worldWidth;
+        this.height = worldHeight;
+
+
+        for (Use use : Use.values()) {
+            buildingUseCounts.put(use, 0);
+        }
+
+
+        satisfactionScore = 0;
+        // Creates an adjacency matrix for each building use pair
+        for (Use use1 : Use.values()) {
+            for (Use use2 : Use.values()) {
+                averageDistances[use1.ordinal()][use2.ordinal()] = 0;
+            }
+        }
+
+        buildings = new Array<>();
+        gridLookup = new Building[width][height];
+
+        createWorldAssets();
+
+        eventManager = new EventManager(new GameEventListener[] { new GameEventListener(this::handleEvent), additionalEventListener }, GAME_LENGTH_SECONDS);
     }
 
     public void createWorldAssets() {
@@ -85,7 +124,7 @@ public class World {
 
         if (!terrainAssetsPlaced) {
             TerrainAsset asset = new TerrainAsset(new Random().nextInt(0, width), new Random().nextInt(0, height), 0, true, TerrainAsset.Feature.LAKE);
-            if (!doesBuildingOverlap(asset)) {addBuilding(asset);}
+            addTerrain(asset);
         }
     }
 
@@ -99,7 +138,7 @@ public class World {
 
                 if (value > acceptedValue) {
                     TerrainAsset asset = new TerrainAsset(x, y, 0, true, feature);
-                    if (!doesBuildingOverlap(asset)) {addBuilding(asset);}
+                    addTerrain(asset);
                 }
             }
         }
@@ -114,6 +153,22 @@ public class World {
         if (!doesBuildingOverlap(building)) {
             buildings.add(building);
             building.place();
+            gridLookup[building.gridX][building.gridY] = building;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Adds a terrain asset to the world if allowed, updating the terrain store
+     * @param asset Asset to add to the world
+     * @return true if the placement was successful
+     */
+    public boolean addTerrain(TerrainAsset asset) {
+        if (!doesBuildingOverlap(asset)) {
+            terrain.add(asset);
+            asset.place();
+            gridLookup[asset.gridX][asset.gridY] = asset;
             return true;
         }
         return false;
@@ -178,6 +233,108 @@ public class World {
     }
 
     public void handleEvent(GameEvent event) {
-        System.out.println(event.title);
+        switch (event) {
+            case Flooding:
+                float floodingTimeSeconds = 30;
+                for (TerrainAsset asset : terrain) {
+                    // Iterate through lakes
+                    if (asset.feature == TerrainAsset.Feature.LAKE) {
+                        // Iterate through objects around the lake to find buildings
+                        for (int x = Math.max(0, asset.gridX - 1); x <= Math.min(width - 1, asset.gridX + 1); x++) {
+                            for (int y = Math.max(0, asset.gridY - 1); y <= Math.min(height - 1, asset.gridY + 1); y++) {
+                                if (!(gridLookup[x][y] instanceof TerrainAsset)) {
+                                    closeBuilding(gridLookup[x][y], floodingTimeSeconds);
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            case Smelly:
+                modifyEfficiency(getRandomBuilding(buildings), 1.2f, GAME_LENGTH_SECONDS + 1);
+                break;
+            case Seagull:
+                closeBuilding(getRandomBuilding(buildings));
+                break;
+            case TreeHype:
+                addActiveEvent(GameEvent.TreeHype, 120);
+                break;
+            case TreeDamage:
+                Array<Building> buildingsNearTrees = new Array<>();
+                for (TerrainAsset asset : terrain) {
+                    // Iterate through trees
+                    if (asset.feature == TerrainAsset.Feature.TREE) {
+                        // Iterate through objects around the lake to find buildings
+                        for (int x = Math.max(0, asset.gridX - 1); x <= Math.min(width - 1, asset.gridX + 1); x++) {
+                            for (int y = Math.max(0, asset.gridY - 1); y <= Math.min(height - 1, asset.gridY + 1); y++) {
+                                if (!(gridLookup[x][y] instanceof TerrainAsset)) {
+                                    buildingsNearTrees.add(gridLookup[x][y]);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (buildingsNearTrees.isEmpty()) {
+                    throw new RuntimeException("No buildings are near trees");
+                }
+
+                destroyBuilding(getRandomBuilding(buildingsNearTrees));
+                break;
+            case AColdWinter:
+                addActiveEvent(GameEvent.AColdWinter, 45);
+                break;
+            case GooseAttack:
+                break;
+            case LectureLake:
+                addActiveEvent(GameEvent.LectureLake, GAME_LENGTH_SECONDS + 1);
+                break;
+            case RockClimbing:
+                addActiveEvent(GameEvent.RockClimbing, 120);
+                break;
+            case LongBoiSighting:
+                addActiveEvent(GameEvent.LongBoiSighting, 10);
+                break;
+            default:
+                throw new RuntimeException("Unknown event type: " + event);
+        }
+        calculatesatisfaction();
+
+    }
+
+    /**
+     * Mark a building as under construction indefinitely
+     */
+    public void closeBuilding(Building building) {
+
+    }
+
+    /**
+     * Mark a building as under construction for {@code timeSeconds} seconds
+     */
+    public void closeBuilding(Building building, float timeSeconds) {
+
+    }
+
+    /**
+     * Multiplies a building's efficiency by {@code multiplier} for {@code timeSeconds}, affecting satisfaction
+     */
+    public void modifyEfficiency(Building building, float multiplier, float timeSeconds) {
+
+    }
+
+    public void destroyBuilding(Building building) {
+
+    }
+
+    public Building getRandomBuilding(Array<Building> buildings) {
+        return buildings.get(random.nextInt(buildings.size));
+    }
+
+    /**
+     * Adds an effect to the current game for {@code timeSeconds} seconds
+     * @param event The event associated with the effect
+     */
+    public void addActiveEvent(GameEvent event, float timeSeconds) {
+        activeEvents[event.ordinal()] = event;
     }
 }

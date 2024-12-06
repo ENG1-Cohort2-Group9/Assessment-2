@@ -160,4 +160,13 @@ public class Building {
         Vector2 gridCoords = getRawGridCoords();
         this.setCenter(gridCoords.x, gridCoords.y);
     }
+
+    /**
+     * Determines if a building is in any of the nine squares (including the centre) adjacent to this square
+     * @param other the other building to compare
+     * @return true if the building is adjacent to this one
+     */
+    public boolean isAdjacentTo(Building other) {
+        return Math.abs(other.gridX - gridX) <= 1 && Math.abs(other.gridY - gridY) <= 1;
+    }
 }
