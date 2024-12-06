@@ -32,13 +32,8 @@ public class Building {
     public Rectangle bounds;
 
     public final Use[] uses;
+    int UseSize;
 
-    /**
-     * The use of a building
-     */
-    public enum Use {
-        TEACHING, ACCOMMODATION, CAFETERIA, RECREATION
-    }
 
     /**
      * Initialises a new building.
@@ -64,6 +59,7 @@ public class Building {
 
         this.built = built;
         this.uses = uses;
+        this.UseSize = Use.values().length;
         this.spriteName = spriteName;
 
         if (!built) {
@@ -135,6 +131,7 @@ public class Building {
     public Use[] getUses() {
         return uses;
     }
+
 
     /**
      * Get the raw coordinates of the grid square the building would

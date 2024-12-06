@@ -61,8 +61,8 @@ public class GameScreen implements Screen {
     private Table rightTable;
     private Label countDownLabel;
     private Label timerLabel;
-    private final HashMap<Building.Use, Label> buildingUseCountLabels = new HashMap<>();
-    private final HashMap<Building.Use, Label> buildingUseNameLabels = new HashMap<>();
+    private final HashMap<Use, Label> buildingUseCountLabels = new HashMap<>();
+    private final HashMap<Use, Label> buildingUseNameLabels = new HashMap<>();
 
     final ScreenManager game;
 
@@ -88,11 +88,11 @@ public class GameScreen implements Screen {
         countDownLabel = new Label("Timer", labelStyle);
         timerLabel = new Label("Timer", labelStyle);
 
-        for (Building.Use buildingUse : Building.Use.values()) {
+        for (Use buildingUse : Use.values()) {
             String useName = buildingUse.toString().charAt(0) + buildingUse.toString().substring(1).toLowerCase();
             buildingUseNameLabels.put(buildingUse, new Label(useName + " buildings:", labelStyle));
         }
-        for (Building.Use buildingUse : Building.Use.values()) {
+        for (Use buildingUse : Use.values()) {
             buildingUseCountLabels.put(buildingUse, new Label("0", labelStyle));
         }
 
@@ -114,7 +114,7 @@ public class GameScreen implements Screen {
 
         rightTable.add(countDownLabel).row();
         rightTable.add(timerLabel).row();
-        for (Building.Use buildingUse : Building.Use.values()) {
+        for (Use buildingUse : Use.values()) {
             rightTable.add(buildingUseNameLabels.get(buildingUse)).left();
             rightTable.add(buildingUseCountLabels.get(buildingUse)).right().row();
         }
@@ -164,7 +164,7 @@ public class GameScreen implements Screen {
 
         buildingRectangle = new Rectangle();
 
-        // defaults the
+        // defaults the screen to be minimised on launch
         fullScreen = false;
 
         button.addListener(new ClickListener() {
@@ -304,7 +304,7 @@ public class GameScreen implements Screen {
 
         batch.end();
 
-        for (Building.Use use : Building.Use.values()) {
+        for (Use use : Use.values()) {
             buildingUseCountLabels.get(use).setText(world.buildingUseCounts.get(use));
         }
 
