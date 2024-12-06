@@ -34,6 +34,8 @@ public class Building {
     public final Use[] uses;
     int UseSize;
 
+    private float efficiency = 0.5f;
+
 
     /**
      * Initialises a new building.
@@ -168,5 +170,13 @@ public class Building {
      */
     public boolean isAdjacentTo(Building other) {
         return Math.abs(other.gridX - gridX) <= 1 && Math.abs(other.gridY - gridY) <= 1;
+    }
+
+    public float getEfficiency() {
+        return efficiency;
+    }
+
+    public void setEfficiency(float efficiency) {
+        this.efficiency = efficiency;
     }
 }

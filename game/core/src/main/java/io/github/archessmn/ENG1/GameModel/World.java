@@ -42,6 +42,8 @@ public class World {
 
     // Stores events that have prolonged effects. Indices are preset for quicker lookup, even though instantaneous events are never stored here so the array can never be full.
     GameEvent[] activeEvents = new GameEvent[GameEvent.values().length];
+    float[] activeEventEndTime = new float[GameEvent.values().length];
+    Array<EfficiencyModifier> activeModifiers = new Array<>();
 
     // This 2D array stores the average distance between a pair of building types,
     // For example, you may set averageDistances[Use.RECREATION.ordinal()][Use.TEACHING.ordinal()] to 0
@@ -185,6 +187,18 @@ public class World {
         currentTime += deltaTime;
         updateBuildings(deltaTime);
         eventManager.processEvents(currentTime);
+        for (int i = 0; i < activeEventEndTime.length; i++) {
+            if (currentTime > activeEventEndTime[i]) {
+                activeEvents[i] = null;
+                activeEventEndTime[i] = GAME_LENGTH_SECONDS + 1;
+            }
+        }
+        for (int i = 0; i < activeModifiers.size; i++) {
+            if (currentTime > activeModifiers.get(i).endTime()) {
+                activeModifiers.removeIndex(i);
+                i--;
+            }
+        }
     }
 
     /**
@@ -293,29 +307,33 @@ public class World {
             default:
                 throw new RuntimeException("Unknown event type: " + event);
         }
-        calculatesatisfaction();
-
     }
 
     /**
      * Mark a building as under construction indefinitely
      */
     public void closeBuilding(Building building) {
-
+        building.buildingCompletionTime = GAME_LENGTH_SECONDS + 1;
+        building.built = false;
+        calculatesatisfaction();
     }
 
     /**
      * Mark a building as under construction for {@code timeSeconds} seconds
      */
     public void closeBuilding(Building building, float timeSeconds) {
-
+        building.buildingCompletionTime = currentTime + timeSeconds;
+        building.built = false;
+        calculatesatisfaction();
     }
 
     /**
      * Multiplies a building's efficiency by {@code multiplier} for {@code timeSeconds}, affecting satisfaction
      */
     public void modifyEfficiency(Building building, float multiplier, float timeSeconds) {
-
+        activeModifiers.add(new EfficiencyModifier(currentTime + timeSeconds, multiplier, building));
+        building.setEfficiency(building.getEfficiency() * multiplier);
+        calculatesatisfaction();
     }
 
     public void destroyBuilding(Building building) {
@@ -334,5 +352,7 @@ public class World {
      */
     public void addActiveEvent(GameEvent event, float timeSeconds) {
         activeEvents[event.ordinal()] = event;
+        activeEventEndTime[event.ordinal()] = currentTime + timeSeconds;
+        calculatesatisfaction();
     }
 }
