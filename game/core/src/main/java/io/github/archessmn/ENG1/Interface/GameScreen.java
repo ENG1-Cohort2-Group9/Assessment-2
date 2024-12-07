@@ -396,6 +396,7 @@ public class GameScreen implements Screen {
     public void showEventPopup(GameEvent event) {
         currentEvent = event;
         timeEventShownAt = world.getCurrentTime();
+        paused = true;
     }
 
     @Override
