@@ -5,8 +5,8 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class EventManager {
-    ArrayList<GameEvent> occurredEventList = new ArrayList<GameEvent>();
-    ArrayList<GameEvent> possibleEvents;
+    boolean[] eventsEnabled = new boolean[GameEvent.values().length]; // Whether each event can happen (assuming it has not already)
+    boolean[] eventsOccurred = new boolean[GameEvent.values().length]; // True if an event has happened
     GameEventListener[] listeners;
 
     private Random random = new Random();
@@ -25,15 +25,18 @@ public class EventManager {
      */
     public EventManager(GameEventListener[] listeners, float gameLengthSeconds) {
         this.listeners = listeners;
-        // Possible events will be pruned when events occur to prevent duplicate events
-        possibleEvents = new ArrayList<GameEvent>(Arrays.asList(GameEvent.values()));
-        for (GameEvent event : possibleEvents) {
+
+        // All events are initially enabled
+        for (int i = 0; i < GameEvent.values().length; i++) {
+            eventsEnabled[i] = true;
+        }
+        for (GameEvent event : GameEvent.values()) {
             maxRandomVal += event.chance;
         }
 
         averageEventInterval = gameLengthSeconds / (float)numberOfEventsThisGame;
         nextEventTime = getNextEventTime(averageEventInterval, eventTimeVariation, eventsRaised);
-        System.out.println(numberOfEventsThisGame + " events will occur this game");
+        System.out.println("a maximum of " + numberOfEventsThisGame + " events will occur this game");
     }
 
     /**
@@ -54,21 +57,73 @@ public class EventManager {
      * @param currentTime world time in seconds
      */
     public void processEvents(float currentTime) {
-        if (currentTime > nextEventTime) { // Calculate whether to raise an event
+        if (currentTime > nextEventTime && getPossibleEventsCount() > 0) { // Calculate whether to raise an event
             eventsRaised++;
             nextEventTime = getNextEventTime(averageEventInterval, eventTimeVariation, eventsRaised);
 
             // Select a random event based on its chance
-            float randomValue = random.nextFloat(0, maxRandomVal);
-            int eventIndex = (int)((randomValue / maxRandomVal) * possibleEvents.size());
-            GameEvent event = possibleEvents.get(eventIndex);
-            possibleEvents.remove(eventIndex);
-            occurredEventList.add(event);
+            float randomValue = random.nextFloat(0, maxRandomVal);;
+            GameEvent event = getValidEventFromFloat(randomValue);
+            eventsOccurred[event.ordinal()] = true;
             maxRandomVal -= event.chance;
 
             for (GameEventListener listener : listeners) {
                 listener.raiseEvent(event);
             }
         }
+    }
+
+    /**
+     * @return The number of events that can occur when called
+     */
+    public int getPossibleEventsCount() {
+        int count = 0;
+        for (int i = 0; i < GameEvent.values().length; i++) {
+            if (eventsEnabled[i] && !eventsOccurred[i]) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Given a float where 0 represents the first valid event, return a possible event at that index. The last valid event
+     * is given by the sum of all possible event chances when the function is called.
+     */
+    public GameEvent getValidEventFromFloat(float value) {
+        float distanceToIndex = value;
+        int position = 0;
+        while (position < GameEvent.values().length && distanceToIndex >= 0) {
+            if (eventsEnabled[position] && !eventsOccurred[position]) {
+                distanceToIndex -= GameEvent.values()[position].chance;
+            }
+            position++;
+        }
+        if (position == GameEvent.values().length)
+            throw new RuntimeException("No available events to raise");
+        return GameEvent.values()[position - 1];
+    }
+
+    public void disableEvent(GameEvent event) {
+        if (eventsEnabled[event.ordinal()]) {
+            eventsEnabled[event.ordinal()] = false;
+            if (!eventsOccurred[event.ordinal()]) {
+                maxRandomVal -= event.chance;
+            }
+        }
+    }
+
+    public void enableEvent(GameEvent event) {
+        if (!eventsEnabled[event.ordinal()]) {
+            eventsEnabled[event.ordinal()] = true;
+            if (!eventsOccurred[event.ordinal()]) {
+                maxRandomVal += event.chance;
+            }
+        }
+    }
+
+    public boolean isEventEnabled(GameEvent event) {
+        return eventsEnabled[event.ordinal()];
     }
 }

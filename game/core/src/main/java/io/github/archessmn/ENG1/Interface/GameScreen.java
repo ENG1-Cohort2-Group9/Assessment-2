@@ -137,6 +137,8 @@ public class GameScreen implements Screen {
         assetManager.load("rock.png", Texture.class);
         assetManager.load("construction.png", Texture.class);
         assetManager.load("missing_texture.png", Texture.class);
+        assetManager.load("plus.png", Texture.class);
+        assetManager.load("minus.png", Texture.class);
 
         assetManager.finishLoading();
 
@@ -349,6 +351,22 @@ public class GameScreen implements Screen {
         sprite.setSize(building.width, building.height);
         sprite.setPosition(building.x, building.y);
         sprite.draw(batch);
+
+        Sprite efficiencySprite = null;
+        // Draw '+' or '-' if building efficiency is not the default value, 0.5
+        if (building.getEfficiency() > 0.5f) {
+            efficiencySprite = new Sprite(assetManager.get("plus.png", Texture.class));
+        }
+        else if (building.getEfficiency() < 0.5f) {
+            efficiencySprite = new Sprite(assetManager.get("minus.png", Texture.class));
+        }
+        else {
+            return;
+        }
+
+        efficiencySprite.setSize(building.width * 0.25f, building.height * 0.25f);
+        efficiencySprite.setPosition(building.x + building.width * 0.75f, building.y + building.height * 0.75f);
+        efficiencySprite.draw(batch);
     }
 
     /**
