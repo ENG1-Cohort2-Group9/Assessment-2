@@ -32,13 +32,9 @@ public class Building {
     public Rectangle bounds;
 
     public final Use[] uses;
+    int UseSize;
 
-    /**
-     * The use of a building
-     */
-    public enum Use {
-        TEACHING, ACCOMMODATION, CAFETERIA, RECREATION, TERRAIN
-    }
+    private float efficiency = 0.5f;
 
 
     /**
@@ -65,6 +61,7 @@ public class Building {
 
         this.built = built;
         this.uses = uses;
+        this.UseSize = Use.values().length;
         this.spriteName = spriteName;
 
         if (!built) {
@@ -137,6 +134,7 @@ public class Building {
         return uses;
     }
 
+
     /**
      * Get the raw coordinates of the grid square the building would
      * snap to, relative to the entire viewport.
@@ -163,5 +161,22 @@ public class Building {
     public void snapToGrid() {
         Vector2 gridCoords = getRawGridCoords();
         this.setCenter(gridCoords.x, gridCoords.y);
+    }
+
+    /**
+     * Determines if a building is in any of the nine squares (including the centre) adjacent to this square
+     * @param other the other building to compare
+     * @return true if the building is adjacent to this one
+     */
+    public boolean isAdjacentTo(Building other) {
+        return Math.abs(other.gridX - gridX) <= 1 && Math.abs(other.gridY - gridY) <= 1;
+    }
+
+    public float getEfficiency() {
+        return efficiency;
+    }
+
+    public void setEfficiency(float efficiency) {
+        this.efficiency = efficiency;
     }
 }
