@@ -1,7 +1,5 @@
-package io.github.archessmn.ENG1.GameModel.Buildings;
+package io.github.archessmn.ENG1.GameModel.Objects;
 
-
-import com.badlogic.gdx.utils.Array;
 
 /**
  * Wrapper of {@link Building} that creates a building with the Pub type.

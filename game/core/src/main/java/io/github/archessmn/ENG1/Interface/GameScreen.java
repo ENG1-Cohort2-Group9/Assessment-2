@@ -18,7 +18,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.archessmn.ENG1.GameModel.*;
-import io.github.archessmn.ENG1.GameModel.Buildings.*;
+import io.github.archessmn.ENG1.GameModel.Objects.*;
 
 import java.util.HashMap;
 import static java.lang.Math.floorDiv;
@@ -47,7 +47,6 @@ public class GameScreen implements Screen {
 
     Array<Building> draggableBuildings;
 
-    float gameTimer;
 
     Rectangle buildingRectangle;
     BitmapFont font;
@@ -64,8 +63,11 @@ public class GameScreen implements Screen {
     private Label timerLabel;
     private final HashMap<Use, Label> buildingUseCountLabels = new HashMap<>();
     private final HashMap<Use, Label> buildingUseNameLabels = new HashMap<>();
+    private float timeEventShownAt = -10f;
+    private GameEvent currentEvent = null;
 
     final ScreenManager game;
+    final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
 
 
 
@@ -77,7 +79,7 @@ public class GameScreen implements Screen {
     public void show() {
         viewport = new FitViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
         // 300 here represents the pixel width of the UI on the right hand side
-        world = new World(VIEWPORT_WIDTH - 300, VIEWPORT_HEIGHT);
+        world = new World(VIEWPORT_WIDTH - 300, VIEWPORT_HEIGHT, new GameEventListener(this::showEventPopup));
 
         atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
@@ -131,8 +133,12 @@ public class GameScreen implements Screen {
         assetManager.load("lecturehall.png", Texture.class);
         assetManager.load("offices.png", Texture.class);
         assetManager.load("piazza.png", Texture.class);
+        assetManager.load("lake.jpg", Texture.class);
+        assetManager.load("rock.png", Texture.class);
         assetManager.load("construction.png", Texture.class);
         assetManager.load("missing_texture.png", Texture.class);
+        assetManager.load("plus.png", Texture.class);
+        assetManager.load("minus.png", Texture.class);
 
         assetManager.finishLoading();
 
@@ -160,8 +166,6 @@ public class GameScreen implements Screen {
         draggableBuildings.add(new LectureHallBuilding(780, 40, 0, true));
         draggableBuildings.add(new Pub(840, 40, 0, true));
         draggableBuildings.add(new PiazzaBuilding(900, 40, 0, true));
-
-        gameTimer = 0f;
 
         blockRenderer = new ShapeRenderer();
 
@@ -237,13 +241,9 @@ public class GameScreen implements Screen {
 
         world.worldProcess(delta);
 
-        gameTimer += delta;
-
         // Ends the game when the timer exceeds 5 minutes.
         // This should probably be moved from this class to World, it already has a timer
-        if (gameTimer >= 300) {
-            gameEnded = true;
-        }
+        gameEnded = world.getGameEnded();
 
         stage.act(delta);
     }
@@ -284,18 +284,25 @@ public class GameScreen implements Screen {
         // Draws a 5-minute countdown timer for the games length
         // If it's a whole minute, it displays :00 for the seconds
         // Otherwise it gets the remainder of gameTimer divided by 60 for the seconds.
-        if (60 - (int) gameTimer % 60 == 60) {
-            countDownLabel.setText(floorDiv(300 - (int) gameTimer, 60) + ":00");
+        float gameTime = world.getCurrentTime();
+        if (60 - (int) gameTime % 60 == 60) {
+            countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":00");
         }
         else {
-            countDownLabel.setText(floorDiv(300 - (int) gameTimer, 60) + ":" + String.format("%02d", 60 - (int) gameTimer % 60));
+            countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":" + String.format("%02d", 60 - (int) gameTime % 60));
         }
 
-        timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTimer / 60) + 1, (int) ((gameTimer % 60) / (60 / (double) 365)) + 1));
+        timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTime / 60) + 1, (int) ((gameTime % 60) / (60 / (double) 365)) + 1));
         if (clickedBuilding != null) {
             if (world.doesBuildingOverlap(clickedBuilding)) {
                 font.draw(batch, "Buildings overlap", 20, 520);
             }
+        }
+
+        // Show event text (if there is one)
+        if (currentEvent != null && world.getCurrentTime() < timeEventShownAt + EVENT_NOTIFICATION_TIME) {
+            font.draw(batch, currentEvent.title, 20, 525);
+            font.draw(batch, currentEvent.description, 20, 495);
         }
 
         if (paused) {
@@ -324,6 +331,9 @@ public class GameScreen implements Screen {
         for (Building building : world.buildings) {
             drawBuilding(batch, assetManager, building);
         }
+        for (Building building : world.terrain) {
+            drawBuilding(batch, assetManager, building);
+        }
         if (clickedBuilding != null) {
             drawBuilding(batch, assetManager, clickedBuilding);
         }
@@ -341,6 +351,22 @@ public class GameScreen implements Screen {
         sprite.setSize(building.width, building.height);
         sprite.setPosition(building.x, building.y);
         sprite.draw(batch);
+
+        Sprite efficiencySprite = null;
+        // Draw '+' or '-' if building efficiency is not the default value, 0.5
+        if (building.getEfficiency() > 0.5f) {
+            efficiencySprite = new Sprite(assetManager.get("plus.png", Texture.class));
+        }
+        else if (building.getEfficiency() < 0.5f) {
+            efficiencySprite = new Sprite(assetManager.get("minus.png", Texture.class));
+        }
+        else {
+            return;
+        }
+
+        efficiencySprite.setSize(building.width * 0.25f, building.height * 0.25f);
+        efficiencySprite.setPosition(building.x + building.width * 0.75f, building.y + building.height * 0.75f);
+        efficiencySprite.draw(batch);
     }
 
     /**
@@ -365,6 +391,12 @@ public class GameScreen implements Screen {
 
         gridRenderer.end();
 
+    }
+
+    public void showEventPopup(GameEvent event) {
+        currentEvent = event;
+        timeEventShownAt = world.getCurrentTime();
+        paused = true;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package io.github.archessmn.ENG1.GameModel.Buildings;
+package io.github.archessmn.ENG1.GameModel.Objects;
 
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -34,6 +34,7 @@ public class Building {
     public final Use[] uses;
     int UseSize;
 
+    private float efficiency = 0.5f;
 
 
     /**
@@ -162,5 +163,20 @@ public class Building {
         this.setCenter(gridCoords.x, gridCoords.y);
     }
 
+    /**
+     * Determines if a building is in any of the nine squares (including the centre) adjacent to this square
+     * @param other the other building to compare
+     * @return true if the building is adjacent to this one
+     */
+    public boolean isAdjacentTo(Building other) {
+        return Math.abs(other.gridX - gridX) <= 1 && Math.abs(other.gridY - gridY) <= 1;
+    }
 
+    public float getEfficiency() {
+        return efficiency;
+    }
+
+    public void setEfficiency(float efficiency) {
+        this.efficiency = efficiency;
+    }
 }
