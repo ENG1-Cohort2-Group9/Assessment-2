@@ -59,4 +59,11 @@ public class GridUtils {
         float gridHeight = (VIEWPORT_HEIGHT / 9f);
         return (MathUtils.round(coord / (gridHeight) + 0.5f) * gridHeight) - (gridHeight / 2f);
     }
+
+
+
+    public static float getGridHeight() {
+        float gridHeight = (VIEWPORT_HEIGHT / 9f);
+        return (MathUtils.round(VIEWPORT_HEIGHT / (gridHeight) + 0.5f) * gridHeight) - (gridHeight / 2f);
+    }
 }

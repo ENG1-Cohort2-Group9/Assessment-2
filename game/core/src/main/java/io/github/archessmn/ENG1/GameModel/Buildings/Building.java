@@ -5,6 +5,8 @@ import com.badlogic.gdx.math.Vector2;
 import io.github.archessmn.ENG1.GameModel.GridCoordTuple;
 import io.github.archessmn.ENG1.GameModel.GridUtils;
 
+import java.util.Arrays;
+
 /**
  * Base class for each building type,
  * stores information about the building and provides utility classes for interacting with it.
@@ -131,6 +133,15 @@ public class Building {
      */
     public Use[] getUses() {
         return uses;
+    }
+
+    /**
+     * Allows for neater call when checking if a building has a certain use.
+     * @param use The use the method checks if the building has.
+     * @return True if the uses array contains the use, false otherwise.
+     */
+    public boolean hasUse(Use use) {
+        return Arrays.stream(uses).toList().contains(use);
     }
 
 
