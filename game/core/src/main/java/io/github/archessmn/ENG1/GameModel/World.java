@@ -59,10 +59,15 @@ public class World {
 
     // These help with buildingDistancesScore
 
+
+
     // The map currently is 11x9 tiles
+    private static final int GRID_WIDTH = 11;
+    private static final int GRID_HEIGHT = 9;
+
     // The maximum possible distance between two buildings, is the diagonal distance 1 less in both x and y,
     // than the number of tiles on the map
-    float maxDistance = (float) Math.sqrt(Math.pow(11-1, 2) + Math.pow(9-1, 2));
+    float maxDistance = (float) (Math.sqrt(Math.pow(GRID_WIDTH-1, 2) + Math.pow(GRID_HEIGHT-1, 2)));
 
     // This is how much of the satisfaction score each building use pair accounts for.
     // The number of undirected use pairs is of the form n + n-1 + n-2... + n-n, as we want the first use connected to
@@ -137,17 +142,6 @@ public class World {
         if (!doesBuildingOverlap(building)) {
             buildings.add(building);
             building.place();
-
-            // Update satisfaction score
-            updateAverageDistances(building, true);
-            updateBuildingDistancesScore(building);
-
-
-            updateCompletionScore();
-
-
-            updateSatisfactionScore();
-            System.out.println("satisfaction score: " + satisfactionScore);
             return true;
         }
         return false;
@@ -158,12 +152,23 @@ public class World {
      * Update all buildings' states
      */
     public void updateBuildings(float deltaTime) {
-        for (Building building : buildings) {
+        // Some of the methods for satisfaction score use the building, these methods don't edit the building
+        // but libGDX seems to get confused and break if a for (Building building : buildings) loop is used.
+        for (int i = 0; i < buildings.size; i++) {
+            Building building = buildings.get(i);
             if (building.placed && !building.built && currentTime > building.buildingCompletionTime) {
                 // This will only trigger once (see '&& !building.built')
                 building.built = true;
 
+                // Update satisfaction score
+                updateAverageDistances(building, true);
+                updateBuildingDistancesScore(building);
+                updateCompletionScore();
+                updateSatisfactionScore();
+                System.out.println("satisfaction score: " + satisfactionScore);
+
                 for (Use use : building.getUses()) {
+
                     buildingUseCounts.put(use, buildingUseCounts.get(use) + 1);
                 }
             }
@@ -270,23 +275,23 @@ public class World {
                 // and the comparison building are the same building.
                 if (distance != 0) {
                     for (Use use2 : comparisonBuilding.getUses()) {
-                        // The number of building distances in each average stored in averageDistances is the counter
-                        // for both building types multiplied together. For example if there are 5 teaching buildings,
-                        // and 3 accommodation buildings, then there are 15 pairs of the two types. If we label each
-                        // pair in the form T1A1 = distance between teaching building 1 and accommodation building 1,
-                        // the average distance between all teaching and accommodation buildings would be:
-                        // (T1A1 + T1A2 + T1A3 + T2A1 +...+ T5A3)/(5*3)
+                        // The averageDistancesCount array stores average distances, this is calculated as each use
+                        // count in the use pair multiplied together. (e.g., 5 teaching * 3 accommodation = 15 pairs).
+                        // If we label each pair in the form T1A1 = distance between teaching building 1 and
+                        // accommodation building 1, the average distance between all teaching and accommodation
+                        // buildings would be: (T1A1 + T1A2 + T1A3 + T2A1 +...+ T5A3)/(5*3)
 
                         // numberOfPairs is the number of pairs the average distance between the two uses is made up of
                         // For example, if there were 4 teaching and 3 accommodation buildings before the building
                         // passed to this method was added/removed, then numberOfPairs would be 12.
-                        int numberOfPairs = averageDistancesCount[use1.ordinal()][use2.ordinal()];
+                        int numberOfPairs;
 
                         // Update the average distance between the current pair of uses.
                         // If statement ensures that only the upper triangle of the adjacency matrix is actually
                         // updated, meaning use pairs are only ever updated and later checked, where the first use
                         // is <= to the second use. (based of the ordinal of the use)
                         if (use1.ordinal() < use2.ordinal()) {
+                            numberOfPairs = averageDistancesCount[use1.ordinal()][use2.ordinal()];
                             averageDistances[use1.ordinal()][use2.ordinal()] = (averageDistances[use1.ordinal()][use2.ordinal()]
                                 * numberOfPairs + distance * updateFactor) / (numberOfPairs + updateFactor);
 
@@ -294,7 +299,8 @@ public class World {
                             averageDistancesCount[use1.ordinal()][use2.ordinal()] += updateFactor;
                         }
                         else {
-                            averageDistances[use2.ordinal()][use1.ordinal()] = (averageDistances[use1.ordinal()][use2.ordinal()]
+                            numberOfPairs = averageDistancesCount[use2.ordinal()][use1.ordinal()];
+                            averageDistances[use2.ordinal()][use1.ordinal()] = (averageDistances[use2.ordinal()][use1.ordinal()]
                                 * numberOfPairs + distance * updateFactor) / (numberOfPairs + updateFactor);
 
                             // Update the number of building pairs used for the average distance between use2 and use1
@@ -353,13 +359,11 @@ public class World {
     public float calculateScoreBonus(float multiplier, Use use1, Use use2) {
         // Prevents adding to satisfaction score for buildings uses that aren't yet placed.
         if (buildingUseCounts.get(use1) == 0 || buildingUseCounts.get(use2) == 0) {
-            System.out.println("no score given " + use1 + " and " + use2);
             return 0;
         }
         // If the distance between the use pair is under the maxScoreThreshold, the max satisfaction is given, as long
         // as the distance is greater than 0.
         else if (averageDistances[use1.ordinal()][use2.ordinal()] <= maxScoreThreshold) {
-            System.out.println("max score given between " + use1 + " and " + use2);
             return percentPerUsePair * multiplier;
         }
         // If the distance between the use pair is not under the maxScoreThreshold, then the score given is calculated
@@ -368,8 +372,6 @@ public class World {
         // To calculate this, we would do maxDistance - distance, divided by maxDistance - threshold, which would be
         // (10 - 7) / (10 - 6) = 3/4 = 0.75 (using distance as 7 here).
         else {
-            System.out.println("some score given " + use1 + " and " + use2);
-            System.out.println(averageDistances[use1.ordinal()][use2.ordinal()]);
             return (percentPerUsePair * multiplier) *
                 ((maxDistance - averageDistances[use1.ordinal()][use2.ordinal()]) / (maxDistance - maxScoreThreshold));
         }
@@ -406,6 +408,7 @@ public class World {
         }
     }
 
+
     /**
      * Allows for neater access to the weighting of a use pair, assumes order of the two uses was checked before being
      * passed to this method.
@@ -416,7 +419,6 @@ public class World {
     private float getWeight(Use use1, Use use2) {
         return weightMatrix[use1.ordinal()][use2.ordinal()];
     }
-
 
 
     /**
@@ -444,6 +446,10 @@ public class World {
     }
 
 
+    /**
+     * Gets the current game time.
+     * @return The value of currentTime.
+     */
     public float getCurrentTime() {
         return currentTime;
     }
