@@ -5,7 +5,6 @@ import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Buildings.Building;
 import io.github.archessmn.ENG1.GameModel.Buildings.*;
 
-import java.util.Arrays;
 import java.util.HashMap;
 
 import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_HEIGHT;
@@ -45,6 +44,17 @@ public class World {
     public float eventsScore;
     public float buildingValuesScore;
 
+    // Here the maximum value for each of these scores is set:
+
+    public float buildingDistancesScoreCap = 40;
+    public float completionScoreCap = 10;
+    public float eventsScoreCap = 30;
+    public float buildingValuesScoreCap = 20;
+
+    // Some of these scores need/have more variables to help calculate them:
+
+    // These help with buildingDistancesScore
+
     // The map currently is 11x9 tiles
     // The maximum possible distance between two buildings, is the diagonal distance 1 less in both x and y,
     // than the number of tiles on the map
@@ -55,11 +65,10 @@ public class World {
     // all uses, then the second needs to connect to all uses except the first, as that's already been counted, the
     // third use ignores the first and second, and so on. So we use the sum of 1 to n formula for this, which is
     // (n *(n+1)) / 2 We divide the total percent allowed for average distances (40) by this number
-    float percentPerUsePair = 40 / (((float) Use.values().length * ((float) Use.values().length + 1)) / 2);
-
+    float percentPerUsePair = buildingDistancesScoreCap / (((float) Use.values().length * ((float) Use.values().length + 1)) / 2);
     // Allows the user to get the maximum satisfaction for a building use pair, if the pairs' average distance is
     // under 60% of the maximum possible distance. Anything over will give progressively less satisfaction.
-    float maxScoreThreshold = maxDistance * 0.6f;
+    float maxScoreThreshold = maxDistance * 0.1f;
 
 
     // This 2D array stores the average distance between a pair of building types as an adjacency matrix
@@ -76,6 +85,16 @@ public class World {
     // average distance is made up of, so that we can know what to multiply the average by, and then increment it and
     // divide the new total distance by the new number of building pairs. This value is stored in this 2D array:
     public int[][] averageDistancesCount = new int[Use.values().length][Use.values().length];
+
+
+    // These help with completionScore:
+
+
+    // Defines how much satisfaction score is gained for having > 0 of each building use type.
+    public float completionScorePerUse = completionScoreCap / Use.values().length;
+    // Set to true when at least one of each use is placed, allows checks and calculation to be skipped
+    public boolean isComplete = false;
+
 
     private float currentTime;
 
@@ -109,9 +128,15 @@ public class World {
             building.place();
             // Update satisfaction score
             updateAverageDistances(building);
-            calculateBuildingDistancesScore(building);
+            calculateBuildingDistancesScore();
+
+
+            updateCompletionScore();
+
+
             updateSatisfactionScore();
             System.out.println(satisfactionScore);
+            System.out.println(("completion score: " + completionScore));
             return true;
         }
         return false;
@@ -192,8 +217,22 @@ public class World {
                         int numberOfPairs = averageDistancesCount[use1.ordinal()][use2.ordinal()];
 
                         // Update the average distance between the current pair of uses.
-                        averageDistances[use1.ordinal()][use2.ordinal()] = (averageDistances[use1.ordinal()][use2.ordinal()]
-                            * numberOfPairs + distance) / (numberOfPairs+1);
+                        // If statement ensures that only the upper triangle of the adjacency matrix
+                        // is actually updated, meaning use pairs are only ever updated, and later checked
+                        // where the first use is <= to the second use. (based of the ordinal of the use)
+                        if (use1.ordinal() < use2.ordinal()) {
+                            averageDistances[use1.ordinal()][use2.ordinal()] = (averageDistances[use1.ordinal()][use2.ordinal()]
+                                * numberOfPairs + distance) / (numberOfPairs + 1);
+
+                            System.out.println("[" + use1 + "," + use2 + "] = " + averageDistances[use1.ordinal()][use2.ordinal()]);
+                        }
+                        else {
+                            averageDistances[use2.ordinal()][use1.ordinal()] = (averageDistances[use1.ordinal()][use2.ordinal()]
+                                * numberOfPairs + distance) / (numberOfPairs + 1);
+
+                            System.out.println("[" + use2 + "," + use1 + "] = " + averageDistances[use2.ordinal()][use1.ordinal()]);
+                        }
+
 
                         // Increment the number of building pairs used for the average distance between use1 and use2
                         averageDistancesCount[use1.ordinal()][use2.ordinal()] += 1;
@@ -207,44 +246,55 @@ public class World {
     /**
      *  Updates the buildingDistancesScore when a building is added
      */
-    public void calculateBuildingDistancesScore(Building building) {
+    public void calculateBuildingDistancesScore() {
 
-        // resets the score to 0, and then adds up the new scores for each use pair.
-        buildingDistancesScore = 0;
-        // Sorts the buildings uses to make sure the right direction is used for the use pairs, as if 
-        Arrays.sort(building.getUses());
-        for (Use use1 : building.getUses()) {
-            for (Use use2 : Use.values()) {
-                // Only iterates over the upper triangle of the adjacency matrix
-                if (use2.ordinal() >= use1.ordinal()) {
-                    if (use1 == Use.TEACHING && use2 == Use.ACCOMMODATION) {
-                        buildingDistancesScore += calculateScoreBonus(1.5f, use1, use2);
-                    }
-                    else if (use1 == Use.TEACHING && use2 == Use.TEACHING) {
-                        buildingDistancesScore += calculateScoreBonus(1.5f, use1, use2);
-                    }
-                    else if (use1 == Use.ACCOMMODATION && use2 == Use.ACCOMMODATION) {
-                        buildingDistancesScore += calculateScoreBonus(1.5f, use1, use2);
-                    }
-                    else if (use1 == Use.ACCOMMODATION && use2 == Use.CAFETERIA) {
-                        buildingDistancesScore += calculateScoreBonus(2.25f, use1, use2);
-                    }
-                    else if (use1 == Use.ACCOMMODATION && use2 == Use.RECREATION) {
-                        buildingDistancesScore += calculateScoreBonus(1.75f, use1, use2);
-                    }
-                    else if (use1 == Use.CAFETERIA && use2 == Use.RECREATION) {
-                        buildingDistancesScore += calculateScoreBonus(0.5f, use1, use2);
-                    }
-                    else if (use1 == use2) {
-                        buildingDistancesScore += 0;
-                    }
-                    else {
+        if (buildingUseCounts.get(Use.ACCOMMODATION) == 0) {
+            // Sets this portion of the score to 0 if no one lives at the university.
+            buildingDistancesScore = 0;
+        }
+        else {
+            // resets the score to 0, and then adds up the new scores for each use pair.
+            buildingDistancesScore = 0;
+            // Sorts the buildings uses to make sure the right direction is used for the use pairs, as if
+            for (Use use1 : Use.values()) {
+                for (Use use2 : Use.values()) {
+                    // Only iterates over the upper triangle of the adjacency matrix
+                    if (use2.ordinal() >= use1.ordinal()) {
+
                         buildingDistancesScore += calculateScoreBonus(1f, use1, use2);
 
+                        /**
+                         *
+                         if (use1 == Use.TEACHING && use2 == Use.ACCOMMODATION) {
+                            buildingDistancesScore += calculateScoreBonus(1.5f, use1, use2);
+                        }
+                        else if (use1 == Use.TEACHING && use2 == Use.TEACHING) {
+                            buildingDistancesScore += calculateScoreBonus(1.5f, use1, use2);
+                        }
+                        else if (use1 == Use.ACCOMMODATION && use2 == Use.ACCOMMODATION) {
+                            buildingDistancesScore += calculateScoreBonus(1.5f, use1, use2);
+                        }
+                        else if (use1 == Use.ACCOMMODATION && use2 == Use.CAFETERIA) {
+                            buildingDistancesScore += calculateScoreBonus(2.25f, use1, use2);
+                        }
+                        else if (use1 == Use.ACCOMMODATION && use2 == Use.RECREATION) {
+                            buildingDistancesScore += calculateScoreBonus(1.75f, use1, use2);
+                        }
+                        else if (use1 == Use.CAFETERIA && use2 == Use.RECREATION) {
+                            buildingDistancesScore += calculateScoreBonus(0.5f, use1, use2);
+                        }
+                        else if (use1 == use2) {
+                            buildingDistancesScore += 0;
+                        }
+                        else {
+                            buildingDistancesScore += calculateScoreBonus(1f, use1, use2);
+                        }
+                         */
                     }
                 }
             }
         }
+
     }
 
     /**
@@ -277,6 +327,30 @@ public class World {
             return (percentPerUsePair * multiplier) *
                 (maxDistance - maxScoreThreshold) / (maxDistance - averageDistances[use1.ordinal()][use2.ordinal()]);
         }
+    }
+
+    /**
+     * For each building placed while the building counters are not all > 0,
+     * the completionScore is incremented by completionScorePerUse
+     */
+    public float updateCompletionScore() {
+        // reset completionScore to avoid falsely maxing it.
+        if (isComplete) {
+            return completionScoreCap;
+        }
+        else {
+            completionScore = 0;
+            for (Use use : Use.values()) {
+                if (buildingUseCounts.get(use) != 0) {
+                    completionScore += completionScorePerUse;
+                }
+            }
+            // Used >= in case floats don't quite equal each other.
+            if (completionScore >= completionScoreCap) {
+                isComplete = true;
+            }
+        }
+        return completionScore;
     }
 
 
