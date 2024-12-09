@@ -100,7 +100,8 @@ public class EventManager {
             }
             position++;
         }
-        if (position == GameEvent.values().length)
+        // Ensure index is in bounds
+        if (position - 1 == GameEvent.values().length)
             throw new RuntimeException("No available events to raise");
         return GameEvent.values()[position - 1];
     }
