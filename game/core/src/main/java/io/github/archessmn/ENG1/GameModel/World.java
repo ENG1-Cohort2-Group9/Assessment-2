@@ -5,6 +5,7 @@ import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Buildings.Building;
 import io.github.archessmn.ENG1.GameModel.Buildings.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_HEIGHT;
@@ -50,7 +51,11 @@ public class World {
     float maxDistance = (float) Math.sqrt(Math.pow(11-1, 2) + Math.pow(9-1, 2));
 
     // This is how much of the satisfaction score each building use pair accounts for.
-    float percentPerUsePair = 40 / (float) Math.pow(Use.values().length, 2);
+    // The number of undirected use pairs is of the form n + n-1 + n-2... + n-n, as we want the first use connected to
+    // all uses, then the second needs to connect to all uses except the first, as that's already been counted, the
+    // third use ignores the first and second, and so on. So we use the sum of 1 to n formula for this, which is
+    // (n *(n+1)) / 2 We divide the total percent allowed for average distances (40) by this number
+    float percentPerUsePair = 40 / (((float) Use.values().length * ((float) Use.values().length + 1)) / 2);
 
     // Allows the user to get the maximum satisfaction for a building use pair, if the pairs' average distance is
     // under 60% of the maximum possible distance. Anything over will give progressively less satisfaction.
@@ -104,7 +109,7 @@ public class World {
             building.place();
             // Update satisfaction score
             updateAverageDistances(building);
-            calculateBuildingDistancesScore();
+            calculateBuildingDistancesScore(building);
             updateSatisfactionScore();
             System.out.println(satisfactionScore);
             return true;
@@ -202,12 +207,13 @@ public class World {
     /**
      *  Updates the buildingDistancesScore when a building is added
      */
-    public void calculateBuildingDistancesScore() {
+    public void calculateBuildingDistancesScore(Building building) {
 
         // resets the score to 0, and then adds up the new scores for each use pair.
         buildingDistancesScore = 0;
-
-        for (Use use1 : Use.values()) {
+        // Sorts the buildings uses to make sure the right direction is used for the use pairs, as if 
+        Arrays.sort(building.getUses());
+        for (Use use1 : building.getUses()) {
             for (Use use2 : Use.values()) {
                 // Only iterates over the upper triangle of the adjacency matrix
                 if (use2.ordinal() >= use1.ordinal()) {
