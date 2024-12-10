@@ -6,7 +6,6 @@ import io.github.archessmn.ENG1.GameModel.Objects.TerrainAsset;
 import io.github.archessmn.ENG1.OpenSimplexNoise;
 import io.github.archessmn.ENG1.GameModel.Objects.Use;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -19,7 +18,7 @@ public class World {
     public final float GAME_LENGTH_SECONDS = 300;
 
     public Array<Building> buildings;
-    public Array<TerrainAsset> terrain;
+    public Array<Building> terrain;
     public Building[][] gridLookup; // Stores pointers to the buildings and terrain on the grid so that squares can be queried
 
     public HashMap<Use, Integer> buildingUseCounts = new HashMap<>();
@@ -109,21 +108,33 @@ public class World {
         eventManager.disableEvent(GameEvent.TreeDamage);
     }
 
+    /**
+     * Responsible for creating all generated world assets, before it is showcased to the player
+     */
     public void createWorldAssets() {
-        generateTerrainFeatures(TerrainAsset.Feature.LAKE, 0.7f, 100f);
-        generateTerrainFeatures(TerrainAsset.Feature.ROCK, 0.65f, 200f);
+        generateTerrainFeatures(TerrainAsset.Feature.LAKE, 0.6f, 100f);
+        generateTerrainFeatures(TerrainAsset.Feature.ROCK, 0.75f, 200f);
+        generateTerrainFeatures(TerrainAsset.Feature.TREE, 0.65f, 200f);
 
+        // Checks to see if any terrain features were placed in the perlin noise generation
         boolean terrainAssetsPlaced = false;
         for (Building building : buildings) {
             if (building.uses[0] == Use.TERRAIN) {terrainAssetsPlaced = true;}
         }
 
+        // Places at least one lake tile down on the map - at a randomly generated location - if none were generated in the perlin noise
         if (!terrainAssetsPlaced) {
             TerrainAsset asset = new TerrainAsset(new Random().nextInt(0, width), new Random().nextInt(0, height), 0, true, TerrainAsset.Feature.LAKE);
             addTerrain(asset);
         }
     }
 
+    /**
+     * Generates a perlin noise map of a particular terrain feature and places the assets into the world
+     * @param feature The type of terrain feature to generate
+     * @param acceptedValue The minimum value (-1 to 1) from the perlin noise algorithm that will be accepted
+     * @param frequency The frequency for the perlin noise algorithm
+     */
     private void generateTerrainFeatures(TerrainAsset.Feature feature, float acceptedValue, float frequency) {
         OpenSimplexNoise noise = new OpenSimplexNoise();
         int seed = new Random().nextInt(0, 100000);
@@ -142,10 +153,10 @@ public class World {
 
     /**
      * Adds a building to the world if allowed, updating the building store
+     *
      * @param building Building to add to the world
-     * @return true if the placement was successful
      */
-    public boolean addBuilding(Building building) {
+    public void addBuilding(Building building) {
         if (!doesBuildingOverlap(building)) {
             buildings.add(building);
             building.place();
@@ -155,10 +166,7 @@ public class World {
                 eventManager.enableEvent(GameEvent.Flooding);
             if (!eventManager.isEventEnabled(GameEvent.TreeDamage) && isBuildingNearTerrain(building, TerrainAsset.Feature.TREE))
                 eventManager.enableEvent(GameEvent.TreeDamage);
-
-            return true;
         }
-        return false;
     }
 
     /**
@@ -391,6 +399,15 @@ public class World {
                 buildingUseCounts.put(use, buildingUseCounts.get(use) - 1);
             }
         }
+
+        calculatesatisfaction();
+    }
+
+    public void destroyTerrain(Building terrainAsset) {
+        // EVENT CHECKS TO BE COMPLETED HERE
+
+        gridLookup[terrainAsset.gridX][terrainAsset.gridY] = null;
+        terrain.removeValue(terrainAsset, true);
 
         calculatesatisfaction();
     }

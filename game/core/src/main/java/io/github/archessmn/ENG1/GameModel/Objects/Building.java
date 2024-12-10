@@ -23,6 +23,7 @@ public class Building {
 
     public final String spriteName;
     public String unbuiltSpriteName;
+    public final String objName;
 
     public float initialBuildTime;
     public float buildingCompletionTime;
@@ -47,8 +48,9 @@ public class Building {
      * @param built Whether the building should be marked as built upon creation.
      * @param uses The use the building has, used for updating building counters.
      * @param spriteName The file name of the buildings' sprite.
+     * @param objName The name of the object in the game space
      */
-    public Building(float x, float y, float width, float height, float buildingConstructionDuration, float initialBuildTime, boolean built, Use[] uses, String spriteName) {
+    public Building(float x, float y, float width, float height, float buildingConstructionDuration, float initialBuildTime, boolean built, Use[] uses, String spriteName, String objName) {
 
         this.x = x;
         this.y = y;
@@ -63,6 +65,7 @@ public class Building {
         this.uses = uses;
         this.UseSize = Use.values().length;
         this.spriteName = spriteName;
+        this.objName = objName;
 
         if (!built) {
             this.unbuiltSpriteName = "construction.png";
@@ -123,7 +126,7 @@ public class Building {
      * @return A copy of the building.
      */
     public Building makeCopy(float currentTime) {
-        return new Building(this.x, this.y + 60, this.width, this.height, currentTime, this.buildingCompletionTime - this.initialBuildTime, false, this.uses, this.spriteName);
+        return new Building(this.x, this.y + 60, this.width, this.height, currentTime, this.buildingCompletionTime - this.initialBuildTime, false, this.uses, this.spriteName, this.objName);
     }
 
     /**
