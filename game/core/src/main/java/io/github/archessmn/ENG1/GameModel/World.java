@@ -1,12 +1,12 @@
 package io.github.archessmn.ENG1.GameModel;
 
 import com.badlogic.gdx.utils.Array;
-import io.github.archessmn.ENG1.GameModel.Objects.Building;
-import io.github.archessmn.ENG1.GameModel.Objects.TerrainAsset;
+import io.github.archessmn.ENG1.GameModel.Objects.BuildingObject;
+import io.github.archessmn.ENG1.GameModel.Objects.MapObject;
+import io.github.archessmn.ENG1.GameModel.Objects.TerrainObject;
 import io.github.archessmn.ENG1.OpenSimplexNoise;
 import io.github.archessmn.ENG1.GameModel.Objects.Use;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -18,9 +18,10 @@ public class World {
     public int width, height;
     public final float GAME_LENGTH_SECONDS = 300;
 
-    public Array<Building> buildings;
-    public Array<TerrainAsset> terrain;
-    public Building[][] gridLookup; // Stores pointers to the buildings and terrain on the grid so that squares can be queried
+    public Array<BuildingObject> buildings;
+    public Array<TerrainObject> terrain;
+    public Array<MapObject> mapObjects;
+    public MapObject[][] gridLookup; // Stores pointers to the buildings and terrain on the grid so that squares can be queried
 
     public HashMap<Use, Integer> buildingUseCounts = new HashMap<>();
 
@@ -75,7 +76,8 @@ public class World {
 
         buildings = new Array<>();
         terrain = new Array<>();
-        gridLookup = new Building[width][height];
+        mapObjects = new Array<>();
+        gridLookup = new MapObject[width][height];
 
         createWorldAssets();
     }
@@ -109,22 +111,28 @@ public class World {
         eventManager.disableEvent(GameEvent.TreeDamage);
     }
 
+    /**
+     * Responsible for creating all generated world assets, before it is showcased to the player
+     */
     public void createWorldAssets() {
-        generateTerrainFeatures(TerrainAsset.Feature.LAKE, 0.7f, 100f);
-        generateTerrainFeatures(TerrainAsset.Feature.ROCK, 0.65f, 200f);
+        generateTerrainFeatures(TerrainObject.Feature.LAKE, 0.6f, 100f);
+        generateTerrainFeatures(TerrainObject.Feature.ROCK, 0.75f, 200f);
+        generateTerrainFeatures(TerrainObject.Feature.TREE, 0.65f, 200f);
 
-        boolean terrainAssetsPlaced = false;
-        for (Building building : buildings) {
-            if (building.uses[0] == Use.TERRAIN) {terrainAssetsPlaced = true;}
-        }
-
-        if (!terrainAssetsPlaced) {
-            TerrainAsset asset = new TerrainAsset(new Random().nextInt(0, width), new Random().nextInt(0, height), 0, true, TerrainAsset.Feature.LAKE);
+        // Places at least one lake tile down on the map - at a randomly generated location - if none were generated in the perlin noise
+        if (terrain.size == 0) {
+            TerrainObject asset = new TerrainObject(new Random().nextInt(0, width), new Random().nextInt(0, height), TerrainObject.Feature.LAKE);
             addTerrain(asset);
         }
     }
 
-    private void generateTerrainFeatures(TerrainAsset.Feature feature, float acceptedValue, float frequency) {
+    /**
+     * Generates a perlin noise map of a particular terrain feature and places the assets into the world
+     * @param feature The type of terrain feature to generate
+     * @param acceptedValue The minimum value (-1 to 1) from the perlin noise algorithm that will be accepted
+     * @param frequency The frequency for the perlin noise algorithm
+     */
+    private void generateTerrainFeatures(TerrainObject.Feature feature, float acceptedValue, float frequency) {
         OpenSimplexNoise noise = new OpenSimplexNoise();
         int seed = new Random().nextInt(0, 100000);
 
@@ -133,7 +141,7 @@ public class World {
                 double value = noise.eval(x / frequency, y / frequency, seed);
 
                 if (value > acceptedValue) {
-                    TerrainAsset asset = new TerrainAsset(x, y, 0, true, feature);
+                    TerrainObject asset = new TerrainObject(x, y, feature);
                     addTerrain(asset);
                 }
             }
@@ -142,23 +150,21 @@ public class World {
 
     /**
      * Adds a building to the world if allowed, updating the building store
+     *
      * @param building Building to add to the world
-     * @return true if the placement was successful
      */
-    public boolean addBuilding(Building building) {
-        if (!doesBuildingOverlap(building)) {
+    public void addBuilding(BuildingObject building) {
+        if (!doesObjectOverlap(building)) {
             buildings.add(building);
+            mapObjects.add(building);
             building.place();
             gridLookup[building.gridX][building.gridY] = building;
 
-            if (!eventManager.isEventEnabled(GameEvent.Flooding) && isBuildingNearTerrain(building, TerrainAsset.Feature.LAKE))
+            if (!eventManager.isEventEnabled(GameEvent.Flooding) && isBuildingNearTerrain(building, TerrainObject.Feature.LAKE))
                 eventManager.enableEvent(GameEvent.Flooding);
-            if (!eventManager.isEventEnabled(GameEvent.TreeDamage) && isBuildingNearTerrain(building, TerrainAsset.Feature.TREE))
+            if (!eventManager.isEventEnabled(GameEvent.TreeDamage) && isBuildingNearTerrain(building, TerrainObject.Feature.TREE))
                 eventManager.enableEvent(GameEvent.TreeDamage);
-
-            return true;
         }
-        return false;
     }
 
     /**
@@ -166,9 +172,10 @@ public class World {
      * @param asset Asset to add to the world
      * @return true if the placement was successful
      */
-    public boolean addTerrain(TerrainAsset asset) {
-        if (!doesBuildingOverlap(asset)) {
+    public boolean addTerrain(TerrainObject asset) {
+        if (!doesObjectOverlap(asset)) {
             terrain.add(asset);
+            mapObjects.add(asset);
             asset.place();
             gridLookup[asset.gridX][asset.gridY] = asset;
             return true;
@@ -180,7 +187,7 @@ public class World {
      * Update all buildings' states
      */
     public void updateBuildings(float deltaTime) {
-        for (Building building : buildings) {
+        for (BuildingObject building : buildings) {
             if (building.placed && !building.built && currentTime > building.buildingCompletionTime) {
                 // This will only trigger once (see '&& !building.built')
                 building.built = true;
@@ -211,7 +218,7 @@ public class World {
         // Maintain active modifiers, removing them when necessary
         for (int i = 0; i < activeModifiers.size; i++) {
             if (currentTime > activeModifiers.get(i).endTime()) {
-                Building building = activeModifiers.get(i).affectedBuilding();
+                BuildingObject building = activeModifiers.get(i).affectedBuilding();
                 building.setEfficiency(building.getEfficiency() / activeModifiers.get(i).multiplier());
                 activeModifiers.removeIndex(i);
                 i--;
@@ -223,26 +230,20 @@ public class World {
     /**
      * Utility method to check if a building overlaps with any others in the world
      * after being snapped to the grid based on its current location
-     * @param overlapBuilding The building to check for overlaps with others
+     * @param overlapObject The building to check for overlaps with others
      * @return true if the building overlaps with another, else false
      */
-    public boolean doesBuildingOverlap(Building overlapBuilding) {
-        GridCoordTuple gridCoords = overlapBuilding.getGridCoords();
+    public boolean doesObjectOverlap(MapObject overlapObject) {
+        GridCoordTuple gridCoords = overlapObject.getGridCoords();
 
-        for (Building building : buildings) {
-            if (!building.equals(overlapBuilding)) {
-                if (building.gridX == gridCoords.x && building.gridY == gridCoords.y) {
+        for (MapObject mapObject : mapObjects) {
+            if (!mapObject.equals(overlapObject)) {
+                if (mapObject.gridX == gridCoords.x && mapObject.gridY == gridCoords.y) {
                     return true;
                 }
             }
         }
-        for (Building building : terrain) {
-            if (!building.equals(overlapBuilding)) {
-                if (building.gridX == gridCoords.x && building.gridY == gridCoords.y) {
-                    return true;
-                }
-            }
-        }
+
         return false;
     }
 
@@ -254,7 +255,7 @@ public class World {
         // Events
         float eventSatisfactionScore = 0f;
         if (activeEvents[GameEvent.TreeHype.ordinal()] != null) {
-            for (Building building : getBuildingsNearTerrain(TerrainAsset.Feature.TREE)) {
+            for (BuildingObject building : getBuildingsNearTerrain(TerrainObject.Feature.TREE)) {
                 for (Use use : building.getUses()) {
                     if (use == Use.ACCOMMODATION) {
                         eventSatisfactionScore += 0.05f;
@@ -263,7 +264,7 @@ public class World {
             }
         }
         if (activeEvents[GameEvent.LectureLake.ordinal()] != null) {
-            for (Building building : getBuildingsNearTerrain(TerrainAsset.Feature.LAKE)) {
+            for (BuildingObject building : getBuildingsNearTerrain(TerrainObject.Feature.LAKE)) {
                 for (Use use : building.getUses()) {
                     if (use == Use.TEACHING) {
                         eventSatisfactionScore += 0.05f;
@@ -272,7 +273,7 @@ public class World {
             }
         }
         if (activeEvents[GameEvent.RockClimbing.ordinal()] != null) {
-            for (Building building : getBuildingsNearTerrain(TerrainAsset.Feature.ROCK)) {
+            for (BuildingObject building : getBuildingsNearTerrain(TerrainObject.Feature.ROCK)) {
                 for (Use use : building.getUses()) {
                     if (use == Use.ACCOMMODATION) {
                         eventSatisfactionScore += 0.05f;
@@ -300,7 +301,7 @@ public class World {
     public void handleEvent(GameEvent event) {
         switch (event) {
             case Flooding:
-                for (Building building : getBuildingsNearTerrain(TerrainAsset.Feature.LAKE)) {
+                for (BuildingObject building : getBuildingsNearTerrain(TerrainObject.Feature.LAKE)) {
                     closeBuilding(building, 30f);
                 }
                 break;
@@ -318,7 +319,7 @@ public class World {
                 addActiveEvent(GameEvent.TreeHype, 120);
                 break;
             case TreeDamage:
-                Array<Building> buildingsNearTrees = getBuildingsNearTerrain(TerrainAsset.Feature.TREE);
+                Array<BuildingObject> buildingsNearTrees = getBuildingsNearTerrain(TerrainObject.Feature.TREE);
                 if (buildingsNearTrees.size > 0) {
                     destroyBuilding(getRandomBuilding(buildingsNearTrees));
                 }
@@ -346,14 +347,14 @@ public class World {
     /**
      * Mark a building as under construction indefinitely
      */
-    public void closeBuilding(Building building) {
+    public void closeBuilding(BuildingObject building) {
         closeBuilding(building, GAME_LENGTH_SECONDS + 1);
     }
 
     /**
      * Mark a building as under construction for {@code timeSeconds} seconds
      */
-    public void closeBuilding(Building building, float timeSeconds) {
+    public void closeBuilding(BuildingObject building, float timeSeconds) {
         if (building.built) {
             for (Use use : building.uses) {
                 buildingUseCounts.put(use, buildingUseCounts.get(use) - 1);
@@ -368,24 +369,25 @@ public class World {
     /**
      * Multiplies a building's efficiency by {@code multiplier} for {@code timeSeconds}, affecting satisfaction
      */
-    public void modifyEfficiency(Building building, float multiplier, float timeSeconds) {
+    public void modifyEfficiency(BuildingObject building, float multiplier, float timeSeconds) {
         activeModifiers.add(new EfficiencyModifier(currentTime + timeSeconds, multiplier, building));
         building.setEfficiency(building.getEfficiency() * multiplier);
         calculatesatisfaction();
     }
 
-    public void destroyBuilding(Building building) {
+    public void destroyBuilding(BuildingObject building) {
         // Check if this changes which events can happen
         // Additional check (left hand side of &&) so we don't have to run the longer check every time
-        if (isBuildingNearTerrain(building, TerrainAsset.Feature.LAKE) && getBuildingsNearTerrain(TerrainAsset.Feature.LAKE).size == 1) {
+        if (isBuildingNearTerrain(building, TerrainObject.Feature.LAKE) && getBuildingsNearTerrain(TerrainObject.Feature.LAKE).size == 1) {
             eventManager.disableEvent(GameEvent.Flooding);
         }
-        if (isBuildingNearTerrain(building, TerrainAsset.Feature.TREE) && getBuildingsNearTerrain(TerrainAsset.Feature.TREE).size == 1) {
+        if (isBuildingNearTerrain(building, TerrainObject.Feature.TREE) && getBuildingsNearTerrain(TerrainObject.Feature.TREE).size == 1) {
             eventManager.disableEvent(GameEvent.TreeDamage);
         }
 
         gridLookup[building.gridX][building.gridY] = null;
         buildings.removeValue(building, true);
+        mapObjects.removeValue(building, true);
         if (building.built) {
             for (Use use : building.uses) {
                 buildingUseCounts.put(use, buildingUseCounts.get(use) - 1);
@@ -395,7 +397,17 @@ public class World {
         calculatesatisfaction();
     }
 
-    public Building getRandomBuilding(Array<Building> buildings) {
+    public void destroyTerrain(TerrainObject terrainObject) {
+        // EVENT CHECKS TO BE COMPLETED HERE
+
+        gridLookup[terrainObject.gridX][terrainObject.gridY] = null;
+        terrain.removeValue(terrainObject, true);
+        mapObjects.removeValue(terrainObject, true);
+
+        calculatesatisfaction();
+    }
+
+    public BuildingObject getRandomBuilding(Array<BuildingObject> buildings) {
         if (buildings.size == 0)
             return null;
         return buildings.get(random.nextInt(buildings.size));
@@ -415,10 +427,10 @@ public class World {
      * Returns a list of buildings that are in any of the 8 tiles next to a given terrain feature
      * @param feature The type of feature, e.g. Lake
      */
-    public Array<Building> getBuildingsNearTerrain(TerrainAsset.Feature feature) {
-        Array<Building> foundBuildings = new Array<>();
+    public Array<BuildingObject> getBuildingsNearTerrain(TerrainObject.Feature feature) {
+        Array<BuildingObject> foundBuildings = new Array<>();
 
-        for (Building building : buildings) {
+        for (BuildingObject building : buildings) {
             if (isBuildingNearTerrain(building, feature)) {
                 foundBuildings.add(building);
             }
@@ -430,10 +442,10 @@ public class World {
     /**
      * @return True if the building is near this type of terrain feature
      */
-    public boolean isBuildingNearTerrain(Building building, TerrainAsset.Feature feature) {
+    public boolean isBuildingNearTerrain(BuildingObject building, TerrainObject.Feature feature) {
         for (int x = Math.max(0, building.gridX - 1); x <= Math.min(width - 1, building.gridX + 1); x++) {
             for (int y = Math.max(0, building.gridY - 1); y <= Math.min(height - 1, building.gridY + 1); y++) {
-                if (gridLookup[x][y] instanceof TerrainAsset && ((TerrainAsset) gridLookup[x][y]).feature == feature) {
+                if (gridLookup[x][y] instanceof TerrainObject && ((TerrainObject) gridLookup[x][y]).feature == feature) {
                     return true;
                 }
             }

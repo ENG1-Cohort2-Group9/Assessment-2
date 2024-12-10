@@ -6,10 +6,10 @@ import io.github.archessmn.ENG1.GameModel.GridCoordTuple;
 import io.github.archessmn.ENG1.GameModel.GridUtils;
 
 /**
- * Base class for each building type,
- * stores information about the building and provides utility classes for interacting with it.
+ * A super-class representing anything that can be placed on a map.
+ * It stored information about the object and provides utility classes for interacting with it.
  */
-public class Building {
+public class MapObject {
     public float x;
     public float y;
 
@@ -19,60 +19,44 @@ public class Building {
     public float width;
     public float height;
 
-    public boolean built;
-
     public final String spriteName;
-    public String unbuiltSpriteName;
-
-    public float initialBuildTime;
-    public float buildingCompletionTime;
+    public final String objName;
 
     public boolean placed = false;
+    public boolean isBuilding = false;
 
     public Rectangle bounds;
-
-    public final Use[] uses;
-    int UseSize;
 
     private float efficiency = 0.5f;
 
 
     /**
-     * Initialises a new building.
-     * @param x The X coordinate to place the building at.
-     * @param y The Y coordinate to place the building at.
-     * @param width Width of the building.
-     * @param height Height of the building.
-     * @param buildingConstructionDuration How long construction takes
-     * @param built Whether the building should be marked as built upon creation.
-     * @param uses The use the building has, used for updating building counters.
-     * @param spriteName The file name of the buildings' sprite.
+     * Initialises a new map object.
+     * @param x The X coordinate to place the object at.
+     * @param y The Y coordinate to place the object at.
+     * @param width Width of the object.
+     * @param height Height of the object.
+     * @param spriteName The file name of the object's sprite.
+     * @param objName The name of the object in the game space
+     * @param isBuilding Indicates whether the map object is a building or not
      */
-    public Building(float x, float y, float width, float height, float buildingConstructionDuration, float initialBuildTime, boolean built, Use[] uses, String spriteName) {
-
+    public MapObject(float x, float y, float width, float height, String spriteName, String objName, boolean isBuilding) {
         this.x = x;
         this.y = y;
 
         this.width = width;
         this.height = height;
 
-        this.initialBuildTime = initialBuildTime;
-        this.buildingCompletionTime = initialBuildTime + buildingConstructionDuration;
-
-        this.built = built;
-        this.uses = uses;
-        this.UseSize = Use.values().length;
         this.spriteName = spriteName;
+        this.objName = objName;
 
-        if (!built) {
-            this.unbuiltSpriteName = "construction.png";
-        }
+        this.isBuilding = isBuilding;
 
         this.bounds = new Rectangle(this.x, this.y, this.width, this.height);
     }
 
     /**
-     * Called when placing the building into the world, will snap the building to
+     * Called when placing the object into the world, will snap the object to
      * the grid and update its grid coordinates to match its position.
      */
     public void place() {
@@ -85,7 +69,7 @@ public class Building {
     }
 
     /**
-     * Used to update the position of the building in the world.
+     * Used to update the position of the object in the world.
      * @param x The X position to use
      * @param y The Y position to use
      */
@@ -95,7 +79,7 @@ public class Building {
     }
 
     /**
-     * Sets the X position of the building
+     * Sets the X position of the object
      * @param x The X position to use
      */
     public void setX(float x) {
@@ -103,7 +87,7 @@ public class Building {
     }
 
     /**
-     * Sets the Y position of the building
+     * Sets the Y position of the object
      * @param y The Y position to use
      */
     public void setY(float y) {
@@ -111,32 +95,15 @@ public class Building {
     }
 
     /**
-     * Calculates and returns the bounding box of the building.
-     * @return The bounding box {@link Rectangle} of the building.
+     * Calculates and returns the bounding box of the object.
+     * @return The bounding box {@link Rectangle} of the object.
      */
     public Rectangle getBounds() {
         return this.bounds.set(this.x, this.y, this.width, this.height);
     }
 
     /**
-     * Makes an un-built copy of the current building type
-     * @return A copy of the building.
-     */
-    public Building makeCopy(float currentTime) {
-        return new Building(this.x, this.y + 60, this.width, this.height, currentTime, this.buildingCompletionTime - this.initialBuildTime, false, this.uses, this.spriteName);
-    }
-
-    /**
-     * Get the uses for the building
-     * @return the array of uses the building has.
-     */
-    public Use[] getUses() {
-        return uses;
-    }
-
-
-    /**
-     * Get the raw coordinates of the grid square the building would
+     * Get the raw coordinates of the grid square the object would
      * snap to, relative to the entire viewport.
      * For example the bottom left grid position would be (0.0, 480).
      * @return A {@link Vector2} of the position on the grid
@@ -146,7 +113,7 @@ public class Building {
     }
 
     /**
-     * Get the raw coordinates of the grid square the building would
+     * Get the raw coordinates of the grid square the object would
      * snap to, relative to the grid.
      * For example, the top left grid position would be (0, 8).
      * @return A {@link GridCoordTuple} of the grid position
@@ -156,7 +123,7 @@ public class Building {
     }
 
     /**
-     * Snaps the building to the grid.
+     * Snaps the object to the grid.
      */
     public void snapToGrid() {
         Vector2 gridCoords = getRawGridCoords();
@@ -164,11 +131,11 @@ public class Building {
     }
 
     /**
-     * Determines if a building is in any of the nine squares (including the centre) adjacent to this square
-     * @param other the other building to compare
-     * @return true if the building is adjacent to this one
+     * Determines if a object is in any of the nine squares (including the centre) adjacent to this square
+     * @param other the other object to compare
+     * @return true if the object is adjacent to this one
      */
-    public boolean isAdjacentTo(Building other) {
+    public boolean isAdjacentTo(MapObject other) {
         return Math.abs(other.gridX - gridX) <= 1 && Math.abs(other.gridY - gridY) <= 1;
     }
 
