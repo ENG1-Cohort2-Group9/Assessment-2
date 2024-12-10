@@ -126,7 +126,7 @@ public class World {
             buildingUseCounts.put(use, 0);
         }
 
-        initializeWeightMatrix();
+        initialiseWeightMatrix();
 
 
         buildings = new Array<>();
@@ -381,7 +381,7 @@ public class World {
     /**
      * Initialises the weight matrix according to values selected by the developer(s).
      */
-    private void initializeWeightMatrix() {
+    private void initialiseWeightMatrix() {
         // This needs to be set manually, but doing so here avoids needing this if else statement to be used to find the
         // weight for a use pair, instead the weightMatrix can be referenced.
         for (Use use1 : Use.values()) {
