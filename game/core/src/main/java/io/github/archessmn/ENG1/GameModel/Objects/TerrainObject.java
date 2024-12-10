@@ -13,8 +13,8 @@ public class TerrainObject extends MapObject {
         ROCK("rock.png", "Rock"),
         TREE("tree.png", "Trees");
 
-        public String asset;
-        public String name;
+        public final String asset;
+        public final String name;
 
         private Feature(String asset, String name) {
             this.asset = asset;
