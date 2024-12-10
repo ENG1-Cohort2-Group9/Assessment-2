@@ -1,10 +1,10 @@
 package io.github.archessmn.ENG1.GameModel.Objects;
 
 
-public class TerrainAsset extends Building {
+public class TerrainObject extends MapObject {
 
-    public TerrainAsset(float x, float y, float currentTime, boolean built, Feature type ) {
-        super(x, y, 60, 60, 10f, currentTime, built, new Use[] {Use.TERRAIN}, type.asset, type.name);
+    public TerrainObject(float x, float y, Feature type) {
+        super(x, y, 60, 60, type.asset, type.name, false);
         feature = type;
     }
 
