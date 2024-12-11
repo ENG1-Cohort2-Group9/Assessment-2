@@ -73,6 +73,8 @@ public class GameScreen implements Screen {
     final ScreenManager game;
     final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
 
+    String uniName = "Guest";
+
 
 
     public GameScreen(ScreenManager main) {
@@ -256,8 +258,10 @@ public class GameScreen implements Screen {
         world.worldProcess(delta);
 
         // Ends the game when the timer exceeds 5 minutes.
-        // This should probably be moved from this class to World, it already has a timer
         gameEnded = world.getGameEnded();
+        if (gameEnded) {
+            world.saveScore(uniName, world.satisfactionScore, "scores.txt");
+        }
 
         stage.act(delta);
     }

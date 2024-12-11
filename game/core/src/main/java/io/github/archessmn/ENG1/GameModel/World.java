@@ -1,6 +1,5 @@
 package io.github.archessmn.ENG1.GameModel;
 
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Objects.BuildingObject;
 import io.github.archessmn.ENG1.GameModel.Objects.MapObject;
@@ -14,6 +13,8 @@ import java.util.Map;
 import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_HEIGHT;
 import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_WIDTH;
 import java.util.Random;
+import java.io.*;
+import java.util.*;
 
 /**
  * Class used to store information about the world and the buildings in it.
@@ -727,8 +728,6 @@ public class World {
                 buildingUseCounts.put(use, buildingUseCounts.get(use) - 1);
             }
         }
-
-        ////////////
     }
 
     public void destroyTerrain(TerrainObject terrainObject) {
@@ -785,5 +784,62 @@ public class World {
             }
         }
         return false;
+    }
+
+    public void saveScore(String name, float score, String filePath) {
+        HashMap<String, Float> scores = loadScores(filePath);
+
+        scores.put(name, score);
+
+        // Output file
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+            objectOutputStream.writeObject(scores);
+            objectOutputStream.flush();
+            objectOutputStream.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+    }
+
+    public ArrayList<Map.Entry<String, Float>> getTopScores(String filePath) {
+        HashMap<String, Float> scores = loadScores(filePath);
+
+        // Sort scores descending
+        ArrayList<Map.Entry<String, Float>> list = new ArrayList<>(scores.entrySet());
+        list.sort(Map.Entry.comparingByValue());
+
+        Collections.reverse(list);
+
+        return list;
+    }
+
+    @SuppressWarnings("unchecked") // Try catch will prevent errors if the file is incorrect
+    public HashMap<String, Float> loadScores(String filePath) {
+        HashMap<String, Float> scores;
+
+        // Read file
+        try {
+            FileInputStream fileInput = new FileInputStream(filePath);
+
+            ObjectInputStream objectInput = new ObjectInputStream(fileInput);
+
+            scores = (HashMap<String, Float>)objectInput.readObject();
+
+            objectInput.close();
+            fileInput.close();
+        }
+        catch (IOException ioException) {
+            scores = new HashMap<>();
+        }
+        catch (ClassNotFoundException classNotFoundException) {
+            classNotFoundException.printStackTrace();
+            return null;
+        }
+
+        return scores;
     }
 }
