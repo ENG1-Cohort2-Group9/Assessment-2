@@ -45,22 +45,26 @@ public class GameScreen implements Screen {
     Vector2 touchPos;
     Vector2 unprojectedTouchPos;
 
-    Array<Building> draggableBuildings;
+    Array<BuildingObject> draggableBuildings;
 
 
     Rectangle buildingRectangle;
     BitmapFont font;
     Boolean isClicked = false;
-    Building clickedBuilding = null;
+    BuildingObject buildingToPlace = null;
+    MapObject selectedAsset = null;
+    float selectionTimer = 5f;
 
     Boolean paused = true;
     Boolean gameEnded = false;
     Boolean fullScreen = false;
 
     private Stage stage;
-    private Table rightTable;
+    private Table sideMenu;
     private Label countDownLabel;
     private Label timerLabel;
+    private Label selectedBuildingLabal;
+    private TextButton actionButton;
     private final HashMap<Use, Label> buildingUseCountLabels = new HashMap<>();
     private final HashMap<Use, Label> buildingUseNameLabels = new HashMap<>();
     private float timeEventShownAt = -10f;
@@ -92,6 +96,20 @@ public class GameScreen implements Screen {
 
         countDownLabel = new Label("Timer", labelStyle);
         timerLabel = new Label("Timer", labelStyle);
+        selectedBuildingLabal = new Label("Building", labelStyle);
+
+        actionButton = new TextButton("Action", textButtonStyle);
+        actionButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (selectedAsset.isBuilding) {
+                    world.destroyBuilding((BuildingObject) selectedAsset);
+                }
+                else {
+                    world.destroyTerrain((TerrainObject) selectedAsset);
+                }
+            }
+        });
 
         for (Use buildingUse : Use.values()) {
             String useName = buildingUse.toString().charAt(0) + buildingUse.toString().substring(1).toLowerCase();
@@ -101,8 +119,6 @@ public class GameScreen implements Screen {
             buildingUseCountLabels.put(buildingUse, new Label("0", labelStyle));
         }
 
-        TextButton button = new TextButton("Clear Buildings", textButtonStyle);
-
 
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
@@ -111,22 +127,22 @@ public class GameScreen implements Screen {
         rootTable.setFillParent(true);
         stage.addActor(rootTable);
 
-        rightTable = new Table();
+        sideMenu = new Table();
 
-        rightTable.pad(10);
+        sideMenu.pad(10);
 
-        rootTable.right().add(rightTable).expandY().fillY().width(300);
+        rootTable.right().add(sideMenu).expandY().fillY().width(300);
 
-        rightTable.add(countDownLabel).row();
-        rightTable.add(timerLabel).row();
+        sideMenu.add(countDownLabel).row();
+        sideMenu.add(timerLabel).row();
         for (Use buildingUse : Use.values()) {
-            rightTable.add(buildingUseNameLabels.get(buildingUse)).left();
-            rightTable.add(buildingUseCountLabels.get(buildingUse)).right().row();
+            sideMenu.add(buildingUseNameLabels.get(buildingUse)).left();
+            sideMenu.add(buildingUseCountLabels.get(buildingUse)).right().row();
         }
-        rightTable.add(new Label("\nHelp:", labelStyle)).row();
-        rightTable.add(new Label("Drag a building from below to place it", labelStyle)).left().top().row();
-        rightTable.add(new Label("onto the grid. Don't overlap them!", labelStyle)).left().top().row();
-        rightTable.add(new Label("Gym  Halls  Lecture Hall  Pub     Piazza", labelStyle)).expandX().expandY().bottom();
+        sideMenu.add(new Label("\nSelection:", labelStyle)).left().row();
+        sideMenu.add(selectedBuildingLabal).left().top().row();
+        sideMenu.add(actionButton).left().top().row();
+        sideMenu.add(new Label("Gym  Halls  Lecture Hall  Pub     Piazza", labelStyle)).expandX().expandY().bottom();
 
         assetManager = new AssetManager();
 
@@ -137,6 +153,7 @@ public class GameScreen implements Screen {
         assetManager.load("piazza.png", Texture.class);
         assetManager.load("lake.jpg", Texture.class);
         assetManager.load("rock.png", Texture.class);
+        assetManager.load("tree.png", Texture.class);
         assetManager.load("construction.png", Texture.class);
         assetManager.load("missing_texture.png", Texture.class);
         assetManager.load("plus.png", Texture.class);
@@ -158,10 +175,7 @@ public class GameScreen implements Screen {
         touchPos = new Vector2();
         unprojectedTouchPos = new Vector2();
 
-//        buildings = new Array<>();
         draggableBuildings = new Array<>();
-
-
 
         draggableBuildings.add(new GymBuilding(660, 40, 0, true));
         draggableBuildings.add(new HallsBuilding(720, 40, 0, true));
@@ -175,13 +189,6 @@ public class GameScreen implements Screen {
 
         // defaults the screen to be minimised on launch
         fullScreen = false;
-
-        button.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                world.buildings.clear();
-            }
-        });
     }
 
     @Override
@@ -201,7 +208,7 @@ public class GameScreen implements Screen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) paused = !paused;
 
         if (gameEnded) {
-            clickedBuilding = null;
+            buildingToPlace = null;
             return;
         }
 
@@ -210,29 +217,36 @@ public class GameScreen implements Screen {
 
         isClicked = Gdx.input.isTouched();
 
-        if (Gdx.input.justTouched()) { // Start drag
-            for (int i = draggableBuildings.size - 1; i >= 0; i--) {
-                Building building = draggableBuildings.get(i);
-
-                if (building.getBounds().contains(unprojectedTouchPos)) {
-
-                    //buildingClicked = building.makeCopy(world.getCurrentTime());
-
-                    clickedBuilding = building.makeCopy(world.getCurrentTime());
-
+        // A check to see if any building/terrain assets have been clicked
+        if (Gdx.input.justTouched()) {
+            // Loops through all placed map objects to see if they have been clicked
+            for (MapObject mapObject : world.mapObjects) {
+                if (mapObject.getBounds().contains(unprojectedTouchPos)) {
+                    selectedAsset = mapObject;
+                    selectionTimer = 5f;
                     break;
                 }
             }
-        } else if (!isClicked && clickedBuilding != null) { // Click released
+
+            // Initiates the dragging feature for when a menu building has been selected
+            for (int i = draggableBuildings.size - 1; i >= 0; i--) {
+                BuildingObject building = draggableBuildings.get(i);
+
+                if (building.getBounds().contains(unprojectedTouchPos)) {
+                    buildingToPlace = building.makeCopy(world.getCurrentTime());
+                    break;
+                }
+            }
+        } else if (!isClicked && buildingToPlace != null) { // Click released
             if (unprojectedTouchPos.x <= VIEWPORT_WIDTH - 300) {
-                world.addBuilding(clickedBuilding); // Places the building if it passes all checks
+                world.addBuilding(buildingToPlace); // Places the building if it passes all checks
             }
 
-            clickedBuilding = null;
+            buildingToPlace = null;
         }
 
-        if (clickedBuilding != null) { // Track building to mouse position for drag
-            clickedBuilding.setCenter(touchPos.x, touchPos.y);
+        if (buildingToPlace != null) { // Track building to mouse position for drag
+            buildingToPlace.setCenter(touchPos.x, touchPos.y);
         }
     }
 
@@ -255,69 +269,34 @@ public class GameScreen implements Screen {
     private void draw() {
         ScreenUtils.clear(Color.OLIVE);
         viewport.apply();
-
         batch.setProjectionMatrix(viewport.getCamera().combined);
 
-        drawGrid(shapeRenderer);
+        // Collision detection for buildings already placed
+        if (buildingToPlace != null) {
+            // If placing building, draw the grid
+            if (isClicked) drawGrid(shapeRenderer);
 
-        // Draw red outline for where the logo will snap to
-        if (clickedBuilding != null) {
-            if (world.doesBuildingOverlap(clickedBuilding)) {
+            if (world.doesObjectOverlap(buildingToPlace)) {
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             } else {
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
             }
             shapeRenderer.setColor(Color.RED);
-            Vector2 buildingCoords = clickedBuilding.getRawGridCoords();
-            shapeRenderer.rect(buildingCoords.x - (clickedBuilding.width / 2), buildingCoords.y - (clickedBuilding.height / 2), clickedBuilding.width, clickedBuilding.height);
+            Vector2 buildingCoords = buildingToPlace.getRawGridCoords();
+            shapeRenderer.rect(buildingCoords.x - (buildingToPlace.width / 2), buildingCoords.y - (buildingToPlace.height / 2), buildingToPlace.width, buildingToPlace.height);
             shapeRenderer.end();
         }
 
-
+        // Draws side menu bar
         blockRenderer.begin(ShapeRenderer.ShapeType.Filled);
         blockRenderer.setColor(Color.DARK_GRAY);
-
-        blockRenderer.rect(rightTable.getX(), rightTable.getY(), rightTable.getWidth(), rightTable.getHeight());
-
+        blockRenderer.rect(sideMenu.getX(), sideMenu.getY(), sideMenu.getWidth(), sideMenu.getHeight());
         blockRenderer.end();
 
         batch.begin();
 
-        drawBuildings(batch, assetManager);
-
-        // Draws a 5-minute countdown timer for the games length
-        // If it's a whole minute, it displays :00 for the seconds
-        // Otherwise it gets the remainder of gameTimer divided by 60 for the seconds.
-        float gameTime = world.getCurrentTime();
-        if (60 - (int) gameTime % 60 == 60) {
-            countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":00");
-        }
-        else {
-            countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":" + String.format("%02d", 60 - (int) gameTime % 60));
-        }
-
-        timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTime / 60) + 1, (int) ((gameTime % 60) / (60 / (double) 365)) + 1));
-        if (clickedBuilding != null) {
-            if (world.doesBuildingOverlap(clickedBuilding)) {
-                font.draw(batch, "Buildings overlap", 20, 520);
-            }
-        }
-
-        // Show event text (if there is one)
-        if (currentEvent != null && world.getCurrentTime() < timeEventShownAt + EVENT_NOTIFICATION_TIME) {
-            font.draw(batch, currentEvent.title, 20, 525);
-            font.draw(batch, currentEvent.description, 20, 495);
-        }
-
-        if (paused) {
-            font.draw(batch, "Paused, press P to resume", 20, 460);
-            font.draw(batch, "Building icons from macrovector on Freepik", 0, 25);
-        }
-
-        if (gameEnded) {
-            font.draw(batch, "End of the game!", 20, 460);
-            font.draw(batch, "Building icons from macrovector on Freepik", 0, 25);
-        }
+        drawAssets(batch, assetManager);
+        drawSideMenu();
 
         batch.end();
 
@@ -328,48 +307,48 @@ public class GameScreen implements Screen {
         stage.draw();
     }
 
-    public void drawBuildings(Batch batch, AssetManager assetManager) {
-        for (Building building : draggableBuildings) {
-            drawBuilding(batch, assetManager, building);
+    public void drawAssets(Batch batch, AssetManager assetManager) {
+        for (BuildingObject building : draggableBuildings) {
+            drawObject(batch, assetManager, building);
         }
-        for (Building building : world.buildings) {
-            drawBuilding(batch, assetManager, building);
+        for (BuildingObject building : world.buildings) {
+            drawObject(batch, assetManager, building);
         }
-        for (Building building : world.terrain) {
-            drawBuilding(batch, assetManager, building);
+        for (TerrainObject terrain : world.terrain) {
+            drawObject(batch, assetManager, terrain);
         }
-        if (clickedBuilding != null) {
-            drawBuilding(batch, assetManager, clickedBuilding);
+        if (buildingToPlace != null) {
+            drawObject(batch, assetManager, buildingToPlace);
         }
     }
 
-    private static void drawBuilding(Batch batch, AssetManager assetManager, Building building) {
-        Sprite sprite = null;
-        if (!building.built) {
-            sprite = new Sprite(assetManager.get(building.unbuiltSpriteName, Texture.class));
-        }
-        else {
-            sprite = new Sprite(assetManager.get(building.spriteName, Texture.class));
+    private static void drawObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
+        Sprite sprite = new Sprite(assetManager.get(mapObject.spriteName, Texture.class));
+        if (mapObject.isBuilding) {
+            BuildingObject buildingObject = (BuildingObject) mapObject;
+            if (!buildingObject.built){
+                sprite = new Sprite(assetManager.get(buildingObject.unbuiltSpriteName, Texture.class));
+            }
         }
 
-        sprite.setSize(building.width, building.height);
-        sprite.setPosition(building.x, building.y);
+        sprite.setSize(mapObject.width, mapObject.height);
+        sprite.setPosition(mapObject.x, mapObject.y);
         sprite.draw(batch);
 
         Sprite efficiencySprite = null;
         // Draw '+' or '-' if building efficiency is not the default value, 0.5
-        if (building.getEfficiency() > 0.5f) {
+        if (mapObject.getEfficiency() > 0.5f) {
             efficiencySprite = new Sprite(assetManager.get("plus.png", Texture.class));
         }
-        else if (building.getEfficiency() < 0.5f) {
+        else if (mapObject.getEfficiency() < 0.5f) {
             efficiencySprite = new Sprite(assetManager.get("minus.png", Texture.class));
         }
         else {
             return;
         }
 
-        efficiencySprite.setSize(building.width * 0.25f, building.height * 0.25f);
-        efficiencySprite.setPosition(building.x + building.width * 0.75f, building.y + building.height * 0.75f);
+        efficiencySprite.setSize(mapObject.width * 0.25f, mapObject.height * 0.25f);
+        efficiencySprite.setPosition(mapObject.x + mapObject.width * 0.75f, mapObject.y + mapObject.height * 0.75f);
         efficiencySprite.draw(batch);
     }
 
@@ -394,8 +373,69 @@ public class GameScreen implements Screen {
         }
 
         gridRenderer.end();
-
     }
+
+    public void drawSideMenu() {
+        // Draws a 5-minute countdown timer for the games length
+        // If it's a whole minute, it displays :00 for the seconds
+        // Otherwise it gets the remainder of gameTimer divided by 60 for the seconds.
+        float gameTime = world.getCurrentTime();
+        if (60 - (int) gameTime % 60 == 60) {
+            countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":00");
+        }
+        else {
+            countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":" + String.format("%02d", 60 - (int) gameTime % 60));
+        }
+
+        if (selectedAsset != null && selectionTimer <= 5f) {
+            selectionTimer -= Gdx.graphics.getDeltaTime();
+
+            selectedBuildingLabal.setVisible(true);
+            actionButton.setVisible(true);
+
+            selectedBuildingLabal.setText(selectedAsset.objName);
+            if (selectedAsset.isBuilding) {
+                actionButton.setText("Demolish");
+            }
+            else {
+                actionButton.setText("Destroy");
+            }
+        }
+        else {
+            selectedBuildingLabal.setVisible(false);
+            actionButton.setVisible(false);
+        }
+
+        if (selectionTimer <= 0f) {
+            selectionTimer = 5f;
+            selectedAsset = null;
+        }
+
+
+        timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTime / 60) + 1, (int) ((gameTime % 60) / (60 / (double) 365)) + 1));
+        if (buildingToPlace != null) {
+            if (world.doesObjectOverlap(buildingToPlace)) {
+                font.draw(batch, "Buildings overlap", 20, 520);
+            }
+        }
+
+        // Show event text (if there is one)
+        if (currentEvent != null && world.getCurrentTime() < timeEventShownAt + EVENT_NOTIFICATION_TIME) {
+            font.draw(batch, currentEvent.title, 20, 525);
+            font.draw(batch, currentEvent.description, 20, 495);
+        }
+
+        if (paused) {
+            font.draw(batch, "Paused, press P to resume", 20, 460);
+            font.draw(batch, "Building icons from macrovector on Freepik", 0, 25);
+        }
+
+        if (gameEnded) {
+            font.draw(batch, "End of the game!", 20, 460);
+            font.draw(batch, "Building icons from macrovector on Freepik", 0, 25);
+        }
+    }
+
 
     public void showEventPopup(GameEvent event) {
         currentEvent = event;
