@@ -1,4 +1,4 @@
-package io.github.archessmn.ENG1.GameModel.Buildings;
+package io.github.archessmn.ENG1.GameModel.Objects;
 
 /**
  * The use of a building, adding a new use will require the updateBuildingDistancesScore in World to be updated if
