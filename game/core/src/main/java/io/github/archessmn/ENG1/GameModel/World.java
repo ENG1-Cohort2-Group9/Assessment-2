@@ -482,7 +482,9 @@ public class World {
         ArrayList<Map.Entry<String, Float>> list = new ArrayList<>(scores.entrySet());
         list.sort(Map.Entry.comparingByValue());
 
-        return new ArrayList<>(list.reversed());
+        Collections.reverse(list);
+
+        return list;
     }
 
     @SuppressWarnings("unchecked") // Try catch will prevent errors if the file is incorrect
