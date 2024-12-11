@@ -786,6 +786,12 @@ public class World {
         return false;
     }
 
+    /**
+     * Save a user's score with the name into a file. If the name is already in the file, it is overwritten
+     * @param name The university name
+     * @param score The satisfaction score, between 0.0 and 1.0
+     * @param filePath The path (relative to assets/..) of the file to create or save to.
+     */
     public void saveScore(String name, float score, String filePath) {
         HashMap<String, Float> scores = loadScores(filePath);
 
@@ -805,6 +811,12 @@ public class World {
         }
     }
 
+    /**
+     * Returns all the scores stored in the given file in descending order of score.
+     * @param filePath The path (relative to assets/..) of the file to load from.
+     * @return a list of Map.Entry<String, Float> where the String is the university name and the float is the
+     * satisfaction score from 0.0 to 1.0
+     */
     public ArrayList<Map.Entry<String, Float>> getTopScores(String filePath) {
         HashMap<String, Float> scores = loadScores(filePath);
 
@@ -817,6 +829,11 @@ public class World {
         return list;
     }
 
+    /**
+     * Load the HashMap of scores from the file
+     * @param filePath The path (relative to assets/..) of the file to load from.
+     * @return A HashMap of names : scores
+     */
     @SuppressWarnings("unchecked") // Try catch will prevent errors if the file is incorrect
     public HashMap<String, Float> loadScores(String filePath) {
         HashMap<String, Float> scores;
