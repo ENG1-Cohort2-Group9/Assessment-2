@@ -6,7 +6,7 @@ import io.github.archessmn.ENG1.GameModel.Objects.BuildingObject;
 import io.github.archessmn.ENG1.GameModel.Objects.MapObject;
 import io.github.archessmn.ENG1.GameModel.Objects.TerrainObject;
 import io.github.archessmn.ENG1.OpenSimplexNoise;
-import io.github.archessmn.ENG1.GameModel.Objects.Use;
+import io.github.archessmn.ENG1.GameModel.Objects.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -300,7 +300,7 @@ public class World {
             if (currentTime > activeEventEndTime[i]) {
                 activeEvents[i] = null;
                 activeEventEndTime[i] = GAME_LENGTH_SECONDS + 1;
-                calculatesatisfaction();
+                updateEventScore();
             }
         }
         // Maintain active modifiers, removing them when necessary
@@ -310,7 +310,7 @@ public class World {
                 building.setEfficiency(building.getEfficiency() / activeModifiers.get(i).multiplier());
                 activeModifiers.removeIndex(i);
                 i--;
-                calculatesatisfaction();
+                updateEventScore();
             }
         }
     }
@@ -340,7 +340,7 @@ public class World {
         return currentTime >= GAME_LENGTH_SECONDS;
     }
 
-    public float calculatesatisfaction() {
+    public void updateEventScore() {
         // Events
         float eventSatisfactionScore = 0f;
         if (activeEvents[GameEvent.TreeHype.ordinal()] != null) {
@@ -378,7 +378,11 @@ public class World {
         }
         if (eventSatisfactionScore > 0.3f)
             eventSatisfactionScore = 0.3f;
-        // -------------------
+
+        updateSatisfactionScore();
+    }
+
+
 
     /**
      * Updates satisfactionScore by assigning it to the sum of its components.
@@ -418,7 +422,7 @@ public class World {
      * @param building The building that was added to/removed from the map, its uses are iterated through to know which
      *                 building use pairs need to have their average distances updated.
      */
-    public void updateAverageDistances(Building building, boolean placed) {
+    public void updateAverageDistances(BuildingObject building, boolean placed) {
         // updateFactor is 1 if the building passed to this method was just placed, -1 if it was removed.
 
         // When it is 1, the distance found for each use pair is added to the corresponding averageDistance
@@ -439,7 +443,7 @@ public class World {
         // Iterates through each use the building passed to this method has
         for (Use use1 : building.getUses()) {
             // Iterates through all buildings currently placed on the map
-            for (Building comparisonBuilding : buildings) {
+            for (BuildingObject comparisonBuilding : buildings) {
                 // Distance is the diagonal distance between the building passed to this method, and the current
                 // comparisonBuilding.
                 float distance = (float) Math.sqrt(Math.pow(building.gridX - comparisonBuilding.gridX, 2) +
@@ -494,7 +498,7 @@ public class World {
      *
      * @param building The building that was just placed or deleted.
      */
-    public void updateBuildingDistancesScore(Building building) {
+    public void updateBuildingDistancesScore(BuildingObject building) {
         for (Use use1 : building.getUses()) {
             for (Use use2 : Use.values()) {
                 // Only iterates over the upper triangle of the adjacency matrix
@@ -693,7 +697,7 @@ public class World {
 
         building.buildingCompletionTime = currentTime + timeSeconds;
         building.built = false;
-        calculatesatisfaction();
+        updateEventScore();
     }
 
     /**
@@ -702,7 +706,7 @@ public class World {
     public void modifyEfficiency(BuildingObject building, float multiplier, float timeSeconds) {
         activeModifiers.add(new EfficiencyModifier(currentTime + timeSeconds, multiplier, building));
         building.setEfficiency(building.getEfficiency() * multiplier);
-        calculatesatisfaction();
+        updateEventScore();
     }
 
     public void destroyBuilding(BuildingObject building) {
@@ -724,7 +728,7 @@ public class World {
             }
         }
 
-        calculatesatisfaction();
+        ////////////
     }
 
     public void destroyTerrain(TerrainObject terrainObject) {
@@ -734,7 +738,7 @@ public class World {
         terrain.removeValue(terrainObject, true);
         mapObjects.removeValue(terrainObject, true);
 
-        calculatesatisfaction();
+        updateEventScore();
     }
 
     public BuildingObject getRandomBuilding(Array<BuildingObject> buildings) {
@@ -750,7 +754,7 @@ public class World {
     public void addActiveEvent(GameEvent event, float timeSeconds) {
         activeEvents[event.ordinal()] = event;
         activeEventEndTime[event.ordinal()] = currentTime + timeSeconds;
-        calculatesatisfaction();
+        updateEventScore();
     }
 
     /**
