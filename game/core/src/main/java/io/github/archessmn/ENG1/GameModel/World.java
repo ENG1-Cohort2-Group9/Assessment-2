@@ -485,6 +485,7 @@ public class World {
         return new ArrayList<>(list.reversed());
     }
 
+    @SuppressWarnings("unchecked") // Try catch will prevent errors if the file is incorrect
     public HashMap<String, Float> loadScores(String filePath) {
         HashMap<String, Float> scores;
 
@@ -494,7 +495,7 @@ public class World {
 
             ObjectInputStream objectInput = new ObjectInputStream(fileInput);
 
-            scores = (HashMap)objectInput.readObject();
+            scores = (HashMap<String, Float>)objectInput.readObject();
 
             objectInput.close();
             fileInput.close();
