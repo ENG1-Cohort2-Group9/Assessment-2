@@ -1,14 +1,14 @@
 package io.github.archessmn.ENG1.GameModel;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Objects.Building;
 import io.github.archessmn.ENG1.GameModel.Objects.TerrainAsset;
 import io.github.archessmn.ENG1.OpenSimplexNoise;
 import io.github.archessmn.ENG1.GameModel.Objects.Use;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Random;
+import java.io.*;
+import java.util.*;
 
 /**
  * Class used to store information about the world and the buildings in it.
@@ -439,5 +439,59 @@ public class World {
             }
         }
         return false;
+    }
+
+    public void saveScore(String name, float score, String filePath) {
+        HashMap<String, Float> scores = loadScores(filePath);
+
+        scores.put(name, score);
+
+        // Output file
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+            objectOutputStream.writeObject(scores);
+            objectOutputStream.flush();
+            objectOutputStream.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+    }
+
+    public ArrayList<Map.Entry<String, Float>> getTopScores(String filePath) {
+        HashMap<String, Float> scores = loadScores(filePath);
+
+        // Sort scores descending
+        ArrayList<Map.Entry<String, Float>> list = new ArrayList<>(scores.entrySet());
+        list.sort(Map.Entry.comparingByValue());
+
+        return new ArrayList<>(list.reversed());
+    }
+
+    public HashMap<String, Float> loadScores(String filePath) {
+        HashMap<String, Float> scores;
+
+        // Read file
+        try {
+            FileInputStream fileInput = new FileInputStream(filePath);
+
+            ObjectInputStream objectInput = new ObjectInputStream(fileInput);
+
+            scores = (HashMap)objectInput.readObject();
+
+            objectInput.close();
+            fileInput.close();
+        }
+        catch (IOException ioException) {
+            scores = new HashMap<>();
+        }
+        catch (ClassNotFoundException classNotFoundException) {
+            classNotFoundException.printStackTrace();
+            return null;
+        }
+
+        return scores;
     }
 }
