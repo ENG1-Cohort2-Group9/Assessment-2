@@ -9,9 +9,6 @@ import io.github.archessmn.ENG1.GameModel.Objects.*;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_HEIGHT;
-import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_WIDTH;
 import java.util.Random;
 import java.io.*;
 import java.util.*;
