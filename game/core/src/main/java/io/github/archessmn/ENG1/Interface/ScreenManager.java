@@ -1,15 +1,15 @@
 package io.github.archessmn.ENG1.Interface;
 
-import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Graphics;
-import com.badlogic.gdx.Input;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class ScreenManager extends Game {
 
     public SpriteBatch batch;
 
+    public MenuScreen menuScreen;
+    public LeaderboardScreen leaderboardScreen;
+    public TutorialScreen tutorialScreen;
     public GameScreen gameScreen;
 
     public Boolean fullScreen;
@@ -21,14 +21,18 @@ public class ScreenManager extends Game {
     public void create() {
 
         //Creates instances of the screens, this allows access to non-static variables
+        menuScreen = new MenuScreen(this);
+        leaderboardScreen = new LeaderboardScreen(this);
+        tutorialScreen = new TutorialScreen(this);
         gameScreen = new GameScreen(this);
+
 
         //Creates the game's sprite batch
         batch = new SpriteBatch();
 
         fullScreen = false;
         // Initiate game to the game screen.
-        setScreen(gameScreen);
+        setScreen(menuScreen);
     }
 
     /**
@@ -45,6 +49,10 @@ public class ScreenManager extends Game {
         }
 
         super.render();
+    }
+
+    public void switchToScreen(Screen screen) {
+        setScreen(screen);
     }
 
     // Disposes of all textures.

@@ -104,8 +104,8 @@ public class World {
      */
     public void createWorldAssets() {
         generateTerrainFeatures(TerrainObject.Feature.LAKE, 0.6f, 100f);
-        generateTerrainFeatures(TerrainObject.Feature.ROCK, 0.75f, 200f);
-        generateTerrainFeatures(TerrainObject.Feature.TREE, 0.65f, 200f);
+        generateTerrainFeatures(TerrainObject.Feature.ROCK, 0.75f, 150f);
+        generateTerrainFeatures(TerrainObject.Feature.TREE, 0.65f, 150f);
 
         // Places at least one lake tile down on the map - at a randomly generated location - if none were generated in the perlin noise
         if (terrain.size == 0) {
