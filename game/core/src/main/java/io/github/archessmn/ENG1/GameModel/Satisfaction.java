@@ -40,16 +40,30 @@ public class Satisfaction {
     public static final float EVENTS_SCORE_CAP = 30;
     public static final float BUILDING_VALUES_SCORE_CAP = 20;
 
-    // Some of these scores need/have more variables to help calculate them:
-
-    // These help with buildingDistancesScore
-
-
-
     // The map currently is 11x9 tiles
     private static final int GRID_WIDTH = 11;
     private static final int GRID_HEIGHT = 9;
 
+    // The coverage goal is the target for what % of the map should have a building on it.
+    private static final float MAP_COVERAGE_GOAL = 0.35f;
+    // The coverage allowance gives a set leeway for the coverage, so that getting the maximum satisfaction isn't
+    // practically impossible.
+    private static final float MAP_COVERAGE_ALLOWANCE = 0.05f;
+    // The lower limit, is the lowest number of tiles required to be filled with a building, for the user to be able to
+    // get the maximum satisfaction score.
+    private static final int LOWER_BUILDING_LIMIT = (int) Math.floor((MAP_COVERAGE_GOAL - MAP_COVERAGE_ALLOWANCE) *
+                                                                        GRID_WIDTH * GRID_HEIGHT);
+    // The upper limit, is the highest number of tiles allowed to be filled with a building, for the user to be able to
+    // get the maximum satisfaction score.
+    private static final int UPPER_BUILDING_LIMIT = (int) Math.ceil((MAP_COVERAGE_GOAL + MAP_COVERAGE_ALLOWANCE) *
+                                                                        GRID_WIDTH * GRID_HEIGHT);
+    // The lower limit discourages players from placing one singular cluster of buildings, while the upper limit
+    // discourages the player from placing buildings in as many tiles as possible.
+
+
+    // Some of these scores need/have more variables to help calculate them:
+
+    // These help with buildingDistancesScore
 
     // The maximum possible distance between two buildings, is the diagonal distance 1 less in both x and y,
     // than the number of tiles on the map
@@ -62,7 +76,7 @@ public class Satisfaction {
     // (n *(n+1)) / 2 We divide the total percent allowed for average distances (40) by this number
     float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) useLength * ((float) useLength + 1)) / 2);
 
-    private static final float THRESHOLD = 0.1f;
+    private static final float THRESHOLD = 0.4f;
 
     // Allows the user to get the maximum satisfaction for a building use pair, if the pairs' average distance is
     // under 60% of the maximum possible distance. Anything over will give progressively less satisfaction.
@@ -164,6 +178,9 @@ public class Satisfaction {
         eventsScore = applyCap(eventsScore, EVENTS_SCORE_CAP);
         buildingValuesScore = applyCap(buildingValuesScore, BUILDING_VALUES_SCORE_CAP);
 
+
+
+
         // If no accommodation buildings are placed yet, the buildingDistancesScore is ignored.
         // (Since no one lives on campus to care about it)
         if (world.getBuildingUseCounts().get(Use.ACCOMMODATION) == 0) {
@@ -172,7 +189,35 @@ public class Satisfaction {
         else {
             satisfactionScore = buildingDistancesScore + completionScore + eventsScore + buildingValuesScore;
         }
+
+
+        int number_of_buildings = world.buildings.size;
+
+        // If lower <= #buildings <= upper, then both Lower -#buildings and #buildings - upper, will be >=1, being
+        // equal to 1 when number_of_buildings is equal to one of the limits.
+        // If the number of buildings is below the lower limit, then lower - #buildings will be > 0, this would make
+        // 1 - (lower - #buildings) / goal < 1, it would also mean #buildings - upper < 0, and therefore
+        // 1 - (#buildings - upper) / goal > 1, so the min is 1 - (lower - #buildings) lower.
+        // The opposite will occur when #buildings > upper.
+        // So by taking the min of these two calculations, we always get the correct multiplier.
+        // If we then take the min of this and 1, it means when both calculations are >1 or one is >1 and the other =1,
+        // The multiplier will be set to one, i.e. when lower <= #buildings <= upper
+
+        if (!(number_of_buildings >= LOWER_BUILDING_LIMIT && number_of_buildings <= UPPER_BUILDING_LIMIT)) {
+            satisfactionScore *= Math.min(Math.max(1 -( (float) (LOWER_BUILDING_LIMIT - number_of_buildings) / MAP_COVERAGE_GOAL),
+                1 - ((float) (number_of_buildings - UPPER_BUILDING_LIMIT) / MAP_COVERAGE_GOAL)), 1);
+        }
+
+
+
+        // Short version: If the number of buildings is in the allowed range, then the max score is achievable. If the
+        // number of buildings is below that range, the amount of buildings it's below by divided by the coverage goal,
+        // is the % of the score the user can't access, the opposite occurs when the #buildings is above the range.
+        // Example: Goal = 35 buildings, lower limit = 30, upper limit = 40, buildings placed = 25:
+        // min(min(1-(30-25)/35,1-(25-40)/35),1) = min(min(1-1/7,1--3/7),1) = min(min(6/7,10/7),1) = min(6/7,1) = 6/7
+
     }
+
 
 
     /**
@@ -182,6 +227,9 @@ public class Satisfaction {
      * @return the capped score
      */
     private float applyCap(double score, float cap) {
+        if (score <= 0) {
+            return 0;
+        }
         return (float) Math.min(score, cap);
     }
 
@@ -372,7 +420,7 @@ public class Satisfaction {
     /**
      * For each building placed the completionScore is incremented by completionScorePerUse
      */
-    public float updateCompletionScore() {
+    public void updateCompletionScore() {
 
         // Reset completionScore to 0, and add the completionScorePerUse for each use > 0
         // Unfortunately this calculation cannot be skipped once the COMPLETION_SCORE_CAP is reached, as building
@@ -383,46 +431,35 @@ public class Satisfaction {
                 completionScore += completionScorePerUse;
             }
         }
-        return completionScore;
     }
 
+
+    public void eventScoreHelper(GameEvent event, TerrainObject.Feature feature, Use use, float scoreBonus) {
+        if (world.getActiveEvents()[event.ordinal()] != null) {
+            for (BuildingObject building : world.getBuildingsNearTerrain(feature)) {
+                for (Use buildingUse : building.getUses()) {
+                    if (buildingUse == use) {
+                        eventsScore += scoreBonus;
+                    }
+                }
+            }
+        }
+    }
+
+
     public void updateEventScore() {
+
         // Events
-        if (world.getActiveEvents()[GameEvent.TreeHype.ordinal()] != null) {
-            for (BuildingObject building : world.getBuildingsNearTerrain(TerrainObject.Feature.TREE)) {
-                for (Use use : building.getUses()) {
-                    if (use == Use.ACCOMMODATION) {
-                        eventsScore += 0.05f;
-                    }
-                }
-            }
-        }
-        if (world.getActiveEvents()[GameEvent.LectureLake.ordinal()] != null) {
-            for (BuildingObject building : world.getBuildingsNearTerrain(TerrainObject.Feature.LAKE)) {
-                for (Use use : building.getUses()) {
-                    if (use == Use.TEACHING) {
-                        eventsScore += 0.05f;
-                    }
-                }
-            }
-        }
-        if (world.getActiveEvents()[GameEvent.RockClimbing.ordinal()] != null) {
-            for (BuildingObject building : world.getBuildingsNearTerrain(TerrainObject.Feature.ROCK)) {
-                for (Use use : building.getUses()) {
-                    if (use == Use.ACCOMMODATION) {
-                        eventsScore += 0.05f;
-                    }
-                }
-            }
-        }
+        eventScoreHelper(GameEvent.TreeHype, TerrainObject.Feature.TREE, Use.ACCOMMODATION, 5f );
+        eventScoreHelper(GameEvent.LectureLake, TerrainObject.Feature.LAKE, Use.TEACHING, 5f );
+        eventScoreHelper(GameEvent.RockClimbing, TerrainObject.Feature.ROCK, Use.ACCOMMODATION, 5f );
+
         if (world.getActiveEvents()[GameEvent.AColdWinter.ordinal()] != null) {
             eventsScore *= 0.8f;
         }
         if (world.getActiveEvents()[GameEvent.LongBoiSighting.ordinal()] != null) {
-            eventsScore = 0.3f; // This event is very powerful, but only lasts a short time
+            eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }
-        if (eventsScore > 0.3f)
-            eventsScore = 0.3f;
     }
 
 }
