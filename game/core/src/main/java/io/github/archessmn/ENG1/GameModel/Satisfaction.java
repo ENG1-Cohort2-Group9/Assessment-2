@@ -151,6 +151,24 @@ public class Satisfaction {
     }
 
     /**
+     * Gets the satisfaction score break-down
+     * Return order: [0] Building Distance | [1] Completion | [2] Events | [3] Building Values
+     * @return An array with the 4 summary variables.
+     */
+    public float[] getSatisfactionScoreBreakdown() {
+        return new float[] { buildingDistancesScore, completionScore, eventsScore, buildingValuesScore };
+    }
+
+    /**
+     * Gets the cap for all satisfaction scores
+     * Return order: [0] Building Distance | [1] Completion | [2] Events | [3] Building Values
+     * @return An array with the 4 summary variable caps.
+     */
+    public float[] getSatisfactionScoreCap() {
+        return new float[] { BUILDING_DISTANCES_SCORE_CAP, COMPLETION_SCORE_CAP, EVENTS_SCORE_CAP, BUILDING_VALUES_SCORE_CAP };
+    }
+
+    /**
      * Updates satisfactionScore by assigning it to the sum of its components.
      */
     public void calculateSatisfactionScore() {
