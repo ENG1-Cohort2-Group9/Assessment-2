@@ -149,7 +149,7 @@ public class GameScreen implements Screen {
         assetManager.load("gym.png", Texture.class);
         assetManager.load("halls.png", Texture.class);
         assetManager.load("lecturehall.png", Texture.class);
-        assetManager.load("offices.png", Texture.class);
+        assetManager.load("pub.png", Texture.class);
         assetManager.load("piazza.png", Texture.class);
         assetManager.load("lake.jpg", Texture.class);
         assetManager.load("rock.png", Texture.class);
