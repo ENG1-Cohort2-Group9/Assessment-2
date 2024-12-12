@@ -44,8 +44,6 @@ public class Satisfaction {
 
     // These help with buildingDistancesScore
 
-
-
     // The map currently is 11x9 tiles
     private static final int GRID_WIDTH = 11;
     private static final int GRID_HEIGHT = 9;
@@ -62,7 +60,7 @@ public class Satisfaction {
     // (n *(n+1)) / 2 We divide the total percent allowed for average distances (40) by this number
     float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) useLength * ((float) useLength + 1)) / 2);
 
-    private static final float THRESHOLD = 0.1f;
+    private static final float THRESHOLD = 0.2f;
 
     // Allows the user to get the maximum satisfaction for a building use pair, if the pairs' average distance is
     // under 60% of the maximum possible distance. Anything over will give progressively less satisfaction.
@@ -368,43 +366,33 @@ public class Satisfaction {
         return completionScore;
     }
 
+
+    public void eventScoreHelper(GameEvent event, TerrainObject.Feature feature, Use use, float scoreBonus) {
+        if (world.getActiveEvents()[event.ordinal()] != null) {
+            for (BuildingObject building : world.getBuildingsNearTerrain(feature)) {
+                for (Use buildingUse : building.getUses()) {
+                    if (buildingUse == use) {
+                        eventsScore += scoreBonus;
+                    }
+                }
+            }
+        }
+    }
+
+
     public void updateEventScore() {
+
         // Events
-        if (world.getActiveEvents()[GameEvent.TreeHype.ordinal()] != null) {
-            for (BuildingObject building : world.getBuildingsNearTerrain(TerrainObject.Feature.TREE)) {
-                for (Use use : building.getUses()) {
-                    if (use == Use.ACCOMMODATION) {
-                        eventsScore += 0.05f;
-                    }
-                }
-            }
-        }
-        if (world.getActiveEvents()[GameEvent.LectureLake.ordinal()] != null) {
-            for (BuildingObject building : world.getBuildingsNearTerrain(TerrainObject.Feature.LAKE)) {
-                for (Use use : building.getUses()) {
-                    if (use == Use.TEACHING) {
-                        eventsScore += 0.05f;
-                    }
-                }
-            }
-        }
-        if (world.getActiveEvents()[GameEvent.RockClimbing.ordinal()] != null) {
-            for (BuildingObject building : world.getBuildingsNearTerrain(TerrainObject.Feature.ROCK)) {
-                for (Use use : building.getUses()) {
-                    if (use == Use.ACCOMMODATION) {
-                        eventsScore += 0.05f;
-                    }
-                }
-            }
-        }
+        eventScoreHelper(GameEvent.TreeHype, TerrainObject.Feature.TREE, Use.ACCOMMODATION, 5f );
+        eventScoreHelper(GameEvent.LectureLake, TerrainObject.Feature.LAKE, Use.TEACHING, 5f );
+        eventScoreHelper(GameEvent.RockClimbing, TerrainObject.Feature.ROCK, Use.ACCOMMODATION, 5f );
+
         if (world.getActiveEvents()[GameEvent.AColdWinter.ordinal()] != null) {
             eventsScore *= 0.8f;
         }
         if (world.getActiveEvents()[GameEvent.LongBoiSighting.ordinal()] != null) {
-            eventsScore = 0.3f; // This event is very powerful, but only lasts a short time
+            eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }
-        if (eventsScore > 0.3f)
-            eventsScore = 0.3f;
     }
 
 }
