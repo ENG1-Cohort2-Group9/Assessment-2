@@ -76,7 +76,7 @@ public class Satisfaction {
     // (n *(n+1)) / 2 We divide the total percent allowed for average distances (40) by this number
     float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) useLength * ((float) useLength + 1)) / 2);
 
-    private static final float THRESHOLD = 0.2f;
+    private static final float THRESHOLD = 0.4f;
 
     // Allows the user to get the maximum satisfaction for a building use pair, if the pairs' average distance is
     // under 60% of the maximum possible distance. Anything over will give progressively less satisfaction.
@@ -178,6 +178,9 @@ public class Satisfaction {
         eventsScore = applyCap(eventsScore, EVENTS_SCORE_CAP);
         buildingValuesScore = applyCap(buildingValuesScore, BUILDING_VALUES_SCORE_CAP);
 
+
+
+
         // If no accommodation buildings are placed yet, the buildingDistancesScore is ignored.
         // (Since no one lives on campus to care about it)
         if (world.getBuildingUseCounts().get(Use.ACCOMMODATION) == 0) {
@@ -199,8 +202,13 @@ public class Satisfaction {
         // So by taking the min of these two calculations, we always get the correct multiplier.
         // If we then take the min of this and 1, it means when both calculations are >1 or one is >1 and the other =1,
         // The multiplier will be set to one, i.e. when lower <= #buildings <= upper
-        satisfactionScore *= Math.min(Math.min(1 -( (float) (LOWER_BUILDING_LIMIT - number_of_buildings) / MAP_COVERAGE_GOAL),
-            1 - ((float) (number_of_buildings - UPPER_BUILDING_LIMIT) / MAP_COVERAGE_GOAL)), 1);
+
+        if (!(number_of_buildings >= LOWER_BUILDING_LIMIT && number_of_buildings <= UPPER_BUILDING_LIMIT)) {
+            satisfactionScore *= Math.min(Math.max(1 -( (float) (LOWER_BUILDING_LIMIT - number_of_buildings) / MAP_COVERAGE_GOAL),
+                1 - ((float) (number_of_buildings - UPPER_BUILDING_LIMIT) / MAP_COVERAGE_GOAL)), 1);
+        }
+
+
 
         // Short version: If the number of buildings is in the allowed range, then the max score is achievable. If the
         // number of buildings is below that range, the amount of buildings it's below by divided by the coverage goal,
@@ -219,6 +227,9 @@ public class Satisfaction {
      * @return the capped score
      */
     private float applyCap(double score, float cap) {
+        if (score <= 0) {
+            return 0;
+        }
         return (float) Math.min(score, cap);
     }
 
