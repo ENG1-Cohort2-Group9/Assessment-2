@@ -103,7 +103,7 @@ public class GameScreen implements Screen {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 if (selectedAsset.isBuilding) {
-                    world.destroyBuilding((BuildingObject) selectedAsset);
+                    world.demolishBuilding((BuildingObject) selectedAsset);
                 }
                 else {
                     world.destroyTerrain((TerrainObject) selectedAsset);
@@ -260,7 +260,7 @@ public class GameScreen implements Screen {
         // Ends the game when the timer exceeds 5 minutes.
         gameEnded = world.getGameEnded();
         if (gameEnded) {
-            world.saveScore(uniName, world.satisfactionScore, "scores.txt");
+            world.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
         }
 
         stage.act(delta);
