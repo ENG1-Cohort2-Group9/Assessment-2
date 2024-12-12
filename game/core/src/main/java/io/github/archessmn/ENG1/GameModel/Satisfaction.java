@@ -40,7 +40,6 @@ public class Satisfaction {
     public static final float EVENTS_SCORE_CAP = 30;
     public static final float BUILDING_VALUES_SCORE_CAP = 20;
 
-    // Some of these scores need/have more variables to help calculate them:
 
     // These help with buildingDistancesScore
 
@@ -48,6 +47,7 @@ public class Satisfaction {
     private static final int GRID_WIDTH = 11;
     private static final int GRID_HEIGHT = 9;
 
+    // The coverage goal is the target for what % of the map should have a building on it.
 
     // The maximum possible distance between two buildings, is the diagonal distance 1 less in both x and y,
     // than the number of tiles on the map
@@ -152,6 +152,7 @@ public class Satisfaction {
         else {
             satisfactionScore = buildingDistancesScore + completionScore + eventsScore + buildingValuesScore;
         }
+
     }
 
 
@@ -352,7 +353,6 @@ public class Satisfaction {
     /**
      * For each building placed the completionScore is incremented by completionScorePerUse
      */
-    public float updateCompletionScore() {
 
         // Reset completionScore to 0, and add the completionScorePerUse for each use > 0
         // Unfortunately this calculation cannot be skipped once the COMPLETION_SCORE_CAP is reached, as building
@@ -363,7 +363,6 @@ public class Satisfaction {
                 completionScore += completionScorePerUse;
             }
         }
-        return completionScore;
     }
 
 
