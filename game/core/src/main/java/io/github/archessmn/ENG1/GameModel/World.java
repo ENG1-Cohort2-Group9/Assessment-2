@@ -1,5 +1,6 @@
 package io.github.archessmn.ENG1.GameModel;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Objects.BuildingObject;
 import io.github.archessmn.ENG1.GameModel.Objects.MapObject;
@@ -10,8 +11,6 @@ import io.github.archessmn.ENG1.GameModel.Objects.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_HEIGHT;
-import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_WIDTH;
 import java.util.Random;
 import java.io.*;
 import java.util.*;
@@ -345,6 +344,7 @@ public class World {
         // Events
         float eventSatisfactionScore = 0f;
         if (activeEvents[GameEvent.TreeHype.ordinal()] != null) {
+            // Accommodation near trees is more effective
             for (BuildingObject building : getBuildingsNearTerrain(TerrainObject.Feature.TREE)) {
                 for (Use use : building.getUses()) {
                     if (use == Use.ACCOMMODATION) {
@@ -353,8 +353,16 @@ public class World {
                 }
             }
         }
-        if (activeEvents[GameEvent.LectureLake.ordinal()] != null) {
+        if (activeEvents[GameEvent.LectureView.ordinal()] != null) {
+            // Teaching near lakes and trees is more effective
             for (BuildingObject building : getBuildingsNearTerrain(TerrainObject.Feature.LAKE)) {
+                for (Use use : building.getUses()) {
+                    if (use == Use.TEACHING) {
+                        eventSatisfactionScore += 0.05f;
+                    }
+                }
+            }
+            for (BuildingObject building : getBuildingsNearTerrain(TerrainObject.Feature.TREE)) {
                 for (Use use : building.getUses()) {
                     if (use == Use.TEACHING) {
                         eventSatisfactionScore += 0.05f;
@@ -363,6 +371,7 @@ public class World {
             }
         }
         if (activeEvents[GameEvent.RockClimbing.ordinal()] != null) {
+            // Accommodation near rocks is more effective
             for (BuildingObject building : getBuildingsNearTerrain(TerrainObject.Feature.ROCK)) {
                 for (Use use : building.getUses()) {
                     if (use == Use.ACCOMMODATION) {
@@ -371,8 +380,29 @@ public class World {
                 }
             }
         }
-        if (activeEvents[GameEvent.AColdWinter.ordinal()] != null) {
-            eventSatisfactionScore *= 0.8f;
+        if (activeEvents[GameEvent.GymHype.ordinal()] != null) {
+            // Gyms are more effective
+            for (BuildingObject building : buildings) {
+                if (building instanceof GymBuilding) {
+                    eventSatisfactionScore += 0.05f;
+                }
+            }
+        }
+        if (activeEvents[GameEvent.SportsWon.ordinal()] != null) {
+            // Permanent boost to satisfaction
+            eventSatisfactionScore += 0.1f;
+        }
+        if (activeEvents[GameEvent.TooMuchTeaching.ordinal()] != null) {
+            // Reduces overall event satisfaction
+            eventSatisfactionScore -= 0.1f;
+        }
+        if (activeEvents[GameEvent.TooManyPubs.ordinal()] != null) {
+            // Reduces overall event satisfaction
+            eventSatisfactionScore -= 0.1f;
+        }
+        if (activeEvents[GameEvent.TooMuchHousing.ordinal()] != null) {
+            // Reduces overall event satisfaction
+            eventSatisfactionScore -= 0.1f;
         }
         if (activeEvents[GameEvent.LongBoiSighting.ordinal()] != null) {
             eventSatisfactionScore = 0.3f; // This event is very powerful, but only lasts a short time
@@ -659,20 +689,32 @@ public class World {
                     destroyBuilding(getRandomBuilding(buildingsNearTrees));
                 }
                 break;
-            case AColdWinter:
-                addActiveEvent(GameEvent.AColdWinter, 45);
-                break;
             case GooseAttack:
                 // Has no effect
                 break;
-            case LectureLake:
-                addActiveEvent(GameEvent.LectureLake, GAME_LENGTH_SECONDS + 1);
+            case LectureView:
+                addActiveEvent(GameEvent.LectureView, GAME_LENGTH_SECONDS + 1);
                 break;
             case RockClimbing:
                 addActiveEvent(GameEvent.RockClimbing, 120);
                 break;
             case LongBoiSighting:
                 addActiveEvent(GameEvent.LongBoiSighting, 10);
+                break;
+            case GymHype:
+                addActiveEvent(GameEvent.GymHype, 120);
+                break;
+            case SportsWon:
+                addActiveEvent(GameEvent.SportsWon, GAME_LENGTH_SECONDS + 1);
+                break;
+            case TooMuchHousing:
+                addActiveEvent(GameEvent.TooMuchHousing, GAME_LENGTH_SECONDS + 1);
+                break;
+            case TooManyPubs:
+                addActiveEvent(GameEvent.TooManyPubs, GAME_LENGTH_SECONDS + 1);
+                break;
+            case TooMuchTeaching:
+                addActiveEvent(GameEvent.TooMuchTeaching, GAME_LENGTH_SECONDS + 1);
                 break;
             default:
                 throw new RuntimeException("Unknown event type: " + event);
