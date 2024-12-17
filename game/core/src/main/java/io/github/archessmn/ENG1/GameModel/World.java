@@ -315,25 +315,12 @@ public class World {
         }
     }
 
-
     /**
-     * Utility method to check if a building overlaps with any others in the world
-     * after being snapped to the grid based on its current location
-     * @param overlapObject The building to check for overlaps with others
-     * @return true if the building overlaps with another, else false
+     * Gets the current game time.
+     * @return The value of currentTime.
      */
-    public boolean doesObjectOverlap(MapObject overlapObject) {
-        GridCoordTuple gridCoords = overlapObject.getGridCoords();
-
-        for (MapObject mapObject : mapObjects) {
-            if (!mapObject.equals(overlapObject)) {
-                if (mapObject.gridX == gridCoords.x && mapObject.gridY == gridCoords.y) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+    public float getCurrentTime() {
+        return currentTime;
     }
 
     public boolean getGameEnded() {
@@ -654,13 +641,62 @@ public class World {
         return completionScore;
     }
 
+    /**
+     * Mark a building as under construction indefinitely
+     */
+    public void closeBuilding(BuildingObject building) {
+        closeBuilding(building, GAME_LENGTH_SECONDS + 1);
+    }
 
     /**
-     * Gets the current game time.
-     * @return The value of currentTime.
+     * Mark a building as under construction for {@code timeSeconds} seconds
      */
-    public float getCurrentTime() {
-        return currentTime;
+    public void closeBuilding(BuildingObject building, float timeSeconds) {
+        if (building.built) {
+            for (Use use : building.uses) {
+                buildingUseCounts.put(use, buildingUseCounts.get(use) - 1);
+            }
+        }
+
+        building.buildingCompletionTime = currentTime + timeSeconds;
+        building.built = false;
+        updateEventScore();
+    }
+
+    public void destroyBuilding(BuildingObject building) {
+        // Check if this changes which events can happen
+        // Additional check (left hand side of &&) so we don't have to run the longer check every time
+        if (isBuildingNearTerrain(building, TerrainObject.Feature.LAKE) && getBuildingsNearTerrain(TerrainObject.Feature.LAKE).size == 1) {
+            eventManager.disableEvent(GameEvent.Flooding);
+        }
+        if (isBuildingNearTerrain(building, TerrainObject.Feature.TREE) && getBuildingsNearTerrain(TerrainObject.Feature.TREE).size == 1) {
+            eventManager.disableEvent(GameEvent.TreeDamage);
+        }
+
+        gridLookup[building.gridX][building.gridY] = null;
+        buildings.removeValue(building, true);
+        mapObjects.removeValue(building, true);
+        if (building.built) {
+            for (Use use : building.uses) {
+                buildingUseCounts.put(use, buildingUseCounts.get(use) - 1);
+            }
+        }
+    }
+
+    public void destroyTerrain(TerrainObject terrainObject) {
+        // EVENT CHECKS TO BE COMPLETED HERE
+
+        gridLookup[terrainObject.gridX][terrainObject.gridY] = null;
+        terrain.removeValue(terrainObject, true);
+        mapObjects.removeValue(terrainObject, true);
+
+        updateEventScore();
+    }
+
+    public BuildingObject getRandomBuilding(Array<BuildingObject> buildings) {
+        if (buildings.size == 0)
+            return null;
+        return buildings.get(random.nextInt(buildings.size));
     }
 
     public void handleEvent(GameEvent event) {
@@ -722,24 +758,12 @@ public class World {
     }
 
     /**
-     * Mark a building as under construction indefinitely
+     * Adds an effect to the current game for {@code timeSeconds} seconds
+     * @param event The event associated with the effect
      */
-    public void closeBuilding(BuildingObject building) {
-        closeBuilding(building, GAME_LENGTH_SECONDS + 1);
-    }
-
-    /**
-     * Mark a building as under construction for {@code timeSeconds} seconds
-     */
-    public void closeBuilding(BuildingObject building, float timeSeconds) {
-        if (building.built) {
-            for (Use use : building.uses) {
-                buildingUseCounts.put(use, buildingUseCounts.get(use) - 1);
-            }
-        }
-
-        building.buildingCompletionTime = currentTime + timeSeconds;
-        building.built = false;
+    public void addActiveEvent(GameEvent event, float timeSeconds) {
+        activeEvents[event.ordinal()] = event;
+        activeEventEndTime[event.ordinal()] = currentTime + timeSeconds;
         updateEventScore();
     }
 
@@ -749,52 +773,6 @@ public class World {
     public void modifyEfficiency(BuildingObject building, float multiplier, float timeSeconds) {
         activeModifiers.add(new EfficiencyModifier(currentTime + timeSeconds, multiplier, building));
         building.setEfficiency(building.getEfficiency() * multiplier);
-        updateEventScore();
-    }
-
-    public void destroyBuilding(BuildingObject building) {
-        // Check if this changes which events can happen
-        // Additional check (left hand side of &&) so we don't have to run the longer check every time
-        if (isBuildingNearTerrain(building, TerrainObject.Feature.LAKE) && getBuildingsNearTerrain(TerrainObject.Feature.LAKE).size == 1) {
-            eventManager.disableEvent(GameEvent.Flooding);
-        }
-        if (isBuildingNearTerrain(building, TerrainObject.Feature.TREE) && getBuildingsNearTerrain(TerrainObject.Feature.TREE).size == 1) {
-            eventManager.disableEvent(GameEvent.TreeDamage);
-        }
-
-        gridLookup[building.gridX][building.gridY] = null;
-        buildings.removeValue(building, true);
-        mapObjects.removeValue(building, true);
-        if (building.built) {
-            for (Use use : building.uses) {
-                buildingUseCounts.put(use, buildingUseCounts.get(use) - 1);
-            }
-        }
-    }
-
-    public void destroyTerrain(TerrainObject terrainObject) {
-        // EVENT CHECKS TO BE COMPLETED HERE
-
-        gridLookup[terrainObject.gridX][terrainObject.gridY] = null;
-        terrain.removeValue(terrainObject, true);
-        mapObjects.removeValue(terrainObject, true);
-
-        updateEventScore();
-    }
-
-    public BuildingObject getRandomBuilding(Array<BuildingObject> buildings) {
-        if (buildings.size == 0)
-            return null;
-        return buildings.get(random.nextInt(buildings.size));
-    }
-
-    /**
-     * Adds an effect to the current game for {@code timeSeconds} seconds
-     * @param event The event associated with the effect
-     */
-    public void addActiveEvent(GameEvent event, float timeSeconds) {
-        activeEvents[event.ordinal()] = event;
-        activeEventEndTime[event.ordinal()] = currentTime + timeSeconds;
         updateEventScore();
     }
 
@@ -812,6 +790,26 @@ public class World {
         }
 
         return foundBuildings;
+    }
+
+    /**
+     * Utility method to check if a building overlaps with any others in the world
+     * after being snapped to the grid based on its current location
+     * @param overlapObject The building to check for overlaps with others
+     * @return true if the building overlaps with another, else false
+     */
+    public boolean doesObjectOverlap(MapObject overlapObject) {
+        GridCoordTuple gridCoords = overlapObject.getGridCoords();
+
+        for (MapObject mapObject : mapObjects) {
+            if (!mapObject.equals(overlapObject)) {
+                if (mapObject.gridX == gridCoords.x && mapObject.gridY == gridCoords.y) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
