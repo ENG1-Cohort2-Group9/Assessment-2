@@ -1,5 +1,6 @@
 package io.github.archessmn.ENG1.GameModel;
 
+import com.badlogic.gdx.math.MathUtils;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
 public class Satisfaction {
@@ -448,18 +449,54 @@ public class Satisfaction {
 
 
     public void updateEventScore() {
+        eventsScore = 0f;
 
-        // Events
         eventScoreHelper(GameEvent.TreeHype, TerrainObject.Feature.TREE, Use.ACCOMMODATION, 5f );
-        eventScoreHelper(GameEvent.LectureLake, TerrainObject.Feature.LAKE, Use.TEACHING, 5f );
         eventScoreHelper(GameEvent.RockClimbing, TerrainObject.Feature.ROCK, Use.ACCOMMODATION, 5f );
-
-        if (world.getActiveEvents()[GameEvent.AColdWinter.ordinal()] != null) {
-            eventsScore *= 0.8f;
+        if (world.getActiveEvents()[GameEvent.LectureView.ordinal()] != null) {
+            // Teaching near lakes and trees is more effective
+            for (BuildingObject building : world.getBuildingsNearTerrain(TerrainObject.Feature.LAKE)) {
+                for (Use use : building.getUses()) {
+                    if (use == Use.TEACHING) {
+                        eventsScore += 5f;
+                    }
+                }
+            }
+            for (BuildingObject building : world.getBuildingsNearTerrain(TerrainObject.Feature.TREE)) {
+                for (Use use : building.getUses()) {
+                    if (use == Use.TEACHING) {
+                        eventsScore += 5f;
+                    }
+                }
+            }
+        }
+        if (world.getActiveEvents()[GameEvent.GymHype.ordinal()] != null) {
+            // Gyms are more effective
+            for (BuildingObject building : world.buildings) {
+                if (building instanceof GymBuilding) {
+                    eventsScore += 5f;
+                }
+            }
+        }
+        if (world.getActiveEvents()[GameEvent.SportsWon.ordinal()] != null) {
+            // Permanent boost to satisfaction
+            eventsScore += 10f;
+        }
+        if (world.getActiveEvents()[GameEvent.TooMuchTeaching.ordinal()] != null) {
+            // Reduces overall event satisfaction
+            eventsScore -= 5f;
+        }
+        if (world.getActiveEvents()[GameEvent.TooManyPubs.ordinal()] != null) {
+            // Reduces overall event satisfaction
+            eventsScore -= 5f;
+        }
+        if (world.getActiveEvents()[GameEvent.TooMuchHousing.ordinal()] != null) {
+            // Reduces overall event satisfaction
+            eventsScore -= 5f;
         }
         if (world.getActiveEvents()[GameEvent.LongBoiSighting.ordinal()] != null) {
             eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }
+        eventsScore = MathUtils.clamp(eventsScore, 0f, EVENTS_SCORE_CAP);
     }
-
 }
