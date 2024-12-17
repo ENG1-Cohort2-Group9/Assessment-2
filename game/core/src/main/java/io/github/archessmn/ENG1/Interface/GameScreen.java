@@ -20,7 +20,10 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.archessmn.ENG1.GameModel.*;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
 import java.util.HashMap;
+import java.util.Map;
+
 import static java.lang.Math.floorDiv;
 
 public class GameScreen implements Screen {
@@ -57,7 +60,6 @@ public class GameScreen implements Screen {
 
     Boolean paused = true;
     Boolean gameEnded = false;
-    Boolean fullScreen = false;
 
     private Stage stage;
     private Table sideMenu;
@@ -65,10 +67,12 @@ public class GameScreen implements Screen {
     private Label timerLabel;
     private Label selectedBuildingLabal;
     private TextButton actionButton;
-    private final HashMap<Use, Label> buildingUseCountLabels = new HashMap<>();
-    private final HashMap<Use, Label> buildingUseNameLabels = new HashMap<>();
+    private final Array<Label> satisfactionCountLabel = new Array<>();
+    private final Array<Label> satisfactionVarLabel = new Array<>();
     private float timeEventShownAt = -10f;
     private GameEvent currentEvent = null;
+
+    float[] satisfactionScoreCaps;
 
     final ScreenManager game;
     final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
@@ -103,7 +107,7 @@ public class GameScreen implements Screen {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 if (selectedAsset.isBuilding) {
-                    world.destroyBuilding((BuildingObject) selectedAsset);
+                    world.demolishBuilding((BuildingObject) selectedAsset);
                 }
                 else {
                     world.destroyTerrain((TerrainObject) selectedAsset);
@@ -111,13 +115,18 @@ public class GameScreen implements Screen {
             }
         });
 
-        for (Use buildingUse : Use.values()) {
-            String useName = buildingUse.toString().charAt(0) + buildingUse.toString().substring(1).toLowerCase();
-            buildingUseNameLabels.put(buildingUse, new Label(useName + " buildings:", labelStyle));
-        }
-        for (Use buildingUse : Use.values()) {
-            buildingUseCountLabels.put(buildingUse, new Label("0", labelStyle));
-        }
+
+        satisfactionVarLabel.add(new Label("Building Distance:", labelStyle));
+        satisfactionVarLabel.add(new Label("Campus Completion:", labelStyle));
+        satisfactionVarLabel.add(new Label("Event Response:", labelStyle));
+        satisfactionVarLabel.add(new Label("Building Diversity:", labelStyle));
+
+        satisfactionCountLabel.add(new Label("000%", labelStyle));
+        satisfactionCountLabel.add(new Label("000%", labelStyle));
+        satisfactionCountLabel.add(new Label("000%", labelStyle));
+        satisfactionCountLabel.add(new Label("000%", labelStyle));
+
+        satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCap();
 
 
         stage = new Stage();
@@ -133,16 +142,17 @@ public class GameScreen implements Screen {
 
         rootTable.right().add(sideMenu).expandY().fillY().width(300);
 
-        sideMenu.add(countDownLabel).row();
-        sideMenu.add(timerLabel).row();
-        for (Use buildingUse : Use.values()) {
-            sideMenu.add(buildingUseNameLabels.get(buildingUse)).left();
-            sideMenu.add(buildingUseCountLabels.get(buildingUse)).right().row();
+        sideMenu.add(countDownLabel).expandX().center().row();
+        sideMenu.add(timerLabel).expandX().center().row();
+        sideMenu.add(new Label("\nCAMPUS SATISFACTION SUMMARY", labelStyle)).left().row();
+        for (int i = 0; i < 4; i++) {
+            sideMenu.add(satisfactionVarLabel.get(i)).left();
+            sideMenu.add(satisfactionCountLabel.get(i)).expandX().right().row();
         }
-        sideMenu.add(new Label("\nSelection:", labelStyle)).left().row();
+        sideMenu.add(new Label("\nSELECTED TILE", labelStyle)).left().row();
         sideMenu.add(selectedBuildingLabal).left().top().row();
         sideMenu.add(actionButton).left().top().row();
-        sideMenu.add(new Label("Gym  Halls  Lecture Hall  Pub     Piazza", labelStyle)).expandX().expandY().bottom();
+        sideMenu.add(new Label("Gym  Halls  Lecture Hall  Pub  Piazza", labelStyle)).expandX().expandY().bottom();
 
         assetManager = new AssetManager();
 
@@ -186,9 +196,6 @@ public class GameScreen implements Screen {
         blockRenderer = new ShapeRenderer();
 
         buildingRectangle = new Rectangle();
-
-        // defaults the screen to be minimised on launch
-        fullScreen = false;
     }
 
     @Override
@@ -260,7 +267,7 @@ public class GameScreen implements Screen {
         // Ends the game when the timer exceeds 5 minutes.
         gameEnded = world.getGameEnded();
         if (gameEnded) {
-            world.saveScore(uniName, world.satisfactionScore, "scores.txt");
+            world.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
         }
 
         stage.act(delta);
@@ -299,11 +306,6 @@ public class GameScreen implements Screen {
         drawSideMenu();
 
         batch.end();
-
-        for (Use use : Use.values()) {
-            buildingUseCountLabels.get(use).setText(world.buildingUseCounts.get(use));
-        }
-
         stage.draw();
     }
 
@@ -322,7 +324,7 @@ public class GameScreen implements Screen {
         }
     }
 
-    private static void drawObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
+    private void drawObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
         Sprite sprite = new Sprite(assetManager.get(mapObject.spriteName, Texture.class));
         if (mapObject.isBuilding) {
             BuildingObject buildingObject = (BuildingObject) mapObject;
@@ -356,7 +358,7 @@ public class GameScreen implements Screen {
      * Draws a grid into the viewport using the {@link ShapeRenderer} passed to it.
      * @param gridRenderer The {@link ShapeRenderer} used to draw the grid.
      */
-    public static void drawGrid(ShapeRenderer gridRenderer) {
+    public void drawGrid(ShapeRenderer gridRenderer) {
         gridRenderer.begin(ShapeRenderer.ShapeType.Line);
 
         gridRenderer.setColor(new Color(0x5b7e13ff));
@@ -387,6 +389,16 @@ public class GameScreen implements Screen {
             countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":" + String.format("%02d", 60 - (int) gameTime % 60));
         }
 
+        // Update the satisfaction summary section
+        float[] scores = world.satisfaction.getSatisfactionScoreBreakdown();
+        for (int i = 0; i < scores.length; i++) {
+            float score = (scores[i] / satisfactionScoreCaps[i]) * 100;
+            satisfactionCountLabel.get(i).setText(String.format("%02d", (int) score) + "%");
+        }
+
+        // Update the main satisfaction score
+        font.draw(batch, "Student Satisfaction: " + (int) world.satisfaction.getSatisfactionScore() + "%", 10, 30);
+
         if (selectedAsset != null && selectionTimer <= 5f) {
             selectionTimer -= Gdx.graphics.getDeltaTime();
 
@@ -415,7 +427,7 @@ public class GameScreen implements Screen {
         timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTime / 60) + 1, (int) ((gameTime % 60) / (60 / (double) 365)) + 1));
         if (buildingToPlace != null) {
             if (world.doesObjectOverlap(buildingToPlace)) {
-                font.draw(batch, "Buildings overlap", 20, 520);
+                font.draw(batch, "Buildings Overlap", 20, 520);
             }
         }
 
@@ -426,13 +438,11 @@ public class GameScreen implements Screen {
         }
 
         if (paused) {
-            font.draw(batch, "Paused, press P to resume", 20, 460);
-            font.draw(batch, "Building icons from macrovector on Freepik", 0, 25);
+            font.draw(batch, "PAUSED: press P to resume", 20, 460);
         }
 
         if (gameEnded) {
             font.draw(batch, "End of the game!", 20, 460);
-            font.draw(batch, "Building icons from macrovector on Freepik", 0, 25);
         }
     }
 

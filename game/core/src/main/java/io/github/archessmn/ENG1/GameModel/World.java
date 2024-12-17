@@ -30,49 +30,8 @@ public class World {
 
     public HashMap<Use, Integer> buildingUseCounts = new HashMap<>();
 
-    // The number of items in the Use enum, this value is used often, so it's stored to prevent repeated calculation.
-    public final int useLength = Use.values().length;
-
-    // Between 0 and 100 percent
-    //
-    // There are n factors to the score:
-    // * Average building distances (40%) average distance for each pair of building types
-    // * Completion (10%) Each counter being > 0 gives 2.5%
-    // * Having a total number in the buildings counters, will unlock the full satisfactionScore
-    //    For example, having 1 of each building counter may multiply the score by 0.1
-    //    Whereas having 5 of each building counter may multiply the score by 1.
-    // * Events (30%) Events will each have separate effects on this portion of satisfactionScore
-    // * Building values (20%) Different buildings will have different values,
-    //    e.g. rent price, this allows for more buildings to be implemented,
-    //    and gives them a clear difference in how they effect satisfaction score.
-    //    In other words, this is why a user may place accommodation building y,
-    //    instead of accommodation building x.
-    public float satisfactionScore;
-
-    // Satisfaction score is the sum of the following 4 variables, allowing for easier access to each part of the score
-    // This also means when one of these values needs to be reset, or altered, the satisfaction score will only update
-    // on screen once when that calculation is complete.
-    public float buildingDistancesScore;
-    public float completionScore;
-    public float eventsScore;
-    public float buildingValuesScore;
-
-    // Here the maximum value for each of these scores is set:
-
-    public float buildingDistancesScoreCap = 40;
-    public float completionScoreCap = 10;
-    public float eventsScoreCap = 30;
-    public float buildingValuesScoreCap = 20;
-
-    // Some of these scores need/have more variables to help calculate them:
-
-    // These help with buildingDistancesScore
-
-
-
-    // The map currently is 11x9 tiles
-    private static final int GRID_WIDTH = 11;
-    private static final int GRID_HEIGHT = 9;
+    // An instance of the satisfaction class, this handles the satisfaction score, and all relevant calculations.
+    public Satisfaction satisfaction;
 
     // How many *more* of building A than building B before issues arise. If this value is 3 and there are 2 lecture halls and 6 pubs, a "too many pubs" event is likely
     private final int buildingTypeTolerance = 3;
@@ -81,54 +40,11 @@ public class World {
     GameEvent[] activeEvents = new GameEvent[GameEvent.values().length];
     float[] activeEventEndTime = new float[GameEvent.values().length];
     Array<EfficiencyModifier> activeModifiers = new Array<>();
-    // The maximum possible distance between two buildings, is the diagonal distance 1 less in both x and y,
-    // than the number of tiles on the map
-    float maxDistance = (float) (Math.sqrt(Math.pow(GRID_WIDTH-1, 2) + Math.pow(GRID_HEIGHT-1, 2)));
-
-    // This is how much of the satisfaction score each building use pair accounts for.
-    // The number of undirected use pairs is of the form n + n-1 + n-2... + n-n, as we want the first use connected to
-    // all uses, then the second needs to connect to all uses except the first, as that's already been counted, the
-    // third use ignores the first and second, and so on. So we use the sum of 1 to n formula for this, which is
-    // (n *(n+1)) / 2 We divide the total percent allowed for average distances (40) by this number
-    float percentPerUsePair = buildingDistancesScoreCap / (((float) useLength * ((float) useLength + 1)) / 2);
-    // Allows the user to get the maximum satisfaction for a building use pair, if the pairs' average distance is
-    // under 60% of the maximum possible distance. Anything over will give progressively less satisfaction.
-    float maxScoreThreshold = maxDistance * 0.1f;
-
-
-    // This 2D array stores the average distance between a pair of building types as an adjacency matrix
-    // For example, you could set averageDistances[Use.RECREATION.ordinal()][Use.TEACHING.ordinal()] to 0
-    // However, averageDistances[Use.RECREATION.ordinal()][Use.TEACHING.ordinal()] and
-    // averageDistances[Use.TEACHING.ordinal()][Use.RECREATION.ordinal()] should hold the same value.
-    public float[][] averageDistances = new float[useLength][useLength];
-
-    // When adding a new building, it will need to multiply the old average distance by how many building pairs there
-    // were, For example, if the previous average distance between a teaching and accommodation building
-    // (5 + 3 + 2 + 6 + 9)/ 5 = 6 (5 teaching buildings 1 accommodation), and we add a new accommodation building,
-    // it will need to add 5 new values to the average distance, as the accommodation building will have a distance to
-    // each of the 5 teaching buildings. For this reason, it's helpful to keep a count of how many building pairs each
-    // average distance is made up of, so that we can know what to multiply the average by, and then increment it and
-    // divide the new total distance by the new number of building pairs. This value is stored in this 2D array:
-    public int[][] averageDistancesCount = new int[useLength][useLength];
-
-    // Stores the weight for each use pair, allowing different building use pairs to give a bigger or smaller bonus
-    // than others.
-    public float[][] weightMatrix = new float[useLength][useLength];
-
-    public float[][] averageDistanceScores = new float[useLength][useLength];
-
-    // These help with completionScore:
-
-
-    // Defines how much satisfaction score is gained for having > 0 of each building use type.
-    public float completionScorePerUse = completionScoreCap / useLength;
-    // Set to true when at least one of each use is placed, allows checks and calculation to be skipped
-    public boolean isComplete = false;
-
 
     private float currentTime;
     private EventManager eventManager;
     private Random random = new Random();
+
 
     /**
      * Initialises an empty world and loads assets.
@@ -148,8 +64,7 @@ public class World {
             buildingUseCounts.put(use, 0);
         }
 
-        initialiseWeightMatrix();
-
+        satisfaction = new Satisfaction(this);
 
         // Pretty sure these lines aren't needed, can be done above
         buildings = new Array<>();
@@ -159,6 +74,7 @@ public class World {
 
         createWorldAssets();
     }
+
 
     /**
      * Initialises the game world
@@ -171,6 +87,7 @@ public class World {
 
     }
 
+
     /**
      * Initialises the game world with an extra event listener for event handling outside of this class
      * @param worldWidth Width to use for the usable world space
@@ -182,13 +99,14 @@ public class World {
         setUpWorld(worldWidth, worldHeight, eventManager);
     }
 
+
     /**
      * Responsible for creating all generated world assets, before it is showcased to the player
      */
     public void createWorldAssets() {
         generateTerrainFeatures(TerrainObject.Feature.LAKE, 0.6f, 100f);
-        generateTerrainFeatures(TerrainObject.Feature.ROCK, 0.75f, 200f);
-        generateTerrainFeatures(TerrainObject.Feature.TREE, 0.65f, 200f);
+        generateTerrainFeatures(TerrainObject.Feature.ROCK, 0.75f, 150f);
+        generateTerrainFeatures(TerrainObject.Feature.TREE, 0.65f, 150f);
 
         // Places at least one lake tile down on the map - at a randomly generated location - if none were generated in the perlin noise
         if (terrain.size == 0) {
@@ -196,6 +114,7 @@ public class World {
             addMapObject(asset);
         }
     }
+
 
     /**
      * Generates a perlin noise map of a particular terrain feature and places the assets into the world
@@ -256,12 +175,8 @@ public class World {
                 // This will only trigger once (see '&& !building.built')
                 building.built = true;
 
-                // Update satisfaction score
-                updateAverageDistances(building, true);
-                updateBuildingDistancesScore(building);
-                updateCompletionScore();
-                updateSatisfactionScore();
-                System.out.println("satisfaction score: " + satisfactionScore);
+                // Update satisfaction score when the building has finished being built.
+                satisfaction.updateScore(building, true);
 
                 for (Use use : building.getUses()) {
                     buildingUseCounts.put(use, buildingUseCounts.get(use) + 1);
@@ -284,7 +199,7 @@ public class World {
             if (currentTime > activeEventEndTime[i]) {
                 activeEvents[i] = null;
                 activeEventEndTime[i] = GAME_LENGTH_SECONDS + 1;
-                updateEventScore();
+                satisfaction.updateScore();
             }
         }
         // Maintain active modifiers, removing them when necessary
@@ -294,7 +209,7 @@ public class World {
                 building.setEfficiency(building.getEfficiency() / activeModifiers.get(i).multiplier());
                 activeModifiers.removeIndex(i);
                 i--;
-                updateEventScore();
+                satisfaction.updateScore();
             }
         }
     }
@@ -728,14 +643,16 @@ public class World {
         building.built = false;
 
         updateWorldState(building, true);
+        satisfaction.updateScore();
     }
 
-    public void destroyBuilding(BuildingObject building) {
+    public void demolishBuilding(BuildingObject building) {
         gridLookup[building.gridX][building.gridY] = null;
         buildings.removeValue(building, true);
         mapObjects.removeValue(building, true);
 
         updateWorldState(building, true);
+        satisfaction.updateScore();
     }
 
     public void destroyTerrain(TerrainObject terrainObject) {
@@ -745,6 +662,7 @@ public class World {
         mapObjects.removeValue(terrainObject, true);
 
         updateWorldState(terrainObject, true);
+        satisfaction.updateScore();
     }
 
     public BuildingObject getRandomBuilding(Array<BuildingObject> buildings) {
@@ -752,6 +670,7 @@ public class World {
             return null;
         return buildings.get(random.nextInt(buildings.size));
     }
+
 
     public void handleEvent(GameEvent event) {
         switch (event) {
@@ -776,7 +695,7 @@ public class World {
             case TreeDamage:
                 Array<BuildingObject> buildingsNearTrees = getBuildingsNearTerrain(TerrainObject.Feature.TREE);
                 if (buildingsNearTrees.size > 0) {
-                    destroyBuilding(getRandomBuilding(buildingsNearTrees));
+                    demolishBuilding(getRandomBuilding(buildingsNearTrees));
                 }
                 break;
             case GooseAttack:
@@ -818,7 +737,7 @@ public class World {
     public void addActiveEvent(GameEvent event, float timeSeconds) {
         activeEvents[event.ordinal()] = event;
         activeEventEndTime[event.ordinal()] = currentTime + timeSeconds;
-        updateEventScore();
+        satisfaction.updateScore();
     }
 
     /**
@@ -827,7 +746,7 @@ public class World {
     public void modifyEfficiency(BuildingObject building, float multiplier, float timeSeconds) {
         activeModifiers.add(new EfficiencyModifier(currentTime + timeSeconds, multiplier, building));
         building.setEfficiency(building.getEfficiency() * multiplier);
-        updateEventScore();
+        satisfaction.updateScore();
     }
 
     /**
@@ -921,7 +840,6 @@ public class World {
         }
         catch (IOException e) {
             e.printStackTrace();
-            return;
         }
     }
 
@@ -972,5 +890,40 @@ public class World {
         }
 
         return scores;
+    }
+
+    /**
+     * Does not return the satisfaction score, but rather the satisfaction object.
+     * To retrieve the score from a class such as GameScreen, do world.getSatisfaction().getSatisfactionScore().
+     * @return The satisfaction object responsible for satisfaction storage and calculations.
+     */
+    public Satisfaction getSatisfaction() {
+        return satisfaction;
+    }
+
+    /**
+     * Gets the HashMap between a building use, and the number of instances of that use currently on the map.
+     * @return The buildingUseCounts HashMap.
+     */
+    public HashMap<Use, Integer> getBuildingUseCounts() {
+        return buildingUseCounts;
+    }
+
+
+    /**
+     * Get the Array containing the buildings placed on the map.
+     * @return The Array<BuildingObject> buildings variable.
+     */
+    public Array<BuildingObject> getBuildings() {
+        return buildings;
+    }
+
+
+    /**
+     * Gets the List of currently active game events.
+     * @return The activeEvents list.
+     */
+    public GameEvent[] getActiveEvents() {
+        return activeEvents;
     }
 }
