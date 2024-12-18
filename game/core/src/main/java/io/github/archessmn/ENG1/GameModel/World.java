@@ -6,7 +6,6 @@ import io.github.archessmn.ENG1.GameModel.Objects.MapObject;
 import io.github.archessmn.ENG1.GameModel.Objects.TerrainObject;
 import io.github.archessmn.ENG1.OpenSimplexNoise;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
-import io.github.archessmn.ENG1.GameModel.Satisfaction;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,10 +46,13 @@ public class World {
      * @param worldWidth Width to use for the usable world space
      * @param worldHeight Height to use for the usable world space
      */
-    private void setUpWorld(int worldWidth, int worldHeight) {
+    private void setUpWorld(int worldWidth, int worldHeight, EventManager eventManager) {
         this.width = worldWidth;
         this.height = worldHeight;
 
+        // These can only happen when a building is near these terrain types
+        eventManager.disableEvent(GameEvent.Flooding);
+        eventManager.disableEvent(GameEvent.TreeDamage);
 
         for (Use use : Use.values()) {
             buildingUseCounts.put(use, 0);
@@ -74,12 +76,8 @@ public class World {
      * @param worldHeight Height to use for the usable world space
      */
     public World(int worldWidth, int worldHeight) {
-        setUpWorld(worldWidth, worldHeight);
-
         eventManager = new EventManager(new GameEventListener[] { new GameEventListener(this::handleEvent) }, GAME_LENGTH_SECONDS);
-        // These can only happen when a building is near these terrain types
-        eventManager.disableEvent(GameEvent.Flooding);
-        eventManager.disableEvent(GameEvent.TreeDamage);
+        setUpWorld(worldWidth, worldHeight, eventManager);
     }
 
 
@@ -90,12 +88,8 @@ public class World {
      * @param additionalEventListener an extra event listener for event handling outside of this class. Can be used for rendering effects
      */
     public World(int worldWidth, int worldHeight, GameEventListener additionalEventListener) {
-        setUpWorld(worldWidth, worldHeight);
-
         eventManager = new EventManager(new GameEventListener[] { new GameEventListener(this::handleEvent), additionalEventListener }, GAME_LENGTH_SECONDS);
-        // These can only happen when a building is near these terrain types
-        eventManager.disableEvent(GameEvent.Flooding);
-        eventManager.disableEvent(GameEvent.TreeDamage);
+        setUpWorld(worldWidth, worldHeight, eventManager);
     }
 
 
@@ -151,10 +145,8 @@ public class World {
             building.place();
             gridLookup[building.gridX][building.gridY] = building;
 
-            if (!eventManager.isEventEnabled(GameEvent.Flooding) && isBuildingNearTerrain(building, TerrainObject.Feature.LAKE))
-                eventManager.enableEvent(GameEvent.Flooding);
-            if (!eventManager.isEventEnabled(GameEvent.TreeDamage) && isBuildingNearTerrain(building, TerrainObject.Feature.TREE))
-                eventManager.enableEvent(GameEvent.TreeDamage);
+            updateWorldState(building, false);
+
             return true;
         }
         return false;
@@ -172,6 +164,9 @@ public class World {
             mapObjects.add(asset);
             asset.place();
             gridLookup[asset.gridX][asset.gridY] = asset;
+
+            updateWorldState(asset, false);
+
             return true;
         }
         return false;
@@ -198,6 +193,69 @@ public class World {
                 }
             }
         }
+    }
+
+
+    /**
+     * Called when a world object has been added or removed to provide more information to the update the world's state.
+     * Note that closing a building has the same effect on satisfaction as removing it.
+     * @param building The object in question.
+     * @param wasRemoved if true, the building has just been removed. If false, the building has just been added.
+     */
+    public void updateWorldState(BuildingObject building, boolean wasRemoved) {
+        int addOrRemove = wasRemoved ? -1 : 1;
+        // Check if this changes which events can happen
+        // Additional check (left hand side of &&) so we don't have to run the longer check every time
+        if (wasRemoved) {
+            if (isBuildingNearTerrain(building, TerrainObject.Feature.LAKE) && getBuildingsNearTerrain(TerrainObject.Feature.LAKE).size == 1) {
+                eventManager.disableEvent(GameEvent.Flooding);
+            }
+            if (isBuildingNearTerrain(building, TerrainObject.Feature.TREE) && getBuildingsNearTerrain(TerrainObject.Feature.TREE).size == 1) {
+                eventManager.disableEvent(GameEvent.TreeDamage);
+            }
+        } else {
+            if (!eventManager.isEventEnabled(GameEvent.Flooding) && isBuildingNearTerrain(building, TerrainObject.Feature.LAKE)) {
+                eventManager.disableEvent(GameEvent.Flooding);
+            }
+            if (!eventManager.isEventEnabled(GameEvent.TreeDamage) && isBuildingNearTerrain(building, TerrainObject.Feature.TREE)) {
+                eventManager.disableEvent(GameEvent.TreeDamage);
+            }
+        }
+
+        // Update building counters
+        if (building.built) {
+            for (Use use : building.uses) {
+                buildingUseCounts.put(use, buildingUseCounts.get(use) + addOrRemove);
+            }
+        }
+
+        satisfaction.updateScore(building, wasRemoved);
+    }
+
+
+    /**
+     * Called when a world object has been added or removed to provide more information to the update the world's state.
+     * Note that closing a building has the same effect on satisfaction as removing it.
+     * @param terrain The object in question.
+     * @param wasRemoved if true, the mapObject has just been removed. If false, the mapObject has just been added.
+     */
+    public void updateWorldState(TerrainObject terrain, boolean wasRemoved) {
+        // Check if this changes which events can happen if this object is the first or last object next to a building
+        if (wasRemoved && getCountOfTerrainNearBuildings(terrain.feature) == 1) {
+            if (terrain.feature == TerrainObject.Feature.LAKE) {
+                eventManager.disableEvent(GameEvent.Flooding);
+            } else if (terrain.feature == TerrainObject.Feature.TREE) {
+                eventManager.disableEvent(GameEvent.TreeDamage);
+            }
+        } else if (!wasRemoved && getCountOfTerrainNearBuildings(terrain.feature) == 0) {
+            if (terrain.feature == TerrainObject.Feature.LAKE) {
+                eventManager.enableEvent(GameEvent.Flooding);
+            } else if (terrain.feature == TerrainObject.Feature.TREE) {
+                eventManager.enableEvent(GameEvent.TreeDamage);
+            }
+        }
+
+        satisfaction.updateScore();
     }
 
 
@@ -329,7 +387,8 @@ public class World {
 
         building.buildingCompletionTime = currentTime + timeSeconds;
         building.built = false;
-        satisfaction.updateScore();
+
+        updateWorldState(building, true);
     }
 
     /**
@@ -338,38 +397,27 @@ public class World {
     public void modifyEfficiency(BuildingObject building, float multiplier, float timeSeconds) {
         activeModifiers.add(new EfficiencyModifier(currentTime + timeSeconds, multiplier, building));
         building.setEfficiency(building.getEfficiency() * multiplier);
+
+        // We do not update the world state here as the objects on the map have not changed
         satisfaction.updateScore();
     }
 
     public void demolishBuilding(BuildingObject building) {
-        // Check if this changes which events can happen
-        // Additional check (left hand side of &&) so we don't have to run the longer check every time
-        if (isBuildingNearTerrain(building, TerrainObject.Feature.LAKE) && getBuildingsNearTerrain(TerrainObject.Feature.LAKE).size == 1) {
-            eventManager.disableEvent(GameEvent.Flooding);
-        }
-        if (isBuildingNearTerrain(building, TerrainObject.Feature.TREE) && getBuildingsNearTerrain(TerrainObject.Feature.TREE).size == 1) {
-            eventManager.disableEvent(GameEvent.TreeDamage);
-        }
-
         gridLookup[building.gridX][building.gridY] = null;
         buildings.removeValue(building, true);
         mapObjects.removeValue(building, true);
         if (building.built) {
-            for (Use use : building.uses) {
-                buildingUseCounts.put(use, buildingUseCounts.get(use) - 1);
-            }
-            satisfaction.updateScore(building, false);
+            updateWorldState(building, true);
         }
     }
 
     public void destroyTerrain(TerrainObject terrainObject) {
-        // EVENT CHECKS TO BE COMPLETED HERE
 
         gridLookup[terrainObject.gridX][terrainObject.gridY] = null;
         terrain.removeValue(terrainObject, true);
         mapObjects.removeValue(terrainObject, true);
 
-        satisfaction.updateScore();
+        updateWorldState(terrainObject, true);
     }
 
     public BuildingObject getRandomBuilding(Array<BuildingObject> buildings) {
@@ -385,6 +433,8 @@ public class World {
     public void addActiveEvent(GameEvent event, float timeSeconds) {
         activeEvents[event.ordinal()] = event;
         activeEventEndTime[event.ordinal()] = currentTime + timeSeconds;
+
+        // We do not update the world state here as the objects on the map have not changed
         satisfaction.updateScore();
     }
 
@@ -416,6 +466,26 @@ public class World {
             }
         }
         return false;
+    }
+
+    /**
+     * @param feature e.g. Lake, Trees, etc.
+     * @return The number of terrain tiles of type {@code feature} that is adjacent to any building
+     */
+    public int getCountOfTerrainNearBuildings(TerrainObject.Feature feature) {
+        int count = 0;
+        for (TerrainObject terrainObject : terrain) {
+            if (terrainObject.feature == feature) {
+                for (int x = Math.max(0, terrainObject.gridX - 1); x <= Math.min(width - 1, terrainObject.gridX + 1); x++) {
+                    for (int y = Math.max(0, terrainObject.gridY - 1); y <= Math.min(height - 1, terrainObject.gridY + 1); y++) {
+                        if (gridLookup[x][y] instanceof BuildingObject) {
+                            count += 1;
+                        }
+                    }
+                }
+            }
+        }
+        return count;
     }
 
     /**
