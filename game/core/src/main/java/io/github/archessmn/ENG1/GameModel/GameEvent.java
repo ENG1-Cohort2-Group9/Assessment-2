@@ -7,7 +7,7 @@ public enum GameEvent {
     TreeDamage("A tree has fallen on a building", "A new one will need to be constructed", 0.1f),
     LongBoiSighting("Long boi sighting", "LONG BOI HAS BEEN SPOTTED!!!", 0.02f),
     TreeHype("Tree hype!", "The latest trend is living near trees!", 0.4f),
-    RockClimbing("Rock climbing", "Rock climbing is the sport of the year!", 0.1f),
+    RockClimbing("Rock climbing", "Rock climbing is the sport of the year! Students want to live near rocks.", 0.1f),
     LectureView("A pleasant view","Students want nice scenery to look at while \"focusing\" in lectures.", 0.7f),
     GooseAttack("Goose attack", "A student has been attacked by a goose!", 0.02f);
 
