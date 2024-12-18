@@ -434,29 +434,43 @@ public class Satisfaction {
     }
 
 
-    public void eventScoreHelper(GameEvent event, TerrainObject.Feature feature, Use use, float scoreBonus) {
-        if (world.getActiveEvents()[event.ordinal()] != null) {
-            for (BuildingObject building : world.getBuildingsNearTerrain(feature)) {
-                for (Use buildingUse : building.getUses()) {
-                    if (buildingUse == use) {
-                        eventsScore += scoreBonus;
+    /**
+     * Gets the satisfaction score bonus for an active event in which buildings of use {@code use} near any of a group
+     * of terrain features adds +{@code scoreBonus} for each. If the event is not active, the result will be 0.
+     * @param activeEvents The array of active events, values populated by null if the event is not active.
+     * @param event The event in question.
+     * @param features The features the building type must be near to produce a bonus. If a building is near multiple
+     *                 terrain features, the satisfaction is increased for each one.
+     * @param use The type of building that will provide the bonus.
+     * @param scoreBonus The bonus to add for each building satisfying the conditions. The overall maximum event score is
+     *                   {@value EVENTS_SCORE_CAP}
+     * @return The total satisfaction score increase.
+     */
+    private float getEventScoreBonus(GameEvent[] activeEvents, GameEvent event, TerrainObject.Feature[] features, Use use, float scoreBonus) {
+        float total = 0;
+        if (activeEvents[event.ordinal()] != null) {
+            for (TerrainObject.Feature feature : features) {
+                for (BuildingObject building : world.getBuildingsNearTerrain(feature)) {
+                    for (Use buildingUse : building.getUses()) {
+                        if (buildingUse == use) {
+                            total += scoreBonus;
+                        }
                     }
                 }
             }
         }
+        return total;
     }
 
 
     public void updateEventScore() {
+        GameEvent[] activeEvents = world.getActiveEvents();
 
         // Events
-        eventScoreHelper(GameEvent.TreeHype, TerrainObject.Feature.TREE, Use.ACCOMMODATION, 5f );
-        eventScoreHelper(GameEvent.LectureLake, TerrainObject.Feature.LAKE, Use.TEACHING, 5f );
-        eventScoreHelper(GameEvent.RockClimbing, TerrainObject.Feature.ROCK, Use.ACCOMMODATION, 5f );
+        getEventScoreBonus(activeEvents, GameEvent.TreeHype, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 5f );
+        getEventScoreBonus(activeEvents, GameEvent.LectureView, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 5f );
+        getEventScoreBonus(activeEvents, GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 5f );
 
-        if (world.getActiveEvents()[GameEvent.AColdWinter.ordinal()] != null) {
-            eventsScore *= 0.8f;
-        }
         if (world.getActiveEvents()[GameEvent.LongBoiSighting.ordinal()] != null) {
             eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }

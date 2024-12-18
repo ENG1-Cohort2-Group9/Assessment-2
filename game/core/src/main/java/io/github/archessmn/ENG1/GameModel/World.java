@@ -340,8 +340,8 @@ public class World {
             case GooseAttack:
                 // Has no effect
                 break;
-            case LectureLake:
-                addActiveEvent(GameEvent.LectureLake, GAME_LENGTH_SECONDS + 1);
+            case LectureView:
+                addActiveEvent(GameEvent.LectureView, GAME_LENGTH_SECONDS + 1);
                 break;
             case RockClimbing:
                 addActiveEvent(GameEvent.RockClimbing, 120);
