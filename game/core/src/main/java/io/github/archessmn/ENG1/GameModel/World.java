@@ -145,7 +145,7 @@ public class World {
 
             if (mapObject instanceof BuildingObject building) {
                 buildings.add(building);
-                updateWorldState(building, false);
+                // Do not update the world state here. That will be done when the building finishes construction
             } else if (mapObject instanceof TerrainObject terrainObject) {
                 terrain.add(terrainObject);
                 updateWorldState(terrainObject, false);
@@ -171,12 +171,7 @@ public class World {
                 // This will only trigger once (see '&& !building.built')
                 building.built = true;
 
-                // Update satisfaction score when the building has finished being built.
-                satisfaction.updateScore(building, true);
-
-                for (Use use : building.getUses()) {
-                    buildingUseCounts.put(use, buildingUseCounts.get(use) + 1);
-                }
+                updateWorldState(building, true);
             }
         }
     }
@@ -215,7 +210,7 @@ public class World {
             }
         }
 
-        satisfaction.updateScore(building, wasRemoved);
+        satisfaction.updateScore(building, !wasRemoved);
     }
 
 
@@ -333,9 +328,6 @@ public class World {
                 if (buildingsNearTrees.size > 0) {
                     demolishBuilding(getRandomBuilding(buildingsNearTrees));
                 }
-                break;
-            case AColdWinter:
-                addActiveEvent(GameEvent.AColdWinter, 45);
                 break;
             case GooseAttack:
                 // Has no effect

@@ -1,5 +1,6 @@
 package io.github.archessmn.ENG1.GameModel;
 
+import com.badlogic.gdx.math.MathUtils;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
 public class Satisfaction {
@@ -129,6 +130,7 @@ public class Satisfaction {
         updateAverageDistances(building, placed);
         updateBuildingDistancesScore(building);
         updateCompletionScore();
+        updateEventScore();
         calculateSatisfactionScore();
     }
 
@@ -465,15 +467,17 @@ public class Satisfaction {
 
     public void updateEventScore() {
         GameEvent[] activeEvents = world.getActiveEvents();
-
+        eventsScore = 0;
         // Events
-        getEventScoreBonus(activeEvents, GameEvent.TreeHype, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 5f );
-        getEventScoreBonus(activeEvents, GameEvent.LectureView, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 5f );
-        getEventScoreBonus(activeEvents, GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 5f );
+        eventsScore += getEventScoreBonus(activeEvents, GameEvent.TreeHype, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 5f );
+        eventsScore += getEventScoreBonus(activeEvents, GameEvent.LectureView, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 5f );
+        eventsScore += getEventScoreBonus(activeEvents, GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 5f );
 
         if (world.getActiveEvents()[GameEvent.LongBoiSighting.ordinal()] != null) {
             eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }
+
+        eventsScore = MathUtils.clamp(eventsScore, 0f, 30f);
     }
 
 }
