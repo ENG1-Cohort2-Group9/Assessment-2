@@ -131,7 +131,7 @@ public class MapObject {
     }
 
     /**
-     * Determines if a object is in any of the nine squares (including the centre) adjacent to this square
+     * Determines if an object is in any of the nine squares (including the centre) adjacent to this square
      * @param other the other object to compare
      * @return true if the object is adjacent to this one
      */
