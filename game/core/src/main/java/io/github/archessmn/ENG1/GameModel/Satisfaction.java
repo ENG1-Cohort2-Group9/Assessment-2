@@ -473,7 +473,34 @@ public class Satisfaction {
         eventsScore += getEventScoreBonus(activeEvents, GameEvent.LectureView, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
         eventsScore += getEventScoreBonus(activeEvents, GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
 
-        if (world.getActiveEvents()[GameEvent.LongBoiSighting.ordinal()] != null) {
+        if (activeEvents[GameEvent.GymHype.ordinal()] != null) {
+            for (BuildingObject building : world.getBuildings()) {
+                if (building instanceof GymBuilding) {
+                    eventsScore += 1f;
+                }
+            }
+        }
+
+        float debuffPerBuilding = 2f;
+        if (activeEvents[GameEvent.TooManyBuildings.ordinal()] != null) {
+            for (BuildingObject building : world.getBuildings()) {
+                for (Use use : building.getUses()) {
+                    if (use == Use.TEACHING) {
+                        eventsScore -= debuffPerBuilding;
+                    }
+                }
+            }
+            // This ensures that only teaching buildings over the limit reduce satisfaction. This could be removed to make
+            // this event harsher. It sort of makes sense to me that ALL teaching buildings would be negatively affected by
+            // overcrowding, but that would make this event very punishing
+            eventsScore += debuffPerBuilding * (world.TOO_MANY_LECTURE_BUILDINGS - 1);
+        }
+
+        if (activeEvents[GameEvent.TournamentWon.ordinal()] != null) {
+            eventsScore += 15f; // Quite strong. This event is (hopefully) hard to obtain
+        }
+
+        if (activeEvents[GameEvent.LongBoiSighting.ordinal()] != null) {
             eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }
 

@@ -40,6 +40,8 @@ public class World {
     private EventManager eventManager;
     private Random random = new Random();
 
+    public final int TOO_MANY_LECTURE_BUILDINGS = 15; // How many lecture buildings are needed to allow the "too many buildings" event to occur
+    private final int GYMS_FOR_TOURNAMENT_WIN = 10; // The number of gyms needed to allow the university to win a sports event.
 
     /**
      * Initialises an empty world and loads assets.
@@ -53,6 +55,9 @@ public class World {
         // These can only happen when a building is near these terrain types
         eventManager.disableEvent(GameEvent.Flooding);
         eventManager.disableEvent(GameEvent.TreeDamage);
+        // These are conditional on the player's actions
+        eventManager.disableEvent(GameEvent.TournamentWon);
+        eventManager.disableEvent(GameEvent.TooManyBuildings);
 
         for (Use use : Use.values()) {
             buildingUseCounts.put(use, 0);
@@ -143,12 +148,12 @@ public class World {
             mapObject.place();
             gridLookup[mapObject.gridX][mapObject.gridY] = mapObject;
 
-            if (mapObject instanceof BuildingObject building) {
-                buildings.add(building);
+            if (mapObject instanceof BuildingObject) {
+                buildings.add((BuildingObject)mapObject);
                 // Do not update the world state here. That will be done when the building finishes construction
-            } else if (mapObject instanceof TerrainObject terrainObject) {
-                terrain.add(terrainObject);
-                updateWorldState(terrainObject, false);
+            } else if (mapObject instanceof TerrainObject) {
+                terrain.add((TerrainObject)mapObject);
+                updateWorldState((TerrainObject) mapObject, false);
             } else {
                 throw new IllegalArgumentException("Invalid map object type: " + mapObject.getClass().getName());
             }
@@ -194,12 +199,20 @@ public class World {
             if (isBuildingNearTerrain(building, TerrainObject.Feature.TREE) && getBuildingsNearTerrain(TerrainObject.Feature.TREE).size == 1) {
                 eventManager.disableEvent(GameEvent.TreeDamage);
             }
+            if (eventManager.isEventEnabled(GameEvent.TooManyBuildings) && buildingUseCounts.get(Use.TEACHING) <= TOO_MANY_LECTURE_BUILDINGS) {
+                eventManager.disableEvent(GameEvent.TooManyBuildings);
+                // Disable the effect of the event as well if it has occurred
+                activeEvents[GameEvent.TooManyBuildings.ordinal()] = null;
+            }
         } else {
             if (!eventManager.isEventEnabled(GameEvent.Flooding) && isBuildingNearTerrain(building, TerrainObject.Feature.LAKE)) {
                 eventManager.disableEvent(GameEvent.Flooding);
             }
             if (!eventManager.isEventEnabled(GameEvent.TreeDamage) && isBuildingNearTerrain(building, TerrainObject.Feature.TREE)) {
                 eventManager.disableEvent(GameEvent.TreeDamage);
+            }
+            if (!eventManager.isEventEnabled(GameEvent.TooManyBuildings) && buildingUseCounts.get(Use.TEACHING) >= TOO_MANY_LECTURE_BUILDINGS - 1) {
+                eventManager.enableEvent(GameEvent.TooManyBuildings);
             }
         }
 
@@ -212,7 +225,6 @@ public class World {
 
         satisfaction.updateScore(building, !wasRemoved);
     }
-
 
     /**
      * Called when a world object has been added or removed to provide more information to the update the world's state.
@@ -251,6 +263,11 @@ public class World {
         // Maintain active events, removing them when necessary
         for (int i = 0; i < activeEventEndTime.length; i++) {
             if (currentTime > activeEventEndTime[i]) {
+                // Special effect for "Gym hype" to enable the possibility of winning the tournament if the user has placed enough gyms.
+                if (i == GameEvent.GymHype.ordinal() && getCountOfSpecificBuilding(GymBuilding.class) >= GYMS_FOR_TOURNAMENT_WIN) {
+                    eventManager.enableEvent(GameEvent.TournamentWon);
+                }
+
                 activeEvents[i] = null;
                 activeEventEndTime[i] = GAME_LENGTH_SECONDS + 1;
                 satisfaction.updateScore();
@@ -341,6 +358,15 @@ public class World {
             case LongBoiSighting:
                 addActiveEvent(GameEvent.LongBoiSighting, 10);
                 break;
+            case GymHype:
+                addActiveEvent(GameEvent.GymHype, 120);
+                break;
+            case TournamentWon:
+                addActiveEvent(GameEvent.TournamentWon);
+                break;
+            case TooManyBuildings:
+                addActiveEvent(GameEvent.TooManyBuildings);
+                break;
             default:
                 throw new RuntimeException("Unknown event type: " + event);
         }
@@ -430,6 +456,16 @@ public class World {
 
         // We do not update the world state here as the objects on the map have not changed
         satisfaction.updateScore();
+    }
+
+    public <T extends BuildingObject> int getCountOfSpecificBuilding(Class<T> buildingClass) {
+        int count = 0;
+        for (BuildingObject building : buildings) {
+            if (buildingClass.isInstance(building)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     /**
