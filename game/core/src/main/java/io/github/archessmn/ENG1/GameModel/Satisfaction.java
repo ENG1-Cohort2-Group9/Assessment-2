@@ -1,5 +1,6 @@
 package io.github.archessmn.ENG1.GameModel;
 
+import com.badlogic.gdx.math.MathUtils;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
 public class Satisfaction {
@@ -129,6 +130,7 @@ public class Satisfaction {
         updateAverageDistances(building, placed);
         updateBuildingDistancesScore(building);
         updateCompletionScore();
+        updateEventScore();
         calculateSatisfactionScore();
     }
 
@@ -434,32 +436,75 @@ public class Satisfaction {
     }
 
 
-    public void eventScoreHelper(GameEvent event, TerrainObject.Feature feature, Use use, float scoreBonus) {
-        if (world.getActiveEvents()[event.ordinal()] != null) {
-            for (BuildingObject building : world.getBuildingsNearTerrain(feature)) {
-                for (Use buildingUse : building.getUses()) {
-                    if (buildingUse == use) {
-                        eventsScore += scoreBonus;
+    /**
+     * Gets the satisfaction score bonus for an active event in which buildings of use {@code use} near any of a group
+     * of terrain features adds +{@code scoreBonus} for each. If the event is not active, the result will be 0.
+     * @param activeEvents The array of active events, values populated by null if the event is not active.
+     * @param event The event in question.
+     * @param features The features the building type must be near to produce a bonus. If a building is near multiple
+     *                 terrain features, the satisfaction is increased for each one.
+     * @param use The type of building that will provide the bonus.
+     * @param scoreBonus The bonus to add for each building satisfying the conditions. The overall maximum event score is
+     *                   {@value EVENTS_SCORE_CAP}
+     * @return The total satisfaction score increase.
+     */
+    private float getEventScoreBonus(GameEvent[] activeEvents, GameEvent event, TerrainObject.Feature[] features, Use use, float scoreBonus) {
+        float total = 0;
+        if (activeEvents[event.ordinal()] != null) {
+            for (TerrainObject.Feature feature : features) {
+                for (BuildingObject building : world.getBuildingsNearTerrain(feature)) {
+                    for (Use buildingUse : building.getUses()) {
+                        if (buildingUse == use) {
+                            total += scoreBonus;
+                        }
                     }
                 }
             }
         }
+        return total;
     }
 
 
     public void updateEventScore() {
-
+        GameEvent[] activeEvents = world.getActiveEvents();
+        eventsScore = 0;
         // Events
-        eventScoreHelper(GameEvent.TreeHype, TerrainObject.Feature.TREE, Use.ACCOMMODATION, 5f );
-        eventScoreHelper(GameEvent.LectureLake, TerrainObject.Feature.LAKE, Use.TEACHING, 5f );
-        eventScoreHelper(GameEvent.RockClimbing, TerrainObject.Feature.ROCK, Use.ACCOMMODATION, 5f );
+        eventsScore += getEventScoreBonus(activeEvents, GameEvent.TreeHype, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 1f );
+        eventsScore += getEventScoreBonus(activeEvents, GameEvent.LectureView, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
+        eventsScore += getEventScoreBonus(activeEvents, GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
 
-        if (world.getActiveEvents()[GameEvent.AColdWinter.ordinal()] != null) {
-            eventsScore *= 0.8f;
+        if (activeEvents[GameEvent.GymHype.ordinal()] != null) {
+            for (BuildingObject building : world.getBuildings()) {
+                if (building instanceof GymBuilding) {
+                    eventsScore += 1f;
+                }
+            }
         }
-        if (world.getActiveEvents()[GameEvent.LongBoiSighting.ordinal()] != null) {
+
+        float debuffPerBuilding = 2f;
+        if (activeEvents[GameEvent.TooManyBuildings.ordinal()] != null) {
+            for (BuildingObject building : world.getBuildings()) {
+                for (Use use : building.getUses()) {
+                    if (use == Use.TEACHING) {
+                        eventsScore -= debuffPerBuilding;
+                    }
+                }
+            }
+            // This ensures that only teaching buildings over the limit reduce satisfaction. This could be removed to make
+            // this event harsher. It sort of makes sense to me that ALL teaching buildings would be negatively affected by
+            // overcrowding, but that would make this event very punishing
+            eventsScore += debuffPerBuilding * (world.TOO_MANY_LECTURE_BUILDINGS - 1);
+        }
+
+        if (activeEvents[GameEvent.TournamentWon.ordinal()] != null) {
+            eventsScore += 15f; // Quite strong. This event is (hopefully) hard to obtain
+        }
+
+        if (activeEvents[GameEvent.LongBoiSighting.ordinal()] != null) {
             eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }
+
+        eventsScore = MathUtils.clamp(eventsScore, 0f, 30f);
     }
 
 }

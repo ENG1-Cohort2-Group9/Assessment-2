@@ -246,7 +246,7 @@ public class GameScreen implements Screen {
             }
         } else if (!isClicked && buildingToPlace != null) { // Click released
             if (unprojectedTouchPos.x <= VIEWPORT_WIDTH - 300) {
-                world.addBuilding(buildingToPlace); // Places the building if it passes all checks
+                world.addMapObject(buildingToPlace); // Places the building if it passes all checks
             }
 
             buildingToPlace = null;
