@@ -104,7 +104,7 @@ public class World {
         // Places at least one lake tile down on the map - at a randomly generated location - if none were generated in the perlin noise
         if (terrain.size == 0) {
             TerrainObject asset = new TerrainObject(new Random().nextInt(0, width), new Random().nextInt(0, height), TerrainObject.Feature.LAKE);
-            addTerrain(asset);
+            addMapObject(asset);
         }
     }
 
@@ -125,47 +125,33 @@ public class World {
 
                 if (value > acceptedValue) {
                     TerrainObject asset = new TerrainObject(x, y, feature);
-                    addTerrain(asset);
+                    addMapObject(asset);
                 }
             }
         }
     }
 
-
     /**
-     * Adds a building to the world if allowed, updating the building store
+     * Adds a mapObject to the world if allowed, updating the relevant store(s)
      *
-     * @param building Building to add to the world
+     * @param mapObject Building to add to the world
      * @return true if the placement was successful
      */
-    public boolean addBuilding(BuildingObject building) {
-        if (!doesObjectOverlap(building)) {
-            buildings.add(building);
-            mapObjects.add(building);
-            building.place();
-            gridLookup[building.gridX][building.gridY] = building;
+    public boolean addMapObject(MapObject mapObject) {
+        if (!doesObjectOverlap(mapObject)) {
+            mapObjects.add(mapObject);
+            mapObject.place();
+            gridLookup[mapObject.gridX][mapObject.gridY] = mapObject;
 
-            updateWorldState(building, false);
-
-            return true;
-        }
-        return false;
-    }
-
-
-    /**
-     * Adds a terrain asset to the world if allowed, updating the terrain store
-     * @param asset Asset to add to the world
-     * @return true if the placement was successful
-     */
-    public boolean addTerrain(TerrainObject asset) {
-        if (!doesObjectOverlap(asset)) {
-            terrain.add(asset);
-            mapObjects.add(asset);
-            asset.place();
-            gridLookup[asset.gridX][asset.gridY] = asset;
-
-            updateWorldState(asset, false);
+            if (mapObject instanceof BuildingObject building) {
+                buildings.add(building);
+                updateWorldState(building, false);
+            } else if (mapObject instanceof TerrainObject terrainObject) {
+                terrain.add(terrainObject);
+                updateWorldState(terrainObject, false);
+            } else {
+                throw new IllegalArgumentException("Invalid map object type: " + mapObject.getClass().getName());
+            }
 
             return true;
         }
