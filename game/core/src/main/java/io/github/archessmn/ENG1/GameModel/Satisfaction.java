@@ -469,9 +469,9 @@ public class Satisfaction {
         GameEvent[] activeEvents = world.getActiveEvents();
         eventsScore = 0;
         // Events
-        eventsScore += getEventScoreBonus(activeEvents, GameEvent.TreeHype, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 5f );
-        eventsScore += getEventScoreBonus(activeEvents, GameEvent.LectureView, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 5f );
-        eventsScore += getEventScoreBonus(activeEvents, GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 5f );
+        eventsScore += getEventScoreBonus(activeEvents, GameEvent.TreeHype, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 1f );
+        eventsScore += getEventScoreBonus(activeEvents, GameEvent.LectureView, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
+        eventsScore += getEventScoreBonus(activeEvents, GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
 
         if (world.getActiveEvents()[GameEvent.LongBoiSighting.ordinal()] != null) {
             eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time

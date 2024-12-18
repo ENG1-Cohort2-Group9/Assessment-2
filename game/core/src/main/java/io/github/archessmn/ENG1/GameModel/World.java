@@ -312,7 +312,7 @@ public class World {
                 break;
             case Smelly:
                 if (buildings.size > 0) {
-                    modifyEfficiency(getRandomBuilding(buildings), 0.5f, GAME_LENGTH_SECONDS + 1);
+                    modifyEfficiency(getRandomBuilding(buildings), 0.5f);
                 }
                 break;
             case Seagull:
@@ -333,7 +333,7 @@ public class World {
                 // Has no effect
                 break;
             case LectureView:
-                addActiveEvent(GameEvent.LectureView, GAME_LENGTH_SECONDS + 1);
+                addActiveEvent(GameEvent.LectureView);
                 break;
             case RockClimbing:
                 addActiveEvent(GameEvent.RockClimbing, 120);
@@ -370,6 +370,13 @@ public class World {
     }
 
     /**
+     * Multiplies a building's efficiency by {@code multiplier} indefinitely, affecting satisfaction
+     */
+    public void modifyEfficiency(BuildingObject building, float multiplier) {
+        modifyEfficiency(building, multiplier, GAME_LENGTH_SECONDS + 1);
+    }
+
+    /**
      * Multiplies a building's efficiency by {@code multiplier} for {@code timeSeconds}, affecting satisfaction
      */
     public void modifyEfficiency(BuildingObject building, float multiplier, float timeSeconds) {
@@ -403,6 +410,15 @@ public class World {
             return null;
         return buildings.get(random.nextInt(buildings.size));
     }
+
+    /**
+     * Adds an effect to the current game indefinitely
+     * @param event The event associated with the effect
+     */
+    public void addActiveEvent(GameEvent event) {
+        addActiveEvent(event, GAME_LENGTH_SECONDS + 1);
+    }
+
 
     /**
      * Adds an effect to the current game for {@code timeSeconds} seconds
