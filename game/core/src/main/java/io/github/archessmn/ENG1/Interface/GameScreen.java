@@ -386,7 +386,7 @@ public class GameScreen implements Screen {
         }
 
         // Snaps the dragged object to the grid and draws it, if selected
-        if (objectToPlace != null && objectToPlace.x <= VIEWPORT_WIDTH - 300) {
+        if (objectToPlace != null && unprojectedTouchPos.x <= VIEWPORT_WIDTH - 300) {
             objectToPlace.snapToGrid();
             drawObject(batch, assetManager, objectToPlace);
         }
