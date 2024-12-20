@@ -148,12 +148,13 @@ public class World {
             mapObject.place();
             gridLookup[mapObject.gridX][mapObject.gridY] = mapObject;
 
-            if (mapObject instanceof BuildingObject) {
-                buildings.add((BuildingObject)mapObject);
+            if (mapObject instanceof BuildingObject building) {
+                building.resetBuildingConstruction(getCurrentTime());
+                buildings.add(building);
                 // Do not update the world state here. That will be done when the building finishes construction
-            } else if (mapObject instanceof TerrainObject) {
-                terrain.add((TerrainObject)mapObject);
-                updateWorldState((TerrainObject) mapObject, false);
+            } else if (mapObject instanceof TerrainObject terrainAsset) {
+                terrain.add(terrainAsset);
+                updateWorldState(terrainAsset, false);
             } else {
                 throw new IllegalArgumentException("Invalid map object type: " + mapObject.getClass().getName());
             }
@@ -172,7 +173,7 @@ public class World {
         // but libGDX seems to get confused and break if a for (BuildingObject building : buildings) loop is used.
         for (int i = 0; i < buildings.size; i++) {
             BuildingObject building = buildings.get(i);
-            if (building.placed && !building.built && currentTime > building.buildingCompletionTime) {
+            if (!building.built && currentTime > building.buildingCompletionTime) {
                 // This will only trigger once (see '&& !building.built')
                 building.built = true;
 
