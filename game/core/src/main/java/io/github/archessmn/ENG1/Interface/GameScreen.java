@@ -251,11 +251,12 @@ public class GameScreen implements Screen {
         sideMenu.add(new Label("\nSELECTED TILE", labelStyle)).left().colspan(2).row();
         sideMenu.add(highlightedBuildingLabel).left().colspan(2).row();
         sideMenu.add(actionButton).left().colspan(2).row();
-        sideMenu.add(new Label("\n", labelStyle)).colspan(2).expandY().row();
 
         // Creates the table that contains the build and terrain selection
         Table mapObjectTable = new Table().padBottom(20);
         sideMenu.add(mapObjectTable).fillX().colspan(2);
+        mapObjectTable.add(new Label("\nBUILDINGS", labelStyle)).expandX().center().padBottom(10);
+        mapObjectTable.add(new Label("\nTERRAIN", labelStyle)).expandX().center().padBottom(10).row();
         mapObjectTable.add(buildingUpButton).expandX().center().padBottom(40);
         mapObjectTable.add(terrainUpButton).expandX().center().padBottom(40).row();
         mapObjectTable.add(selectedBuildingLabel).expandX().center().padTop(40).uniform();
