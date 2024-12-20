@@ -51,10 +51,6 @@ public class ScreenManager extends Game {
         super.render();
     }
 
-    public void switchToScreen(Screen screen) {
-        setScreen(screen);
-    }
-
     // Disposes of all textures.
     public void dispose() {
         batch.dispose();
