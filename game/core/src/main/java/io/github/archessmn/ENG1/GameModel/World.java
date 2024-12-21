@@ -19,7 +19,7 @@ import java.util.*;
 public class World {
 
     public int width, height;
-    public final float GAME_LENGTH_SECONDS = 300;
+    public static final float GAME_LENGTH_SECONDS = 300;
 
     public Array<BuildingObject> buildings;
     public Array<TerrainObject> terrain;
@@ -327,6 +327,7 @@ public class World {
                 for (BuildingObject building : getBuildingsNearTerrain(TerrainObject.Feature.LAKE)) {
                     closeBuilding(building, 30f);
                 }
+                addActiveEvent(GameEvent.Flooding, 30);
                 break;
             case Smelly:
                 if (buildings.size > 0) {
@@ -457,6 +458,10 @@ public class World {
 
         // We do not update the world state here as the objects on the map have not changed
         satisfaction.updateScore();
+    }
+
+    public boolean hasActiveEvent(GameEvent event) {
+        return activeEvents[event.ordinal()] != null;
     }
 
     public <T extends BuildingObject> int getCountOfSpecificBuilding(Class<T> buildingClass) {
@@ -625,5 +630,14 @@ public class World {
      */
     public GameEvent[] getActiveEvents() {
         return activeEvents;
+    }
+
+    /**
+     * Get the game time at which this active event will be removed. If the event is not active, returns {@value GAME_LENGTH_SECONDS} + 1
+     * @param event The event to check
+     * @return Time in seconds
+     */
+    public float getEndTimeOfActiveEvent(GameEvent event) {
+        return activeEventEndTime[event.ordinal()];
     }
 }
