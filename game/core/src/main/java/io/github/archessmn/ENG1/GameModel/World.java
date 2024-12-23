@@ -52,8 +52,12 @@ public class World {
     private void setUpWorld(int worldWidth, int worldHeight, EventManager eventManager) {
         this.width = worldWidth;
         this.height = worldHeight;
-        mapObjectHolder = new MapObjectHolder(width, height);
-        mapObjectHolder.add(new TerrainObject(5, 5, TerrainObject.Feature.LAKE));
+        mapObjectHolder = new MapObjectHolder(GridUtils.GRID_WIDTH, GridUtils.GRID_HEIGHT);
+        mapObjectHolder.add(new TerrainObject(5, 5, TerrainObject.Feature.LAKE) {{gridX = 5; gridY = 5;}});
+        mapObjectHolder.add(new Pub(6, 7, 0f, true) {{gridX = 6; gridY = 7;}});
+        mapObjectHolder.add(new GymBuilding(5, 7, 0f, true) {{gridX = 5; gridY = 7;}});
+        mapObjectHolder.add(new TerrainObject(6, 5, TerrainObject.Feature.TREE) {{gridX = 6; gridY = 5;}});
+
 
         // These can only happen when a building is near these terrain types
         eventManager.disableEvent(GameEvent.Flooding);
@@ -72,7 +76,7 @@ public class World {
         buildings = new Array<>();
         terrain = new Array<>();
         mapObjects = new Array<>();
-        gridLookup = new MapObject[width][height];
+        gridLookup = new MapObject[GridUtils.GRID_WIDTH][GridUtils.GRID_HEIGHT];
 
         createWorldAssets();
     }
