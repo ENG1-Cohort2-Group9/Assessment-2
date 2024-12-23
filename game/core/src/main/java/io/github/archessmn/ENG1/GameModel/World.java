@@ -451,8 +451,8 @@ public class World {
      * @return True if the building is near this type of terrain feature
      */
     public boolean isBuildingNearTerrain(BuildingObject building, TerrainObject.Feature feature) {
-        for (int x = Math.max(0, building.gridX - 1); x <= Math.min(width - 1, building.gridX + 1); x++) {
-            for (int y = Math.max(0, building.gridY - 1); y <= Math.min(height - 1, building.gridY + 1); y++) {
+        for (int x = Math.max(0, building.gridX - 1); x <= Math.min(GridUtils.GRID_WIDTH - 1, building.gridX + 1); x++) {
+            for (int y = Math.max(0, building.gridY - 1); y <= Math.min(GridUtils.GRID_HEIGHT - 1, building.gridY + 1); y++) {
                 if (mapObjects.getByGrid(x,y) instanceof TerrainObject && ((TerrainObject) mapObjects.getByGrid(x,y)).feature == feature) {
                     return true;
                 }
@@ -468,8 +468,8 @@ public class World {
     public int getCountOfTerrainNearBuildings(TerrainObject.Feature feature) {
         int count = 0;
         for (TerrainObject terrainObject : mapObjects.getByFeature(feature)) {
-            for (int x = Math.max(0, terrainObject.gridX - 1); x <= Math.min(width - 1, terrainObject.gridX + 1); x++) {
-                for (int y = Math.max(0, terrainObject.gridY - 1); y <= Math.min(height - 1, terrainObject.gridY + 1); y++) {
+            for (int x = Math.max(0, terrainObject.gridX - 1); x <= Math.min(GridUtils.GRID_WIDTH - 1, terrainObject.gridX + 1); x++) {
+                for (int y = Math.max(0, terrainObject.gridY - 1); y <= Math.min(GridUtils.GRID_HEIGHT - 1, terrainObject.gridY + 1); y++) {
                     if (mapObjects.getByGrid(x,y) instanceof BuildingObject) {
                         count += 1;
                         break;
