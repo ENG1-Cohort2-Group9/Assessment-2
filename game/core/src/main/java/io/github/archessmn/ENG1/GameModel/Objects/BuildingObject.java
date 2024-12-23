@@ -10,6 +10,7 @@ public class BuildingObject extends MapObject {
     public String unbuiltSpriteName;
 
     public float initialBuildTime;
+    public float constructionDuration;
     public float buildingCompletionTime;
 
     public final Use[] uses;
@@ -23,6 +24,7 @@ public class BuildingObject extends MapObject {
      * @param width Width of the building.
      * @param height Height of the building.
      * @param buildingConstructionDuration How long construction takes
+     * @param initialBuildTime The time at which the building will start construction
      * @param built Whether the building should be marked as built upon creation.
      * @param uses The use the building has, used for updating building counters.
      * @param spriteName The file name of the buildings' sprite.
@@ -32,23 +34,32 @@ public class BuildingObject extends MapObject {
         super(x, y, width, height, spriteName, objName, true);
 
         this.initialBuildTime = initialBuildTime;
+        this.constructionDuration = buildingConstructionDuration;
         this.buildingCompletionTime = initialBuildTime + buildingConstructionDuration;
 
         this.built = built;
         this.uses = uses;
         this.UseSize = Use.values().length;
 
-        if (!built) {
-            this.unbuiltSpriteName = "construction.png";
-        }
+        this.unbuiltSpriteName = "construction.png";
     }
 
     /**
-     * Makes an un-built copy of the current building type
-     * @return A copy of the building.
+     * Creates a copy of the BuildingObject
+     * @return The BuildingObject clone
      */
-    public BuildingObject makeCopy(float currentTime) {
-        return new BuildingObject(this.x, this.y + 60, this.width, this.height, currentTime, this.buildingCompletionTime - this.initialBuildTime, false, this.uses, this.spriteName, this.objName);
+    public BuildingObject makeCopy() {
+        return new BuildingObject(this.x, this.y + 60, this.width, this.height, this.constructionDuration, this.initialBuildTime, true, this.uses, this.spriteName, this.objName);
+    }
+
+    /**
+     * Sets the building back to un-built and begins construction again
+     * @param newInitialConstructionTime The time at which the building will begin construction
+     */
+    public void resetBuildingConstruction(float newInitialConstructionTime) {
+        this.built = false;
+        this.initialBuildTime = newInitialConstructionTime;
+        this.buildingCompletionTime = initialBuildTime + constructionDuration;
     }
 
     /**

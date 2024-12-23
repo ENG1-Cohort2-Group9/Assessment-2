@@ -8,6 +8,14 @@ public class TerrainObject extends MapObject {
         feature = type;
     }
 
+    /**
+     * Creates a copy of the TerrainObject
+     * @return The TerrainObject clone
+     */
+    public TerrainObject makeCopy() {
+        return new TerrainObject(this.x, this.y + 60, this.feature);
+    }
+
     public enum Feature {
         LAKE("lake.jpg", "Water"),
         ROCK("rock.png", "Rock"),

@@ -20,10 +20,6 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.archessmn.ENG1.GameModel.*;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
-import javax.xml.crypto.dsig.keyinfo.KeyValue;
-import java.util.HashMap;
-import java.util.Map;
-
 import static java.lang.Math.floorDiv;
 
 public class GameScreen implements Screen {
@@ -47,16 +43,19 @@ public class GameScreen implements Screen {
 
     Vector2 touchPos;
     Vector2 unprojectedTouchPos;
-
-    Array<BuildingObject> draggableBuildings;
-
+    Boolean isClicked = false;
 
     Rectangle buildingRectangle;
     BitmapFont font;
-    Boolean isClicked = false;
-    BuildingObject buildingToPlace = null;
-    MapObject selectedAsset = null;
-    float selectionTimer = 5f;
+
+    MapObject objectToPlace = null;
+    Array<BuildingObject> selectableBuildings = new Array<>();
+    Array<TerrainObject> selectableTerrains = new Array<>();
+    int selectableBuildingsIndex = 0;
+    int selectableTerrainsIndex = 0;
+
+    MapObject highlightedTile = null;
+    float highlightTimer = 5f;
 
     Boolean paused = true;
     Boolean gameEnded = false;
@@ -65,7 +64,9 @@ public class GameScreen implements Screen {
     private Table sideMenu;
     private Label countDownLabel;
     private Label timerLabel;
-    private Label selectedBuildingLabal;
+    private Label highlightedBuildingLabel;
+    private Label selectedBuildingLabel;
+    private Label selectedTerrainLabel;
     private TextButton actionButton;
     private final Array<Label> satisfactionCountLabel = new Array<>();
     private final Array<Label> satisfactionVarLabel = new Array<>();
@@ -95,64 +96,20 @@ public class GameScreen implements Screen {
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
         skin.addRegions(atlas);
 
-        Label.LabelStyle labelStyle = skin.get(Label.LabelStyle.class);
-        TextButtonStyle textButtonStyle = skin.get(TextButtonStyle.class);
-
-        countDownLabel = new Label("Timer", labelStyle);
-        timerLabel = new Label("Timer", labelStyle);
-        selectedBuildingLabal = new Label("Building", labelStyle);
-
-        actionButton = new TextButton("Action", textButtonStyle);
-        actionButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (selectedAsset.isBuilding) {
-                    world.demolishBuilding((BuildingObject) selectedAsset);
-                }
-                else {
-                    world.destroyTerrain((TerrainObject) selectedAsset);
-                }
-            }
-        });
-
-
-        satisfactionVarLabel.add(new Label("Building Distance:", labelStyle));
-        satisfactionVarLabel.add(new Label("Campus Completion:", labelStyle));
-        satisfactionVarLabel.add(new Label("Event Response:", labelStyle));
-        satisfactionVarLabel.add(new Label("Building Diversity:", labelStyle));
-
-        satisfactionCountLabel.add(new Label("000%", labelStyle));
-        satisfactionCountLabel.add(new Label("000%", labelStyle));
-        satisfactionCountLabel.add(new Label("000%", labelStyle));
-        satisfactionCountLabel.add(new Label("000%", labelStyle));
-
-        satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCap();
-
-
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
 
-        Table rootTable = new Table();
-        rootTable.setFillParent(true);
-        stage.addActor(rootTable);
-
-        sideMenu = new Table();
-
-        sideMenu.pad(10);
-
-        rootTable.right().add(sideMenu).expandY().fillY().width(300);
-
-        sideMenu.add(countDownLabel).expandX().center().row();
-        sideMenu.add(timerLabel).expandX().center().row();
-        sideMenu.add(new Label("\nCAMPUS SATISFACTION SUMMARY", labelStyle)).left().row();
-        for (int i = 0; i < 4; i++) {
-            sideMenu.add(satisfactionVarLabel.get(i)).left();
-            sideMenu.add(satisfactionCountLabel.get(i)).expandX().right().row();
-        }
-        sideMenu.add(new Label("\nSELECTED TILE", labelStyle)).left().row();
-        sideMenu.add(selectedBuildingLabal).left().top().row();
-        sideMenu.add(actionButton).left().top().row();
-        sideMenu.add(new Label("Gym  Halls  Lecture Hall  Pub  Piazza", labelStyle)).expandX().expandY().bottom();
+        selectableBuildings = new Array<>();
+        selectableBuildings.add(new HallsBuilding(710, 90, 0, true));
+        selectableBuildings.add(new GymBuilding(710, 90, 0, true));
+        selectableBuildings.add(new LectureHallBuilding(710, 90, 0, true));
+        selectableBuildings.add(new PiazzaBuilding(710, 90, 0, true));
+        selectableBuildings.add(new Pub(710, 90, 0, true));
+        selectableTerrains = new Array<>();
+        selectableTerrains.add(new TerrainObject(849, 90, TerrainObject.Feature.LAKE));
+        selectableTerrains.add(new TerrainObject(849, 90, TerrainObject.Feature.ROCK));
+        selectableTerrains.add(new TerrainObject(849, 90, TerrainObject.Feature.TREE));
+        setupSideMenu();
 
         assetManager = new AssetManager();
 
@@ -185,17 +142,127 @@ public class GameScreen implements Screen {
         touchPos = new Vector2();
         unprojectedTouchPos = new Vector2();
 
-        draggableBuildings = new Array<>();
-
-        draggableBuildings.add(new GymBuilding(660, 40, 0, true));
-        draggableBuildings.add(new HallsBuilding(720, 40, 0, true));
-        draggableBuildings.add(new LectureHallBuilding(780, 40, 0, true));
-        draggableBuildings.add(new Pub(840, 40, 0, true));
-        draggableBuildings.add(new PiazzaBuilding(900, 40, 0, true));
-
         blockRenderer = new ShapeRenderer();
 
         buildingRectangle = new Rectangle();
+    }
+
+    private void setupSideMenu() {
+        Table rootTable = new Table();
+        rootTable.setFillParent(true);
+        stage.addActor(rootTable);
+
+        Label.LabelStyle labelStyle = skin.get(Label.LabelStyle.class);
+        TextButtonStyle textButtonStyle = skin.get(TextButtonStyle.class);
+
+        countDownLabel = new Label("Timer", labelStyle);
+        timerLabel = new Label("Timer", labelStyle);
+        highlightedBuildingLabel = new Label("Building", labelStyle);
+
+        selectedBuildingLabel = new Label("{Building}", labelStyle);
+        selectedTerrainLabel = new Label("{Terrain}", labelStyle);
+
+        actionButton = new TextButton("{Action}", textButtonStyle);
+        actionButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (highlightedTile.isBuilding) {
+                    world.demolishBuilding((BuildingObject) highlightedTile);
+                }
+                else {
+                    world.destroyTerrain((TerrainObject) highlightedTile);
+                }
+            }
+        });
+
+        // Initialises the scroll buttons and their actions
+        TextButton buildingUpButton = new TextButton("^", textButtonStyle);
+        buildingUpButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (selectableBuildingsIndex == selectableBuildings.size - 1) {
+                    selectableBuildingsIndex = 0;
+                }
+                else {
+                    selectableBuildingsIndex++;
+                }
+            }
+        });
+        TextButton buildingDownButton = new TextButton("v", textButtonStyle);
+        buildingDownButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (selectableBuildingsIndex == 0) {
+                    selectableBuildingsIndex = selectableBuildings.size - 1;
+                }
+                else {
+                    selectableBuildingsIndex--;
+                }
+            }
+        });
+        TextButton terrainUpButton = new TextButton("^", textButtonStyle);
+        terrainUpButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (selectableTerrainsIndex == selectableTerrains.size - 1) {
+                    selectableTerrainsIndex = 0;
+                }
+                else {
+                    selectableTerrainsIndex++;
+                }
+            }
+        });
+        TextButton terrainDownButton = new TextButton("v", textButtonStyle);
+        terrainDownButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (selectableTerrainsIndex == 0) {
+                    selectableTerrainsIndex = selectableTerrains.size - 1;
+                } else {
+                    selectableTerrainsIndex--;
+                }
+            }
+        });
+
+
+        satisfactionVarLabel.add(new Label("Building Distance:", labelStyle));
+        satisfactionVarLabel.add(new Label("Campus Completion:", labelStyle));
+        satisfactionVarLabel.add(new Label("Event Response:", labelStyle));
+        satisfactionVarLabel.add(new Label("Building Diversity:", labelStyle));
+
+        satisfactionCountLabel.add(new Label("000%", labelStyle));
+        satisfactionCountLabel.add(new Label("000%", labelStyle));
+        satisfactionCountLabel.add(new Label("000%", labelStyle));
+        satisfactionCountLabel.add(new Label("000%", labelStyle));
+
+        satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCap();
+
+        sideMenu = new Table();
+        sideMenu.pad(10);
+        rootTable.right().add(sideMenu).expandY().fillY().width(300);
+
+        sideMenu.add(countDownLabel).expandX().center().colspan(2).row();
+        sideMenu.add(timerLabel).expandX().center().colspan(2).row();
+        sideMenu.add(new Label("\nCAMPUS SATISFACTION SUMMARY", labelStyle)).left().colspan(2).row();
+        for (int i = 0; i < 4; i++) {
+            sideMenu.add(satisfactionVarLabel.get(i)).left();
+            sideMenu.add(satisfactionCountLabel.get(i)).right().row();
+        }
+        sideMenu.add(new Label("\nSELECTED TILE", labelStyle)).left().colspan(2).row();
+        sideMenu.add(highlightedBuildingLabel).left().colspan(2).row();
+        sideMenu.add(actionButton).left().colspan(2).row();
+
+        // Creates the table that contains the build and terrain selection
+        Table mapObjectTable = new Table().padBottom(20);
+        sideMenu.add(mapObjectTable).fillX().colspan(2);
+        mapObjectTable.add(new Label("\nBUILDINGS", labelStyle)).expandX().center().padBottom(10);
+        mapObjectTable.add(new Label("\nTERRAIN", labelStyle)).expandX().center().padBottom(10).row();
+        mapObjectTable.add(buildingUpButton).expandX().center().padBottom(40);
+        mapObjectTable.add(terrainUpButton).expandX().center().padBottom(40).row();
+        mapObjectTable.add(selectedBuildingLabel).expandX().center().padTop(40).uniform();
+        mapObjectTable.add(selectedTerrainLabel).expandX().center().padTop(40).uniform().row();
+        mapObjectTable.add(buildingDownButton).expandX().center().padTop(10);
+        mapObjectTable.add(terrainDownButton).expandX().center().padTop(10).row();
     }
 
     @Override
@@ -215,7 +282,7 @@ public class GameScreen implements Screen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) paused = !paused;
 
         if (gameEnded) {
-            buildingToPlace = null;
+            objectToPlace = null;
             return;
         }
 
@@ -229,31 +296,32 @@ public class GameScreen implements Screen {
             // Loops through all placed map objects to see if they have been clicked
             for (MapObject mapObject : world.mapObjects) {
                 if (mapObject.getBounds().contains(unprojectedTouchPos)) {
-                    selectedAsset = mapObject;
-                    selectionTimer = 5f;
+                    highlightedTile = mapObject;
+                    highlightTimer = 5f;
                     break;
                 }
             }
 
             // Initiates the dragging feature for when a menu building has been selected
-            for (int i = draggableBuildings.size - 1; i >= 0; i--) {
-                BuildingObject building = draggableBuildings.get(i);
-
-                if (building.getBounds().contains(unprojectedTouchPos)) {
-                    buildingToPlace = building.makeCopy(world.getCurrentTime());
-                    break;
-                }
+            BuildingObject currentBuilding = selectableBuildings.get(selectableBuildingsIndex);
+            TerrainObject currentTerrain = selectableTerrains.get(selectableTerrainsIndex);
+            if (currentBuilding.getBounds().contains(unprojectedTouchPos)) {
+                objectToPlace = selectableBuildings.get(selectableBuildingsIndex).makeCopy();
             }
-        } else if (!isClicked && buildingToPlace != null) { // Click released
+            else if (currentTerrain.getBounds().contains(unprojectedTouchPos)) {
+                objectToPlace = selectableTerrains.get(selectableTerrainsIndex).makeCopy();
+            }
+        }
+        else if (!isClicked && objectToPlace != null) { // Click released
             if (unprojectedTouchPos.x <= VIEWPORT_WIDTH - 300) {
-                world.addMapObject(buildingToPlace); // Places the building if it passes all checks
+                world.addMapObject(objectToPlace); // Places the building if it passes all checks
             }
 
-            buildingToPlace = null;
+            objectToPlace = null;
         }
 
-        if (buildingToPlace != null) { // Track building to mouse position for drag
-            buildingToPlace.setCenter(touchPos.x, touchPos.y);
+        if (objectToPlace != null) { // Track building to mouse position for drag
+            objectToPlace.setCenter(touchPos.x, touchPos.y);
         }
     }
 
@@ -279,18 +347,18 @@ public class GameScreen implements Screen {
         batch.setProjectionMatrix(viewport.getCamera().combined);
 
         // Collision detection for buildings already placed
-        if (buildingToPlace != null) {
+        if (objectToPlace != null) {
             // If placing building, draw the grid
             if (isClicked) drawGrid(shapeRenderer);
 
-            if (world.doesObjectOverlap(buildingToPlace)) {
+            if (world.doesObjectOverlap(objectToPlace)) {
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             } else {
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
             }
             shapeRenderer.setColor(Color.RED);
-            Vector2 buildingCoords = buildingToPlace.getRawGridCoords();
-            shapeRenderer.rect(buildingCoords.x - (buildingToPlace.width / 2), buildingCoords.y - (buildingToPlace.height / 2), buildingToPlace.width, buildingToPlace.height);
+            Vector2 buildingCoords = objectToPlace.getRawGridCoords();
+            shapeRenderer.rect(buildingCoords.x - (objectToPlace.width / 2), buildingCoords.y - (objectToPlace.height / 2), objectToPlace.width, objectToPlace.height);
             shapeRenderer.end();
         }
 
@@ -310,25 +378,30 @@ public class GameScreen implements Screen {
     }
 
     public void drawAssets(Batch batch, AssetManager assetManager) {
-        for (BuildingObject building : draggableBuildings) {
-            drawObject(batch, assetManager, building);
-        }
+        // Draws all placed buildings and terrain assets
         for (BuildingObject building : world.buildings) {
             drawObject(batch, assetManager, building);
         }
         for (TerrainObject terrain : world.terrain) {
             drawObject(batch, assetManager, terrain);
         }
-        if (buildingToPlace != null) {
-            drawObject(batch, assetManager, buildingToPlace);
+
+        // Snaps the dragged object to the grid and draws it, if selected
+        if (objectToPlace != null && unprojectedTouchPos.x <= VIEWPORT_WIDTH - 300) {
+            objectToPlace.snapToGrid();
+            drawObject(batch, assetManager, objectToPlace);
         }
+
+        // Draws the currently displayed building and terrain assets, in the side menu
+        drawObject(batch, assetManager, selectableBuildings.get(selectableBuildingsIndex));
+        drawObject(batch, assetManager, selectableTerrains.get(selectableTerrainsIndex));
     }
 
     private void drawObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
         Sprite sprite = new Sprite(assetManager.get(mapObject.spriteName, Texture.class));
-        if (mapObject.isBuilding) {
+        if (mapObject.isBuilding && mapObject.placed) {
             BuildingObject buildingObject = (BuildingObject) mapObject;
-            if (!buildingObject.built){
+            if (!buildingObject.built) {
                 sprite = new Sprite(assetManager.get(buildingObject.unbuiltSpriteName, Texture.class));
             }
         }
@@ -382,6 +455,8 @@ public class GameScreen implements Screen {
         // If it's a whole minute, it displays :00 for the seconds
         // Otherwise it gets the remainder of gameTimer divided by 60 for the seconds.
         float gameTime = world.getCurrentTime();
+        timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTime / 60) + 1, (int) ((gameTime % 60) / (60 / (double) 365)) + 1));
+
         if (60 - (int) gameTime % 60 == 60) {
             countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":00");
         }
@@ -399,34 +474,39 @@ public class GameScreen implements Screen {
         // Update the main satisfaction score
         font.draw(batch, "Student Satisfaction: " + (int) world.satisfaction.getSatisfactionScore() + "%", 10, 30);
 
-        if (selectedAsset != null && selectionTimer <= 5f) {
-            selectionTimer -= Gdx.graphics.getDeltaTime();
+        // Changes the selected label text to whatever is currently selected
+        selectedBuildingLabel.setText(selectableBuildings.get(selectableBuildingsIndex).objName);
+        selectedTerrainLabel.setText(selectableTerrains.get(selectableTerrainsIndex).objName);
 
-            selectedBuildingLabal.setVisible(true);
+        // Displays options in the menu, whenever a tile is highlighted
+        if (highlightedTile != null && highlightTimer <= 5f) {
+            highlightTimer -= Gdx.graphics.getDeltaTime();
+
+            highlightedBuildingLabel.setVisible(true);
             actionButton.setVisible(true);
 
-            selectedBuildingLabal.setText(selectedAsset.objName);
-            if (selectedAsset.isBuilding) {
+            highlightedBuildingLabel.setText(highlightedTile.objName);
+            if (highlightedTile.isBuilding) {
                 actionButton.setText("Demolish");
             }
             else {
                 actionButton.setText("Destroy");
             }
         }
-        else {
-            selectedBuildingLabal.setVisible(false);
+        else { // Hides the options when the tile is no longer highlighted after 5 seconds
+            highlightedBuildingLabel.setVisible(false);
             actionButton.setVisible(false);
         }
 
-        if (selectionTimer <= 0f) {
-            selectionTimer = 5f;
-            selectedAsset = null;
+        // Controls the highlight timer (5 seconds)
+        if (highlightTimer <= 0f) {
+            highlightTimer = 5f;
+            highlightedTile = null;
         }
 
-
-        timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTime / 60) + 1, (int) ((gameTime % 60) / (60 / (double) 365)) + 1));
-        if (buildingToPlace != null) {
-            if (world.doesObjectOverlap(buildingToPlace)) {
+        // Displays building overlap text
+        if (objectToPlace != null) {
+            if (world.doesObjectOverlap(objectToPlace)) {
                 font.draw(batch, "Buildings Overlap", 20, 520);
             }
         }
