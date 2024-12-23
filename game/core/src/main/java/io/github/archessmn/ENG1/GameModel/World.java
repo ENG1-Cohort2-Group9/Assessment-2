@@ -25,6 +25,7 @@ public class World {
     public Array<TerrainObject> terrain;
     public Array<MapObject> mapObjects;
     public MapObject[][] gridLookup; // Stores pointers to the buildings and terrain on the grid so that squares can be queried
+    private MapObjectHolder mapObjectHolder;
 
     public HashMap<Use, Integer> buildingUseCounts = new HashMap<>();
 
@@ -51,6 +52,8 @@ public class World {
     private void setUpWorld(int worldWidth, int worldHeight, EventManager eventManager) {
         this.width = worldWidth;
         this.height = worldHeight;
+        mapObjectHolder = new MapObjectHolder(width, height);
+        mapObjectHolder.add(new TerrainObject(5, 5, TerrainObject.Feature.LAKE));
 
         // These can only happen when a building is near these terrain types
         eventManager.disableEvent(GameEvent.Flooding);

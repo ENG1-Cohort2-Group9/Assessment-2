@@ -3,6 +3,7 @@ package io.github.archessmn.ENG1.GameModel;
 import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Objects.BuildingObject;
 import io.github.archessmn.ENG1.GameModel.Objects.MapObject;
+import io.github.archessmn.ENG1.GameModel.Objects.TerrainObject;
 import io.github.archessmn.ENG1.GameModel.Objects.Use;
 
 import java.util.HashMap;
@@ -10,6 +11,7 @@ import java.util.HashMap;
 public class MapObjectHolder {
     private HashMap<Class<? extends MapObject>, Array<MapObject>> typeIndex = new HashMap<>(); // Get objects by their class
     private HashMap<Use, Array<BuildingObject>> useIndex = new HashMap<>(); // Get objects by their use. Note that only BuildingObjects have a Use
+    private HashMap<TerrainObject.Feature, Array<TerrainObject>> featureIndex = new HashMap<>(); // Get objects by their feature. Note that only TerrainObjects have a Feature
     private MapObject[][] gridLookup; // Get objects by their map co-ordinates
 
     public MapObjectHolder(int worldWidth, int worldHeight) {
@@ -29,6 +31,12 @@ public class MapObjectHolder {
         }
     }
 
+    public void add(TerrainObject terrainObject) {
+        add((MapObject)terrainObject);
+
+        featureIndex.computeIfAbsent(terrainObject.feature, c -> new Array<>()).add(terrainObject);
+    }
+
     public void remove(MapObject mapObject) {
         Array<MapObject> containingArray = typeIndex.get(mapObject.getClass());
         if (containingArray != null) {
@@ -45,6 +53,15 @@ public class MapObjectHolder {
             if (containingArray != null) {
                 containingArray.removeValue(buildingObject, true);
             }
+        }
+    }
+
+    public void remove(TerrainObject terrainObject) {
+        remove((MapObject)terrainObject);
+
+        Array<TerrainObject> containingArray = featureIndex.get(terrainObject.feature);
+        if (containingArray != null) {
+            containingArray.removeValue(terrainObject, true);
         }
     }
 
