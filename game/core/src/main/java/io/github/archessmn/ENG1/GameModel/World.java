@@ -162,7 +162,7 @@ public class World {
                 // This will only trigger once (see '&& !building.built')
                 building.built = true;
 
-                updateWorldState(building, true);
+                updateWorldState(building, false);
             }
         }
     }
@@ -179,10 +179,10 @@ public class World {
         // Check if this changes which events can happen
         // Additional check (left hand side of &&) so we don't have to run the longer check every time
         if (wasRemoved) {
-            if (isBuildingNearTerrain(building, TerrainObject.Feature.LAKE) && getBuildingsNearTerrain(TerrainObject.Feature.LAKE).size == 1) {
+            if (isBuildingNearTerrain(building, TerrainObject.Feature.LAKE) && getCountOfTerrainNearBuildings(TerrainObject.Feature.LAKE) <= 1) {
                 eventManager.disableEvent(GameEvent.Flooding);
             }
-            if (isBuildingNearTerrain(building, TerrainObject.Feature.TREE) && getBuildingsNearTerrain(TerrainObject.Feature.TREE).size == 1) {
+            if (isBuildingNearTerrain(building, TerrainObject.Feature.TREE) && getCountOfTerrainNearBuildings(TerrainObject.Feature.TREE) <= 1) {
                 eventManager.disableEvent(GameEvent.TreeDamage);
             }
             if (eventManager.isEventEnabled(GameEvent.TooManyBuildings) && mapObjects.getUseCount(Use.TEACHING) <= TOO_MANY_LECTURE_BUILDINGS) {
@@ -192,10 +192,10 @@ public class World {
             }
         } else {
             if (!eventManager.isEventEnabled(GameEvent.Flooding) && isBuildingNearTerrain(building, TerrainObject.Feature.LAKE)) {
-                eventManager.disableEvent(GameEvent.Flooding);
+                eventManager.enableEvent(GameEvent.Flooding);
             }
             if (!eventManager.isEventEnabled(GameEvent.TreeDamage) && isBuildingNearTerrain(building, TerrainObject.Feature.TREE)) {
-                eventManager.disableEvent(GameEvent.TreeDamage);
+                eventManager.enableEvent(GameEvent.TreeDamage);
             }
             if (!eventManager.isEventEnabled(GameEvent.TooManyBuildings) && mapObjects.getUseCount(Use.TEACHING) >= TOO_MANY_LECTURE_BUILDINGS - 1) {
                 eventManager.enableEvent(GameEvent.TooManyBuildings);
@@ -220,9 +220,9 @@ public class World {
                 eventManager.disableEvent(GameEvent.TreeDamage);
             }
         } else if (!wasRemoved && getCountOfTerrainNearBuildings(terrain.feature) == 0) {
-            if (terrain.feature == TerrainObject.Feature.LAKE) {
+            if (terrain.feature == TerrainObject.Feature.LAKE && getCountOfTerrainNearBuildings(TerrainObject.Feature.LAKE) > 0) {
                 eventManager.enableEvent(GameEvent.Flooding);
-            } else if (terrain.feature == TerrainObject.Feature.TREE) {
+            } else if (terrain.feature == TerrainObject.Feature.TREE && getCountOfTerrainNearBuildings(TerrainObject.Feature.TREE) > 0) {
                 eventManager.enableEvent(GameEvent.TreeDamage);
             }
         }
@@ -389,7 +389,7 @@ public class World {
     public void demolishBuilding(BuildingObject building) {
         mapObjects.remove(building);
 
-        if (building.built) {
+        if (building.built) { // We only update the world state if this building has been completed. Otherwise, it will not have changed the world space in the first place
             updateWorldState(building, true);
         }
     }
