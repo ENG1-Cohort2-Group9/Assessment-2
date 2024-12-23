@@ -294,7 +294,7 @@ public class GameScreen implements Screen {
         // A check to see if any building/terrain assets have been clicked
         if (Gdx.input.justTouched()) {
             // Loops through all placed map objects to see if they have been clicked
-            for (MapObject mapObject : world.mapObjects) {
+            for (MapObject mapObject : world.getMapObjects()) {
                 if (mapObject.getBounds().contains(unprojectedTouchPos)) {
                     highlightedTile = mapObject;
                     highlightTimer = 5f;
@@ -379,11 +379,8 @@ public class GameScreen implements Screen {
 
     public void drawAssets(Batch batch, AssetManager assetManager) {
         // Draws all placed buildings and terrain assets
-        for (BuildingObject building : world.buildings) {
-            drawObject(batch, assetManager, building);
-        }
-        for (TerrainObject terrain : world.terrain) {
-            drawObject(batch, assetManager, terrain);
+        for (MapObject mapObject : world.getMapObjects()) {
+            drawObject(batch, assetManager, mapObject);
         }
 
         // Snaps the dragged object to the grid and draws it, if selected

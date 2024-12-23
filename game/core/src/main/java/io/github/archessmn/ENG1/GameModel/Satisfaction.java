@@ -193,7 +193,7 @@ public class Satisfaction {
         }
 
 
-        int number_of_buildings = world.buildings.size;
+        int number_of_buildings = world.getBuildings().size;
 
         // If lower <= #buildings <= upper, then both Lower -#buildings and #buildings - upper, will be >=1, being
         // equal to 1 when number_of_buildings is equal to one of the limits.
