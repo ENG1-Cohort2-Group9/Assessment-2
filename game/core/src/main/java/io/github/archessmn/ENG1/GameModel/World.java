@@ -133,6 +133,10 @@ public class World {
         if (mapObject.getGridCoords().x < GridUtils.GRID_WIDTH && mapObject.getGridCoords().y < GridUtils.GRID_HEIGHT && !doesObjectOverlap(mapObject)) {
             mapObject.place();
 
+            if (mapObject instanceof BuildingObject buildingObject) {
+                buildingObject.resetBuildingConstruction(currentTime);
+            }
+
             mapObjects.add(mapObject);
 
             if (mapObject instanceof TerrainObject terrainAsset) {
