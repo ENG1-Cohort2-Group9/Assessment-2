@@ -135,13 +135,14 @@ public class World {
 
             if (mapObject instanceof BuildingObject buildingObject) {
                 buildingObject.resetBuildingConstruction(currentTime);
-            }
-
-            mapObjects.add(mapObject);
-
-            if (mapObject instanceof TerrainObject terrainAsset) {
+                mapObjects.add(buildingObject);
+            } else if (mapObject instanceof TerrainObject terrainAsset) {
+                mapObjects.add(terrainAsset);
                 // Only do this for terrain since buildings update when construction is completed
                 updateWorldState(terrainAsset, false);
+            }
+            else {
+                throw new IllegalArgumentException("Unknown MapObject type" + mapObject.getClass().getSimpleName());
             }
 
             return true;
@@ -175,7 +176,6 @@ public class World {
      * @param wasRemoved if true, the building has just been removed. If false, the building has just been added.
      */
     public void updateWorldState(BuildingObject building, boolean wasRemoved) {
-        int addOrRemove = wasRemoved ? -1 : 1;
         // Check if this changes which events can happen
         // Additional check (left hand side of &&) so we don't have to run the longer check every time
         if (wasRemoved) {
