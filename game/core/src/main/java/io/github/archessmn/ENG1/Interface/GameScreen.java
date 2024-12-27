@@ -331,7 +331,7 @@ public class GameScreen implements Screen {
         }
 
         if (objectToPlace != null) { // Track building to mouse position for drag
-            objectToPlace.setCenter(touchPos.x, touchPos.y);
+            objectToPlace.setCentre(touchPos.x, touchPos.y);
             objectToPlace.updateGridCoords();
         }
     }

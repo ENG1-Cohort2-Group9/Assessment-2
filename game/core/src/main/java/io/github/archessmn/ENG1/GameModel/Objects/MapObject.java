@@ -70,7 +70,7 @@ public class MapObject {
      * @param x The rightmost (positive) x position
      * @param y The topmost (positive) y position
      */
-    public void setCenter(float x, float y) {
+    public void setCentre(float x, float y) {
         this.screenPosition.x = x - this.width / 2;
         this.screenPosition.y = y - this.height / 2;
     }
