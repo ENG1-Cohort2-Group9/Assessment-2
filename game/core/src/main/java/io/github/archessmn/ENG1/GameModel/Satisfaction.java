@@ -185,7 +185,7 @@ public class Satisfaction {
 
         // If no accommodation buildings are placed yet, the buildingDistancesScore is ignored.
         // (Since no one lives on campus to care about it)
-        if (world.getBuildingUseCounts().get(Use.ACCOMMODATION) == 0) {
+        if (world.getBuildingUseCount(Use.ACCOMMODATION) == 0) {
             satisfactionScore = completionScore + eventsScore + buildingValuesScore;
         }
         else {
@@ -193,7 +193,7 @@ public class Satisfaction {
         }
 
 
-        int number_of_buildings = world.buildings.size;
+        int number_of_buildings = world.getBuildings().size;
 
         // If lower <= #buildings <= upper, then both Lower -#buildings and #buildings - upper, will be >=1, being
         // equal to 1 when number_of_buildings is equal to one of the limits.
@@ -356,7 +356,7 @@ public class Satisfaction {
      */
     public float calculateScoreBonus(float multiplier, Use use1, Use use2) {
         // Prevents adding to satisfaction score for buildings uses that aren't yet placed.
-        if (world.getBuildingUseCounts().get(use1) == 0 || world.getBuildingUseCounts().get(use2) == 0) {
+        if (world.getBuildingUseCount(use1) == 0 || world.getBuildingUseCount(use2) == 0) {
             return 0;
         }
         // If the distance between the use pair is under the maxScoreThreshold, the max satisfaction is given, as long
@@ -429,7 +429,7 @@ public class Satisfaction {
         // demolition allows the user to go back down to 0 for a building use.
         completionScore = 0;
         for (Use use : Use.values()) {
-            if (world.getBuildingUseCounts().get(use) != 0) {
+            if (world.getBuildingUseCount(use) != 0) {
                 completionScore += completionScorePerUse;
             }
         }
@@ -472,22 +472,12 @@ public class Satisfaction {
         eventsScore += getEventScoreBonus(GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
 
         if (world.hasActiveEvent(GameEvent.GymHype)) {
-            for (BuildingObject building : world.getBuildings()) {
-                if (building instanceof GymBuilding) {
-                    eventsScore += 1f;
-                }
-            }
+            eventsScore += world.getCountOfSpecificBuilding(GymBuilding.class) * 1f;
         }
 
         float debuffPerBuilding = 2f;
         if (world.hasActiveEvent(GameEvent.TooManyBuildings)) {
-            for (BuildingObject building : world.getBuildings()) {
-                for (Use use : building.getUses()) {
-                    if (use == Use.TEACHING) {
-                        eventsScore -= debuffPerBuilding;
-                    }
-                }
-            }
+            eventsScore -= world.getBuildingUseCount(Use.TEACHING) * debuffPerBuilding;
             // This ensures that only teaching buildings over the limit reduce satisfaction. This could be removed to make
             // this event harsher. It sort of makes sense to me that ALL teaching buildings would be negatively affected by
             // overcrowding, but that would make this event very punishing
