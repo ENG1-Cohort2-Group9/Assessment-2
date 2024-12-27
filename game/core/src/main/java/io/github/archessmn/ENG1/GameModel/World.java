@@ -563,11 +563,10 @@ public class World {
     }
 
     /**
-     * Gets a HashMap between a building use, and the number of built instances of that use currently on the map.
-     * @return The buildingUseCounts HashMap.
+     * @return The number of built buildings that provide a given use
      */
-    public HashMap<Use, Integer> getBuildingUseCounts() {
-        return mapObjects.getBuildingUseCounts();
+    public int getBuildingUseCount(Use use) {
+        return mapObjects.getUseCount(use);
     }
 
     /**

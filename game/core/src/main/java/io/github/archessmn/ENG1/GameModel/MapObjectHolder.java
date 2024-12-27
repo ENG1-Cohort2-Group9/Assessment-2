@@ -185,18 +185,4 @@ public class MapObjectHolder {
         }
         return count;
     }
-
-    /**
-     * @return A hash map of all uses and their associated counts
-     */
-    public HashMap<Use, Integer> getBuildingUseCounts() {
-        HashMap<Use, Integer> useCounts = new HashMap<>();
-        for (Use use : Use.values()) {
-            useCounts.put(use, 0);
-        }
-        for (Map.Entry<Use, Array<BuildingObject>> entry : useIndex.entrySet()) {
-            useCounts.put(entry.getKey(), getUseCount(entry.getKey()));
-        }
-        return useCounts;
-    }
 }
