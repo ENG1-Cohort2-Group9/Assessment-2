@@ -439,7 +439,6 @@ public class Satisfaction {
     /**
      * Gets the satisfaction score bonus for an active event in which buildings of use {@code use} near any of a group
      * of terrain features adds +{@code scoreBonus} for each. If the event is not active, the result will be 0.
-     * @param activeEvents The array of active events, values populated by null if the event is not active.
      * @param event The event in question.
      * @param features The features the building type must be near to produce a bonus. If a building is near multiple
      *                 terrain features, the satisfaction is increased for each one.
@@ -448,9 +447,9 @@ public class Satisfaction {
      *                   {@value EVENTS_SCORE_CAP}
      * @return The total satisfaction score increase.
      */
-    private float getEventScoreBonus(GameEvent[] activeEvents, GameEvent event, TerrainObject.Feature[] features, Use use, float scoreBonus) {
+    private float getEventScoreBonus(GameEvent event, TerrainObject.Feature[] features, Use use, float scoreBonus) {
         float total = 0;
-        if (activeEvents[event.ordinal()] != null) {
+        if (world.hasActiveEvent(event)) {
             for (TerrainObject.Feature feature : features) {
                 for (BuildingObject building : world.getBuildingsNearTerrain(feature)) {
                     for (Use buildingUse : building.getUses()) {
@@ -466,19 +465,18 @@ public class Satisfaction {
 
 
     public void updateEventScore() {
-        GameEvent[] activeEvents = world.getActiveEvents();
         eventsScore = 0;
         // Events
-        eventsScore += getEventScoreBonus(activeEvents, GameEvent.TreeHype, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 1f );
-        eventsScore += getEventScoreBonus(activeEvents, GameEvent.LectureView, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
-        eventsScore += getEventScoreBonus(activeEvents, GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
+        eventsScore += getEventScoreBonus(GameEvent.TreeHype, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 1f );
+        eventsScore += getEventScoreBonus(GameEvent.LectureView, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
+        eventsScore += getEventScoreBonus(GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
 
-        if (activeEvents[GameEvent.GymHype.ordinal()] != null) {
+        if (world.hasActiveEvent(GameEvent.GymHype)) {
             eventsScore += world.getCountOfSpecificBuilding(GymBuilding.class) * 1f;
         }
 
         float debuffPerBuilding = 2f;
-        if (activeEvents[GameEvent.TooManyBuildings.ordinal()] != null) {
+        if (world.hasActiveEvent(GameEvent.TooManyBuildings)) {
             eventsScore -= world.getBuildingUseCount(Use.TEACHING) * debuffPerBuilding;
             // This ensures that only teaching buildings over the limit reduce satisfaction. This could be removed to make
             // this event harsher. It sort of makes sense to me that ALL teaching buildings would be negatively affected by
@@ -486,11 +484,11 @@ public class Satisfaction {
             eventsScore += debuffPerBuilding * (world.TOO_MANY_LECTURE_BUILDINGS - 1);
         }
 
-        if (activeEvents[GameEvent.TournamentWon.ordinal()] != null) {
+        if (world.hasActiveEvent(GameEvent.TournamentWon)) {
             eventsScore += 15f; // Quite strong. This event is (hopefully) hard to obtain
         }
 
-        if (activeEvents[GameEvent.LongBoiSighting.ordinal()] != null) {
+        if (world.hasActiveEvent(GameEvent.LongBoiSighting)) {
             eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }
 

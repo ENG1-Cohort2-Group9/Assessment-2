@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -72,6 +73,7 @@ public class GameScreen implements Screen {
     private final Array<Label> satisfactionVarLabel = new Array<>();
     private float timeEventShownAt = -10f;
     private GameEvent currentEvent = null;
+    private Array<Tuple<String, Integer>> displayedActiveEventTimes = new Array<>();
 
     float[] satisfactionScoreCaps;
 
@@ -125,6 +127,14 @@ public class GameScreen implements Screen {
         assetManager.load("missing_texture.png", Texture.class);
         assetManager.load("plus.png", Texture.class);
         assetManager.load("minus.png", Texture.class);
+        assetManager.load("LectureView.png", Texture.class);
+        assetManager.load("Flooding.png", Texture.class);
+        assetManager.load("GymHype.png", Texture.class);
+        assetManager.load("TournamentWon.png", Texture.class);
+        assetManager.load("TreeHype.png", Texture.class);
+        assetManager.load("TooManyBuildings.png", Texture.class);
+        assetManager.load("RockClimbing.png", Texture.class);
+        assetManager.load("ActiveEventBg.png", Texture.class);
 
         assetManager.finishLoading();
 
@@ -338,6 +348,13 @@ public class GameScreen implements Screen {
             world.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
         }
 
+        for (int i = 0; i < displayedActiveEventTimes.size; i++) {
+            if (world.getCurrentTime() > displayedActiveEventTimes.get(i).y) {
+                displayedActiveEventTimes.removeIndex(i);
+                i--;
+            }
+        }
+
         stage.act(delta);
     }
 
@@ -372,9 +389,42 @@ public class GameScreen implements Screen {
 
         drawAssets(batch, assetManager);
         drawSideMenu();
+        renderActiveEvents(batch, font);
 
         batch.end();
         stage.draw();
+    }
+
+    /**
+     * Renders icons on the left hand side of the screen to show what events are in effect. Draws from bottom to top,
+     * bottom justified, so the most recent icon will be at the top a descending list
+     */
+    private void renderActiveEvents(SpriteBatch batch, BitmapFont font) {
+        float bottomMargin = 35f;
+        float leftMargin = 5f;
+        float iconMargin = 5f;
+        float screenIconSize = 80f;
+        Sprite bgSprite = new Sprite(assetManager.get("ActiveEventBg.png", Texture.class));
+        bgSprite.setSize(screenIconSize * 1.05f, screenIconSize * 1.05f);
+
+        float iconYPos = bottomMargin + screenIconSize / 2f;
+        for (Tuple<String, Integer> pair : displayedActiveEventTimes) {
+            bgSprite.setCenter(leftMargin + screenIconSize / 2f, iconYPos);
+            bgSprite.draw(batch);
+
+
+            Sprite sprite = new Sprite(assetManager.get(pair.x, Texture.class));
+            sprite.setSize(screenIconSize, screenIconSize);
+            sprite.setCenter(leftMargin + screenIconSize / 2f, iconYPos);
+            sprite.draw(batch);
+
+            // Only show the timer if it will end within the game time
+            if (pair.y < World.GAME_LENGTH_SECONDS) {
+                font.draw(batch, (pair.y - MathUtils.round(world.getCurrentTime())) + "s", leftMargin + screenIconSize, iconYPos);
+            }
+
+            iconYPos += screenIconSize + iconMargin;
+        }
     }
 
     public void drawAssets(Batch batch, AssetManager assetManager) {
@@ -527,6 +577,12 @@ public class GameScreen implements Screen {
     public void showEventPopup(GameEvent event) {
         currentEvent = event;
         timeEventShownAt = world.getCurrentTime();
+        // This is always called AFTER the event is handled by world. Therefore, we can check activeEvents to find out
+        // if the new event is an active one
+        if (world.hasActiveEvent(event)) {
+            displayedActiveEventTimes.add(new Tuple<>(event.iconName, MathUtils.round(world.getEndTimeOfActiveEvent(event))));
+        }
+
         paused = true;
     }
 
