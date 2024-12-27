@@ -13,8 +13,7 @@ public class MapObject {
     public float x;
     public float y;
 
-    public int gridX;
-    public int gridY;
+    public GridCoordTuple gridCoords;
 
     public float width;
     public float height;
@@ -61,9 +60,7 @@ public class MapObject {
      */
     public void place() {
         this.snapToGrid();
-        GridCoordTuple gridCoord = GridUtils.getGridCoords(this.x, this.y);
-        this.gridX = gridCoord.x;
-        this.gridY = gridCoord.y;
+        gridCoords = GridUtils.getGridCoords(this.x, this.y);
 
         this.placed = true;
     }
@@ -109,7 +106,7 @@ public class MapObject {
      * @return A {@link Vector2} of the position on the grid
      */
     public Vector2 getRawGridCoords() {
-        return GridUtils.getRawGridCoords(this.x + this.width / 2, this.y + this.height / 2);
+        return GridUtils.getGridSquareScreenCoords(gridCoords);
     }
 
     /**
@@ -128,15 +125,6 @@ public class MapObject {
     public void snapToGrid() {
         Vector2 gridCoords = getRawGridCoords();
         this.setCenter(gridCoords.x, gridCoords.y);
-    }
-
-    /**
-     * Determines if a object is in any of the nine squares (including the centre) adjacent to this square
-     * @param other the other object to compare
-     * @return true if the object is adjacent to this one
-     */
-    public boolean isAdjacentTo(MapObject other) {
-        return Math.abs(other.gridX - gridX) <= 1 && Math.abs(other.gridY - gridY) <= 1;
     }
 
     public float getEfficiency() {
