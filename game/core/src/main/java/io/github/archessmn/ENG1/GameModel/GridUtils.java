@@ -14,18 +14,14 @@ public class GridUtils {
     public final static int GRID_HEIGHT = 9;
 
     /**
-     * Get the screen coordinates of the centre of the grid square the given screen coordinates would snap to.
+     * Get the screen coordinates of the bottom left of the grid square the given screen coordinates would snap to.
      * @param coords the grid square in question.
-     * @return A {@link Vector2} with coordinates of the centre of a grid square.
+     * @return A {@link Vector2} with coordinates of the bottom left of a grid square on the screen.
      */
     public static Vector2 getGridSquareScreenCoords(GridCoordTuple coords) {
-        float gridWidth = ((float)VIEWPORT_WIDTH / GRID_WIDTH);
-        float gridHeight = ((float)VIEWPORT_HEIGHT / GRID_HEIGHT);
-
-        float rawGridX = (MathUtils.round(coords.x / gridWidth + 0.5f) * gridWidth) - (gridWidth / 2f);
-        float rawGridY = (MathUtils.round(coords.y / (gridHeight) + 0.5f) * gridHeight) - (gridHeight / 2f);
-
-        return new Vector2(rawGridX, rawGridY);
+        float viewportX = (float)VIEWPORT_WIDTH * coords.x / GRID_WIDTH;
+        float viewportY = (float)VIEWPORT_HEIGHT * coords.y / GRID_HEIGHT;
+        return new Vector2(viewportX, viewportY);
     }
 
     /**
@@ -36,11 +32,9 @@ public class GridUtils {
      * @return A {@link GridCoordTuple} with coordinates in the grid.
      */
     public static GridCoordTuple getGridCoords(float x, float y) {
-        float gridWidth = ((float)VIEWPORT_WIDTH / GRID_WIDTH);
-        float gridHeight = ((float)VIEWPORT_HEIGHT / GRID_HEIGHT);
 
-        int gridX = Math.round((x / gridWidth) + 0.5f);
-        int gridY = Math.round((y / gridHeight) + 0.5f);
+        int gridX = Math.round((x / VIEWPORT_WIDTH) * GRID_WIDTH);
+        int gridY = Math.round((y / VIEWPORT_HEIGHT) * GRID_HEIGHT);
 
         return new GridCoordTuple(gridX, gridY);
     }

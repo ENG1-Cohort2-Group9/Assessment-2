@@ -36,10 +36,12 @@ public class MapObjectHolder {
      */
     public void add(MapObject mapObject) {
 
-        if (gridLookup[mapObject.gridX][mapObject.gridY] != null) {throw new IllegalArgumentException("Grid space is already occupied");}
+        if (gridLookup[mapObject.getGridCoords().x][mapObject.getGridCoords().y] != null) {
+            throw new IllegalArgumentException("Grid space is already occupied");
+        }
 
         typeIndex.computeIfAbsent(mapObject.getClass(), c -> new Array<>()).add(mapObject);
-        gridLookup[mapObject.gridX][mapObject.gridY] = mapObject;
+        gridLookup[mapObject.getGridCoords().x][mapObject.getGridCoords().y] = mapObject;
 
         // The following two statements check if the object is a generic class. If it is not, the generic class array is
         // updated with the object. This allows objects to be retrieved by superclass and subclass (for example you can
@@ -85,8 +87,8 @@ public class MapObjectHolder {
         if (containingArray != null) {
             containingArray.removeValue(mapObject, true);
         } else {throw new IllegalArgumentException("MapObject not found in list");}
-        if (gridLookup[mapObject.gridX][mapObject.gridY] == mapObject) {
-            gridLookup[mapObject.gridX][mapObject.gridY] = null;
+        if (gridLookup[mapObject.getGridCoords().x][mapObject.getGridCoords().y] == mapObject) {
+            gridLookup[mapObject.getGridCoords().x][mapObject.getGridCoords().y] = null;
         } else {throw new IllegalArgumentException("MapObject not found on grid");}
     }
 
@@ -184,5 +186,9 @@ public class MapObjectHolder {
             }
         }
         return count;
+    }
+
+    public boolean spaceIsOccupied(int x, int y) {
+        return !(x < GridUtils.GRID_WIDTH && y < GridUtils.GRID_HEIGHT) || gridLookup[x][y] != null;
     }
 }

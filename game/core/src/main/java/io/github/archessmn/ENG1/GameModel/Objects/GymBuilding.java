@@ -11,6 +11,6 @@ public class GymBuilding extends BuildingObject {
 
     @Override
     public GymBuilding makeCopy() {
-        return new GymBuilding(this.x, this.y, this.initialBuildTime, this.built);
+        return new GymBuilding(this.screenPosition.x, this.screenPosition.y, this.initialBuildTime, this.built);
     }
 }

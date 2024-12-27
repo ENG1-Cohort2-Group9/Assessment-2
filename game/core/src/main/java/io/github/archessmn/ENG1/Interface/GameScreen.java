@@ -332,6 +332,7 @@ public class GameScreen implements Screen {
 
         if (objectToPlace != null) { // Track building to mouse position for drag
             objectToPlace.setCenter(touchPos.x, touchPos.y);
+            objectToPlace.updateGridCoords();
         }
     }
 
@@ -374,8 +375,8 @@ public class GameScreen implements Screen {
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
             }
             shapeRenderer.setColor(Color.RED);
-            Vector2 buildingCoords = objectToPlace.getRawGridCoords();
-            shapeRenderer.rect(buildingCoords.x - (objectToPlace.width / 2), buildingCoords.y - (objectToPlace.height / 2), objectToPlace.width, objectToPlace.height);
+            Vector2 buildingCoords =  GridUtils.getGridSquareScreenCoords(objectToPlace.getGridCoords());
+            shapeRenderer.rect(buildingCoords.x, buildingCoords.y, objectToPlace.width, objectToPlace.height);
             shapeRenderer.end();
         }
 
@@ -435,13 +436,12 @@ public class GameScreen implements Screen {
 
         // Snaps the dragged object to the grid and draws it, if selected
         if (objectToPlace != null && unprojectedTouchPos.x <= VIEWPORT_WIDTH - 300) {
-            objectToPlace.snapToGrid();
             drawObject(batch, assetManager, objectToPlace);
         }
 
         // Draws the currently displayed building and terrain assets, in the side menu
-        drawObject(batch, assetManager, selectableBuildings.get(selectableBuildingsIndex));
-        drawObject(batch, assetManager, selectableTerrains.get(selectableTerrainsIndex));
+        drawSelectableObject(batch, assetManager, selectableBuildings.get(selectableBuildingsIndex));
+        drawSelectableObject(batch, assetManager, selectableTerrains.get(selectableTerrainsIndex));
     }
 
     private void drawObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
@@ -453,8 +453,9 @@ public class GameScreen implements Screen {
             }
         }
 
+        Vector2 position = GridUtils.getGridSquareScreenCoords(mapObject.getGridCoords());
         sprite.setSize(mapObject.width, mapObject.height);
-        sprite.setPosition(mapObject.x, mapObject.y);
+        sprite.setPosition(position.x, position.y);
         sprite.draw(batch);
 
         Sprite efficiencySprite = null;
@@ -470,8 +471,21 @@ public class GameScreen implements Screen {
         }
 
         efficiencySprite.setSize(mapObject.width * 0.25f, mapObject.height * 0.25f);
-        efficiencySprite.setPosition(mapObject.x + mapObject.width * 0.75f, mapObject.y + mapObject.height * 0.75f);
+        efficiencySprite.setPosition(position.x + mapObject.width * 0.75f, position.y + mapObject.height * 0.75f);
         efficiencySprite.draw(batch);
+    }
+
+    /**
+     * Unique drawing function required to draw buildings offset from the grid. Fewer checks are required for selectable
+     * objects (e.g. they will never be under construction or have efficiency modifiers)
+     */
+    private void drawSelectableObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
+        Sprite sprite = new Sprite(assetManager.get(mapObject.spriteName, Texture.class));
+
+        Vector2 position = mapObject.getScreenPos();
+        sprite.setSize(mapObject.width, mapObject.height);
+        sprite.setPosition(position.x, position.y);
+        sprite.draw(batch);
     }
 
     /**

@@ -49,7 +49,7 @@ public class BuildingObject extends MapObject {
      * @return The BuildingObject clone
      */
     public BuildingObject makeCopy() {
-        return new BuildingObject(this.x, this.y + 60, this.width, this.height, this.constructionDuration, this.initialBuildTime, true, this.uses, this.spriteName, this.objName);
+        return new BuildingObject(this.screenPosition.x, this.screenPosition.y + 60, this.width, this.height, this.constructionDuration, this.initialBuildTime, true, this.uses, this.spriteName, this.objName);
     }
 
     /**
