@@ -316,10 +316,18 @@ public class GameScreen implements Screen {
             BuildingObject currentBuilding = selectableBuildings.get(selectableBuildingsIndex);
             TerrainObject currentTerrain = selectableTerrains.get(selectableTerrainsIndex);
             if (currentBuilding.getBounds().contains(unprojectedTouchPos)) {
-                objectToPlace = selectableBuildings.get(selectableBuildingsIndex).makeCopy();
+                try {
+                    objectToPlace = (BuildingObject) selectableBuildings.get(selectableBuildingsIndex).clone();
+                } catch (CloneNotSupportedException e) {
+                    throw new RuntimeException(e);
+                }
             }
             else if (currentTerrain.getBounds().contains(unprojectedTouchPos)) {
-                objectToPlace = selectableTerrains.get(selectableTerrainsIndex).makeCopy();
+                try {
+                    objectToPlace = (TerrainObject) selectableTerrains.get(selectableTerrainsIndex).clone();
+                } catch (CloneNotSupportedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
         else if (!isClicked && objectToPlace != null) { // Click released

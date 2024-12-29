@@ -9,7 +9,7 @@ import io.github.archessmn.ENG1.GameModel.GridUtils;
  * A super-class representing anything that can be placed on a map.
  * It stored information about the object and provides utility classes for interacting with it.
  */
-public class MapObject {
+public class MapObject implements Cloneable {
     public Vector2 screenPosition;
 
     private GridCoordTuple gridCoords;
@@ -134,5 +134,16 @@ public class MapObject {
 
     public void setEfficiency(float efficiency) {
         this.efficiency = efficiency;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        Object clone = super.clone();
+        // Make a deep copy
+        ((MapObject)clone).screenPosition = new Vector2(screenPosition.x, screenPosition.y);
+        ((MapObject)clone).gridCoords = new GridCoordTuple(gridCoords.x, gridCoords.y);
+        ((MapObject)clone).bounds = new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
+
+        return clone;
     }
 }

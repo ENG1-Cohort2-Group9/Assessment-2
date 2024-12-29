@@ -45,14 +45,6 @@ public class BuildingObject extends MapObject {
     }
 
     /**
-     * Creates a copy of the BuildingObject
-     * @return The BuildingObject clone
-     */
-    public BuildingObject makeCopy() {
-        return new BuildingObject(this.screenPosition.x, this.screenPosition.y + 60, this.width, this.height, this.constructionDuration, this.initialBuildTime, true, this.uses, this.spriteName, this.objName);
-    }
-
-    /**
      * Sets the building back to un-built and begins construction again
      * @param newInitialConstructionTime The time at which the building will begin construction
      */
