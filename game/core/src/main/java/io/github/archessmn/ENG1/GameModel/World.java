@@ -47,9 +47,7 @@ public class World {
     public World(int worldWidth, int worldHeight, GameEventListener[] additionalEventListeners) {
         GameEventListener[] listeners = new GameEventListener[additionalEventListeners.length + 1];
         listeners[0] = new GameEventListener(this::handleEvent);
-        for (int i = 0; i < additionalEventListeners.length; i++) {
-            listeners[i + 1] = additionalEventListeners[i];
-        }
+        System.arraycopy(additionalEventListeners, 0, listeners, 1, additionalEventListeners.length);
         eventManager = new EventManager(listeners, GAME_LENGTH_SECONDS);
 
         this.width = worldWidth;
