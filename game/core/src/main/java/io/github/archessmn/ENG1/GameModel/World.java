@@ -50,11 +50,11 @@ public class World {
 
 
         // These can only happen when a building is near these terrain types
-        eventManager.disableEvent(GameEvent.Flooding);
-        eventManager.disableEvent(GameEvent.TreeDamage);
+        eventManager.disableEvent(GameEvent.FLOODING);
+        eventManager.disableEvent(GameEvent.TREE_DAMAGE);
         // These are conditional on the player's actions
-        eventManager.disableEvent(GameEvent.TournamentWon);
-        eventManager.disableEvent(GameEvent.TooManyBuildings);
+        eventManager.disableEvent(GameEvent.TOURNAMENT_WON);
+        eventManager.disableEvent(GameEvent.TOO_MANY_BUILDINGS);
 
         satisfaction = new Satisfaction(this);
 
@@ -180,25 +180,25 @@ public class World {
         // Additional check (left hand side of &&) so we don't have to run the longer check every time
         if (wasRemoved) {
             if (isBuildingNearTerrain(building, TerrainObject.Feature.LAKE) && getCountOfTerrainNearBuildings(TerrainObject.Feature.LAKE) <= 1) {
-                eventManager.disableEvent(GameEvent.Flooding);
+                eventManager.disableEvent(GameEvent.FLOODING);
             }
             if (isBuildingNearTerrain(building, TerrainObject.Feature.TREE) && getCountOfTerrainNearBuildings(TerrainObject.Feature.TREE) <= 1) {
-                eventManager.disableEvent(GameEvent.TreeDamage);
+                eventManager.disableEvent(GameEvent.TREE_DAMAGE);
             }
-            if (eventManager.isEventEnabled(GameEvent.TooManyBuildings) && mapObjects.getUseCount(Use.TEACHING) <= TOO_MANY_LECTURE_BUILDINGS) {
-                eventManager.disableEvent(GameEvent.TooManyBuildings);
+            if (eventManager.isEventEnabled(GameEvent.TOO_MANY_BUILDINGS) && mapObjects.getUseCount(Use.TEACHING) <= TOO_MANY_LECTURE_BUILDINGS) {
+                eventManager.disableEvent(GameEvent.TOO_MANY_BUILDINGS);
                 // Disable the effect of the event as well if it has occurred
-                activeEvents[GameEvent.TooManyBuildings.ordinal()] = null;
+                activeEvents[GameEvent.TOO_MANY_BUILDINGS.ordinal()] = null;
             }
         } else {
-            if (!eventManager.isEventEnabled(GameEvent.Flooding) && isBuildingNearTerrain(building, TerrainObject.Feature.LAKE)) {
-                eventManager.enableEvent(GameEvent.Flooding);
+            if (!eventManager.isEventEnabled(GameEvent.FLOODING) && isBuildingNearTerrain(building, TerrainObject.Feature.LAKE)) {
+                eventManager.enableEvent(GameEvent.FLOODING);
             }
-            if (!eventManager.isEventEnabled(GameEvent.TreeDamage) && isBuildingNearTerrain(building, TerrainObject.Feature.TREE)) {
-                eventManager.enableEvent(GameEvent.TreeDamage);
+            if (!eventManager.isEventEnabled(GameEvent.TREE_DAMAGE) && isBuildingNearTerrain(building, TerrainObject.Feature.TREE)) {
+                eventManager.enableEvent(GameEvent.TREE_DAMAGE);
             }
-            if (!eventManager.isEventEnabled(GameEvent.TooManyBuildings) && mapObjects.getUseCount(Use.TEACHING) >= TOO_MANY_LECTURE_BUILDINGS - 1) {
-                eventManager.enableEvent(GameEvent.TooManyBuildings);
+            if (!eventManager.isEventEnabled(GameEvent.TOO_MANY_BUILDINGS) && mapObjects.getUseCount(Use.TEACHING) >= TOO_MANY_LECTURE_BUILDINGS - 1) {
+                eventManager.enableEvent(GameEvent.TOO_MANY_BUILDINGS);
             }
         }
 
@@ -215,15 +215,15 @@ public class World {
         // Check if this changes which events can happen if this object is the first or last object next to a building
         if (wasRemoved && getCountOfTerrainNearBuildings(terrain.feature) == 1) {
             if (terrain.feature == TerrainObject.Feature.LAKE) {
-                eventManager.disableEvent(GameEvent.Flooding);
+                eventManager.disableEvent(GameEvent.FLOODING);
             } else if (terrain.feature == TerrainObject.Feature.TREE) {
-                eventManager.disableEvent(GameEvent.TreeDamage);
+                eventManager.disableEvent(GameEvent.TREE_DAMAGE);
             }
         } else if (!wasRemoved && getCountOfTerrainNearBuildings(terrain.feature) == 0) {
             if (terrain.feature == TerrainObject.Feature.LAKE && getCountOfTerrainNearBuildings(TerrainObject.Feature.LAKE) > 0) {
-                eventManager.enableEvent(GameEvent.Flooding);
+                eventManager.enableEvent(GameEvent.FLOODING);
             } else if (terrain.feature == TerrainObject.Feature.TREE && getCountOfTerrainNearBuildings(TerrainObject.Feature.TREE) > 0) {
-                eventManager.enableEvent(GameEvent.TreeDamage);
+                eventManager.enableEvent(GameEvent.TREE_DAMAGE);
             }
         }
 
@@ -243,8 +243,8 @@ public class World {
         for (int i = 0; i < activeEventEndTime.length; i++) {
             if (currentTime > activeEventEndTime[i]) {
                 // Special effect for "Gym hype" to enable the possibility of winning the tournament if the user has placed enough gyms.
-                if (i == GameEvent.GymHype.ordinal() && getCountOfSpecificBuilding(GymBuilding.class) >= GYMS_FOR_TOURNAMENT_WIN) {
-                    eventManager.enableEvent(GameEvent.TournamentWon);
+                if (i == GameEvent.GYM_HYPE.ordinal() && getCountOfSpecificBuilding(GymBuilding.class) >= GYMS_FOR_TOURNAMENT_WIN) {
+                    eventManager.enableEvent(GameEvent.TOURNAMENT_WON);
                 }
 
                 activeEvents[i] = null;
@@ -292,51 +292,51 @@ public class World {
 
     public void handleEvent(GameEvent event) {
         switch (event) {
-            case Flooding:
+            case FLOODING:
                 for (BuildingObject building : getBuildingsNearTerrain(TerrainObject.Feature.LAKE)) {
                     closeBuilding(building, 30f);
                 }
-                addActiveEvent(GameEvent.Flooding, 30);
+                addActiveEvent(GameEvent.FLOODING, 30);
                 break;
-            case Smelly:
+            case SMELLY:
                 if (mapObjects.getBuildings().size > 0) {
                     modifyEfficiency(getRandomBuilding(mapObjects.getBuildings()), 0.5f);
                 }
                 break;
-            case Seagull:
+            case SEAGULL:
                 if (mapObjects.getBuildings().size > 0) {
                     closeBuilding(getRandomBuilding(mapObjects.getBuildings()));
                 }
                 break;
-            case TreeHype:
-                addActiveEvent(GameEvent.TreeHype, 120);
+            case TREE_HYPE:
+                addActiveEvent(GameEvent.TREE_HYPE, 120);
                 break;
-            case TreeDamage:
+            case TREE_DAMAGE:
                 Array<BuildingObject> buildingsNearTrees = getBuildingsNearTerrain(TerrainObject.Feature.TREE);
                 if (buildingsNearTrees.size > 0) {
                     demolishBuilding(getRandomBuilding(buildingsNearTrees));
                 }
                 break;
-            case GooseAttack:
+            case GOOSE_ATTACK:
                 // Has no effect
                 break;
-            case LectureView:
-                addActiveEvent(GameEvent.LectureView);
+            case LECTURE_VIEW:
+                addActiveEvent(GameEvent.LECTURE_VIEW);
                 break;
-            case RockClimbing:
-                addActiveEvent(GameEvent.RockClimbing, 120);
+            case ROCK_CLIMBING:
+                addActiveEvent(GameEvent.ROCK_CLIMBING, 120);
                 break;
-            case LongBoiSighting:
-                addActiveEvent(GameEvent.LongBoiSighting, 10);
+            case LONG_BOI_SIGHTING:
+                addActiveEvent(GameEvent.LONG_BOI_SIGHTING, 10);
                 break;
-            case GymHype:
-                addActiveEvent(GameEvent.GymHype, 120);
+            case GYM_HYPE:
+                addActiveEvent(GameEvent.GYM_HYPE, 120);
                 break;
-            case TournamentWon:
-                addActiveEvent(GameEvent.TournamentWon);
+            case TOURNAMENT_WON:
+                addActiveEvent(GameEvent.TOURNAMENT_WON);
                 break;
-            case TooManyBuildings:
-                addActiveEvent(GameEvent.TooManyBuildings);
+            case TOO_MANY_BUILDINGS:
+                addActiveEvent(GameEvent.TOO_MANY_BUILDINGS);
                 break;
             default:
                 throw new RuntimeException("Unknown event type: " + event);

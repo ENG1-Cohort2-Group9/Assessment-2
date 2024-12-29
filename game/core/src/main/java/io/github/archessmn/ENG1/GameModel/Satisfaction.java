@@ -467,16 +467,16 @@ public class Satisfaction {
     public void updateEventScore() {
         eventsScore = 0;
         // Events
-        eventsScore += getEventScoreBonus(GameEvent.TreeHype, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 1f );
-        eventsScore += getEventScoreBonus(GameEvent.LectureView, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
-        eventsScore += getEventScoreBonus(GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
+        eventsScore += getEventScoreBonus(GameEvent.TREE_HYPE, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 1f );
+        eventsScore += getEventScoreBonus(GameEvent.LECTURE_VIEW, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
+        eventsScore += getEventScoreBonus(GameEvent.ROCK_CLIMBING, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
 
-        if (world.hasActiveEvent(GameEvent.GymHype)) {
+        if (world.hasActiveEvent(GameEvent.GYM_HYPE)) {
             eventsScore += world.getCountOfSpecificBuilding(GymBuilding.class) * 1f;
         }
 
         float debuffPerBuilding = 2f;
-        if (world.hasActiveEvent(GameEvent.TooManyBuildings)) {
+        if (world.hasActiveEvent(GameEvent.TOO_MANY_BUILDINGS)) {
             eventsScore -= world.getBuildingUseCount(Use.TEACHING) * debuffPerBuilding;
             // This ensures that only teaching buildings over the limit reduce satisfaction. This could be removed to make
             // this event harsher. It sort of makes sense to me that ALL teaching buildings would be negatively affected by
@@ -484,11 +484,11 @@ public class Satisfaction {
             eventsScore += debuffPerBuilding * (world.TOO_MANY_LECTURE_BUILDINGS - 1);
         }
 
-        if (world.hasActiveEvent(GameEvent.TournamentWon)) {
+        if (world.hasActiveEvent(GameEvent.TOURNAMENT_WON)) {
             eventsScore += 15f; // Quite strong. This event is (hopefully) hard to obtain
         }
 
-        if (world.hasActiveEvent(GameEvent.LongBoiSighting)) {
+        if (world.hasActiveEvent(GameEvent.LONG_BOI_SIGHTING)) {
             eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }
 
