@@ -18,7 +18,7 @@ import java.util.*;
  */
 public class World {
 
-    public final int width, height;
+    public final int WIDTH, HEIGHT;
     public static final float GAME_LENGTH_SECONDS = 300;
 
     private MapObjectHolder mapObjects = new MapObjectHolder(GridUtils.GRID_WIDTH, GridUtils.GRID_HEIGHT);
@@ -27,8 +27,8 @@ public class World {
     public Satisfaction satisfaction;
 
     // Stores events that have prolonged effects. Indices are preset for quicker lookup, even though instantaneous events are never stored here so the array can never be full.
-    GameEvent[] activeEvents = new GameEvent[GameEvent.values().length];
-    float[] activeEventEndTime = new float[GameEvent.values().length];
+    private GameEvent[] activeEvents = new GameEvent[GameEvent.values().length];
+    private float[] activeEventEndTime = new float[GameEvent.values().length];
     Array<EfficiencyModifier> activeModifiers = new Array<>();
 
     private float currentTime;
@@ -50,8 +50,8 @@ public class World {
         System.arraycopy(additionalEventListeners, 0, listeners, 1, additionalEventListeners.length);
         eventManager = new EventManager(listeners, GAME_LENGTH_SECONDS);
 
-        this.width = worldWidth;
-        this.height = worldHeight;
+        this.WIDTH = worldWidth;
+        this.HEIGHT = worldHeight;
 
 
 
@@ -78,7 +78,7 @@ public class World {
 
         // Places at least one lake tile down on the map - at a randomly generated location - if none were generated in the perlin noise
         if (mapObjects.getTerrainObjects().size == 0) {
-            TerrainObject asset = new TerrainObject(new Random().nextInt(0, width), new Random().nextInt(0, height), TerrainObject.Feature.LAKE);
+            TerrainObject asset = new TerrainObject(new Random().nextInt(0, WIDTH), new Random().nextInt(0, HEIGHT), TerrainObject.Feature.LAKE);
             addMapObject(asset);
         }
     }
@@ -94,8 +94,8 @@ public class World {
         OpenSimplexNoise noise = new OpenSimplexNoise();
         int seed = new Random().nextInt(0, 100000);
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width - 60; x++) {
+        for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH - 60; x++) {
                 double value = noise.eval(x / frequency, y / frequency, seed);
 
                 if (value > acceptedValue) {
@@ -545,14 +545,6 @@ public class World {
      */
     public int getBuildingUseCount(Use use) {
         return mapObjects.getUseCount(use);
-    }
-
-    /**
-     * Gets the List of currently active game events.
-     * @return The activeEvents list.
-     */
-    public GameEvent[] getActiveEvents() {
-        return activeEvents;
     }
 
     public Array<MapObject> getMapObjects() {
