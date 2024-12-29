@@ -24,42 +24,41 @@ import io.github.archessmn.ENG1.GameModel.Objects.*;
 import static java.lang.Math.floorDiv;
 
 public class GameScreen implements Screen {
-    public static final Integer VIEWPORT_WIDTH = 960;
-    public static final Integer VIEWPORT_HEIGHT = 540;
+    public static final int VIEWPORT_WIDTH = 960;
+    public static final int VIEWPORT_HEIGHT = 540;
 
-    World world;
+    private World world;
 
-    AssetManager assetManager;
+    private AssetManager assetManager;
 
-    TextureAtlas atlas;
-    Skin skin;
+    private TextureAtlas atlas;
+    private Skin skin;
 
-    ShapeRenderer gridRenderer;
-    ShapeRenderer shapeRenderer;
-    ShapeRenderer blockRenderer;
+    private ShapeRenderer gridRenderer;
+    private ShapeRenderer shapeRenderer;
+    private ShapeRenderer blockRenderer;
 
-    SpriteBatch batch;
+    private SpriteBatch batch;
 
-    FitViewport viewport;
+    private FitViewport viewport;
 
-    Vector2 touchPos;
-    Vector2 unprojectedTouchPos;
-    Boolean isClicked = false;
+    private Vector2 touchPos;
+    private Vector2 unprojectedTouchPos;
+    private boolean isClicked = false;
 
-    Rectangle buildingRectangle;
-    BitmapFont font;
+    private BitmapFont font;
 
-    MapObject objectToPlace = null;
-    Array<BuildingObject> selectableBuildings = new Array<>();
-    Array<TerrainObject> selectableTerrains = new Array<>();
-    int selectableBuildingsIndex = 0;
-    int selectableTerrainsIndex = 0;
+    private MapObject objectToPlace = null;
+    private Array<BuildingObject> selectableBuildings = new Array<>();
+    private Array<TerrainObject> selectableTerrains = new Array<>();
+    private int selectableBuildingsIndex = 0;
+    private int selectableTerrainsIndex = 0;
 
-    MapObject highlightedTile = null;
-    float highlightTimer = 5f;
+    private MapObject highlightedTile = null;
+    private float highlightTimer = 5f;
 
-    Boolean paused = true;
-    Boolean gameEnded = false;
+    private boolean paused = true;
+    private boolean gameEnded = false;
 
     private Stage stage;
     private Table sideMenu;
@@ -75,12 +74,12 @@ public class GameScreen implements Screen {
     private GameEvent currentEvent = null;
     private Array<Tuple<String, Integer>> displayedActiveEventTimes = new Array<>();
 
-    float[] satisfactionScoreCaps;
+    private float[] satisfactionScoreCaps;
 
-    final ScreenManager game;
-    final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
+    private final ScreenManager game;
+    private final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
 
-    String uniName = "Guest";
+    private String uniName = "Guest";
 
 
 
@@ -153,8 +152,6 @@ public class GameScreen implements Screen {
         unprojectedTouchPos = new Vector2();
 
         blockRenderer = new ShapeRenderer();
-
-        buildingRectangle = new Rectangle();
     }
 
     private void setupSideMenu() {
