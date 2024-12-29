@@ -176,7 +176,7 @@ public class GameScreen implements Screen {
         actionButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                if (highlightedTile.isBuilding) {
+                if (highlightedTile instanceof BuildingObject) {
                     world.demolishBuilding((BuildingObject) highlightedTile);
                 }
                 else {
@@ -454,8 +454,7 @@ public class GameScreen implements Screen {
 
     private void drawObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
         Sprite sprite = new Sprite(assetManager.get(mapObject.spriteName, Texture.class));
-        if (mapObject.isBuilding && mapObject.placed) {
-            BuildingObject buildingObject = (BuildingObject) mapObject;
+        if (mapObject instanceof BuildingObject buildingObject && mapObject.placed) {
             if (!buildingObject.built) {
                 sprite = new Sprite(assetManager.get(buildingObject.unbuiltSpriteName, Texture.class));
             }
@@ -555,7 +554,7 @@ public class GameScreen implements Screen {
             actionButton.setVisible(true);
 
             highlightedBuildingLabel.setText(highlightedTile.objName);
-            if (highlightedTile.isBuilding) {
+            if (highlightedTile instanceof BuildingObject) {
                 actionButton.setText("Demolish");
             }
             else {

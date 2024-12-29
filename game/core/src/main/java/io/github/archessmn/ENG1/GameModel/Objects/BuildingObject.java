@@ -31,7 +31,7 @@ public class BuildingObject extends MapObject {
      * @param objName The name of the object in the game space
      */
     public BuildingObject(float x, float y, float width, float height, float buildingConstructionDuration, float initialBuildTime, boolean built, Use[] uses, String spriteName, String objName) {
-        super(x, y, width, height, spriteName, objName, true);
+        super(x, y, width, height, spriteName, objName);
 
         this.initialBuildTime = initialBuildTime;
         this.constructionDuration = buildingConstructionDuration;

@@ -21,7 +21,6 @@ public class MapObject implements Cloneable {
     public final String objName;
 
     public boolean placed = false;
-    public boolean isBuilding = false;
 
     public Rectangle bounds;
 
@@ -36,9 +35,8 @@ public class MapObject implements Cloneable {
      * @param height Height of the object.
      * @param spriteName The file name of the object's sprite.
      * @param objName The name of the object in the game space
-     * @param isBuilding Indicates whether the map object is a building or not
      */
-    public MapObject(float x, float y, float width, float height, String spriteName, String objName, boolean isBuilding) {
+    public MapObject(float x, float y, float width, float height, String spriteName, String objName) {
         this.screenPosition = new Vector2(x, y);
 
         this.width = width;
@@ -48,8 +46,6 @@ public class MapObject implements Cloneable {
 
         this.spriteName = spriteName;
         this.objName = objName;
-
-        this.isBuilding = isBuilding;
 
         this.bounds = new Rectangle(this.screenPosition.x, this.screenPosition.y, this.width, this.height);
     }
