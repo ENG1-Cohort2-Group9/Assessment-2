@@ -18,7 +18,7 @@ import java.util.*;
  */
 public class World {
 
-    public int width, height;
+    public final int width, height;
     public static final float GAME_LENGTH_SECONDS = 300;
 
     private MapObjectHolder mapObjects = new MapObjectHolder(GridUtils.GRID_WIDTH, GridUtils.GRID_HEIGHT);
@@ -39,11 +39,19 @@ public class World {
     private final int GYMS_FOR_TOURNAMENT_WIN = 10; // The number of gyms needed to allow the university to win a sports event.
 
     /**
-     * Initialises an empty world and loads assets.
+     * Initialises the game world with optional extra event listeners for event handling outside of this class
      * @param worldWidth Width to use for the usable world space
      * @param worldHeight Height to use for the usable world space
+     * @param additionalEventListeners Extra event listeners for event handling outside of this class. Can be used for rendering effects
      */
-    private void setUpWorld(int worldWidth, int worldHeight, EventManager eventManager) {
+    public World(int worldWidth, int worldHeight, GameEventListener[] additionalEventListeners) {
+        GameEventListener[] listeners = new GameEventListener[additionalEventListeners.length + 1];
+        listeners[0] = new GameEventListener(this::handleEvent);
+        for (int i = 0; i < additionalEventListeners.length; i++) {
+            listeners[i + 1] = additionalEventListeners[i];
+        }
+        eventManager = new EventManager(listeners, GAME_LENGTH_SECONDS);
+
         this.width = worldWidth;
         this.height = worldHeight;
 
@@ -59,29 +67,6 @@ public class World {
         satisfaction = new Satisfaction(this);
 
         createWorldAssets();
-    }
-
-
-    /**
-     * Initialises the game world
-     * @param worldWidth Width to use for the usable world space
-     * @param worldHeight Height to use for the usable world space
-     */
-    public World(int worldWidth, int worldHeight) {
-        eventManager = new EventManager(new GameEventListener[] { new GameEventListener(this::handleEvent) }, GAME_LENGTH_SECONDS);
-        setUpWorld(worldWidth, worldHeight, eventManager);
-    }
-
-
-    /**
-     * Initialises the game world with an extra event listener for event handling outside of this class
-     * @param worldWidth Width to use for the usable world space
-     * @param worldHeight Height to use for the usable world space
-     * @param additionalEventListener an extra event listener for event handling outside of this class. Can be used for rendering effects
-     */
-    public World(int worldWidth, int worldHeight, GameEventListener additionalEventListener) {
-        eventManager = new EventManager(new GameEventListener[] { new GameEventListener(this::handleEvent), additionalEventListener }, GAME_LENGTH_SECONDS);
-        setUpWorld(worldWidth, worldHeight, eventManager);
     }
 
 

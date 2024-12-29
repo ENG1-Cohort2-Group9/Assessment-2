@@ -92,7 +92,7 @@ public class GameScreen implements Screen {
     public void show() {
         viewport = new FitViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
         // 300 here represents the pixel width of the UI on the right hand side
-        world = new World(VIEWPORT_WIDTH - 300, VIEWPORT_HEIGHT, new GameEventListener(this::showEventPopup));
+        world = new World(VIEWPORT_WIDTH - 300, VIEWPORT_HEIGHT, new GameEventListener[] {new GameEventListener(this::showEventPopup)});
 
         atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
