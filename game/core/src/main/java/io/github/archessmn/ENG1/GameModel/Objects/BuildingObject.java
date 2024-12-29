@@ -31,7 +31,7 @@ public class BuildingObject extends MapObject {
      * @param objName The name of the object in the game space
      */
     public BuildingObject(float x, float y, float width, float height, float buildingConstructionDuration, float initialBuildTime, boolean built, Use[] uses, String spriteName, String objName) {
-        super(x, y, width, height, spriteName, objName, true);
+        super(x, y, width, height, spriteName, objName);
 
         this.initialBuildTime = initialBuildTime;
         this.constructionDuration = buildingConstructionDuration;
@@ -42,14 +42,6 @@ public class BuildingObject extends MapObject {
         this.UseSize = Use.values().length;
 
         this.unbuiltSpriteName = "construction.png";
-    }
-
-    /**
-     * Creates a copy of the BuildingObject
-     * @return The BuildingObject clone
-     */
-    public BuildingObject makeCopy() {
-        return new BuildingObject(this.screenPosition.x, this.screenPosition.y + 60, this.width, this.height, this.constructionDuration, this.initialBuildTime, true, this.uses, this.spriteName, this.objName);
     }
 
     /**
