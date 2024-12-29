@@ -9,13 +9,13 @@ import io.github.archessmn.ENG1.GameModel.GridUtils;
  * A super-class representing anything that can be placed on a map.
  * It stored information about the object and provides utility classes for interacting with it.
  */
-public class MapObject {
-    public Vector2 screenPosition;
+public abstract class MapObject {
+    private Vector2 screenPosition;
 
     private GridCoordTuple gridCoords;
 
-    public float width;
-    public float height;
+    public final float width;
+    public final float height;
 
     public final String spriteName;
     public final String objName;
