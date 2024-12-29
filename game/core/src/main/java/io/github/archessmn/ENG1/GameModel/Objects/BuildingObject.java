@@ -7,14 +7,14 @@ package io.github.archessmn.ENG1.GameModel.Objects;
 public class BuildingObject extends MapObject {
     public boolean built;
 
-    public String unbuiltSpriteName;
+    public final String unbuiltSpriteName;
 
-    public float initialBuildTime;
-    public float constructionDuration;
-    public float buildingCompletionTime;
+    private float initialBuildTime;
+    private float constructionDuration;
+    private float buildingCompletionTime;
 
     public final Use[] uses;
-    int UseSize;
+    final int UseSize;
 
 
     /**
@@ -52,6 +52,25 @@ public class BuildingObject extends MapObject {
         this.built = false;
         this.initialBuildTime = newInitialConstructionTime;
         this.buildingCompletionTime = initialBuildTime + constructionDuration;
+    }
+
+    /**
+     * Sets the building back to un-built and begins construction again
+     * @param newInitialConstructionTime The time at which the building will begin construction
+     * @param newConstructionTime The time the building will take to finish construction
+     */
+    public void resetBuildingConstruction(float newInitialConstructionTime, float newConstructionTime) {
+        this.built = false;
+        this.initialBuildTime = newInitialConstructionTime;
+        this.buildingCompletionTime = initialBuildTime + newConstructionTime;
+    }
+
+    /**
+     * @return True if the building has finished construction
+     * @param currentTime The current game time in seconds
+     */
+    public boolean isComplete(float currentTime) {
+        return currentTime >= buildingCompletionTime;
     }
 
     /**

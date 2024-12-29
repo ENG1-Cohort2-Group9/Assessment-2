@@ -159,7 +159,7 @@ public class World {
         // but libGDX seems to get confused and break if a for (BuildingObject building : buildings) loop is used.
         for (int i = 0; i < mapObjects.getBuildings().size; i++) {
             BuildingObject building = mapObjects.getBuildings().get(i);
-            if (!building.built && currentTime > building.buildingCompletionTime) {
+            if (!building.built && building.isComplete(currentTime)) {
                 // This will only trigger once (see '&& !building.built')
                 building.built = true;
 
@@ -354,8 +354,7 @@ public class World {
      * Mark a building as under construction for {@code timeSeconds} seconds
      */
     public void closeBuilding(BuildingObject building, float timeSeconds) {
-        building.buildingCompletionTime = currentTime + timeSeconds;
-        building.built = false;
+        building.resetBuildingConstruction(currentTime, timeSeconds);
 
         updateWorldState(building, true);
     }
