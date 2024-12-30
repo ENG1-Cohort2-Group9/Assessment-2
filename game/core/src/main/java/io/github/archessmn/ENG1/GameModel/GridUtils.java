@@ -10,6 +10,10 @@ import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_WIDTH;
  * Utilities to assist with usage of the world grid.
  */
 public class GridUtils {
+    public final static int GRID_WIDTH = 16;
+    public final static int GRID_HEIGHT = 9;
+
+
     /**
      * Get the raw coordinates of the grid square the given coordinates would snap to.
      * @param x The center X coordinate of the object
