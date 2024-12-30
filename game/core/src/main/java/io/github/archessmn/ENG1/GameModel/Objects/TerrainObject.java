@@ -4,16 +4,8 @@ package io.github.archessmn.ENG1.GameModel.Objects;
 public class TerrainObject extends MapObject {
 
     public TerrainObject(float x, float y, Feature type) {
-        super(x, y, 60, 60, type.asset, type.name, false);
+        super(x, y, 60, 60, type.asset, type.name);
         feature = type;
-    }
-
-    /**
-     * Creates a copy of the TerrainObject
-     * @return The TerrainObject clone
-     */
-    public TerrainObject makeCopy() {
-        return new TerrainObject(this.screenPosition.x, this.screenPosition.y + 60, this.feature);
     }
 
     public enum Feature {

@@ -8,9 +8,4 @@ public class GymBuilding extends BuildingObject {
     public GymBuilding(float x, float y, float currentTime, boolean built) {
         super(x, y, 60, 60, 10f, currentTime, built, new Use[] {Use.RECREATION}, "gym.png", "Gym");
     }
-
-    @Override
-    public GymBuilding makeCopy() {
-        return new GymBuilding(this.screenPosition.x, this.screenPosition.y, this.initialBuildTime, this.built);
-    }
 }
