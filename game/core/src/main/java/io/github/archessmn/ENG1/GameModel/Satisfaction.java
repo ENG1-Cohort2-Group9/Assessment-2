@@ -8,7 +8,7 @@ public class Satisfaction {
     private World world;
 
     // The number of items in the Use enum, this value is used often, so it's stored to prevent repeated calculation.
-    private final int useLength = Use.values().length;
+    private final int USE_LENGTH = Use.values().length;
 
     // Between 0 and 100 percent
     //
@@ -75,7 +75,7 @@ public class Satisfaction {
     // all uses, then the second needs to connect to all uses except the first, as that's already been counted, the
     // third use ignores the first and second, and so on. So we use the sum of 1 to n formula for this, which is
     // (n *(n+1)) / 2 We divide the total percent allowed for average distances (40) by this number
-    private float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) useLength * ((float) useLength + 1)) / 2);
+    private float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) USE_LENGTH * ((float) USE_LENGTH + 1)) / 2);
 
     private static final float THRESHOLD = 0.4f;
 
@@ -88,7 +88,7 @@ public class Satisfaction {
     // For example, you could set averageDistances[Use.RECREATION.ordinal()][Use.TEACHING.ordinal()] to 0
     // However, averageDistances[Use.RECREATION.ordinal()][Use.TEACHING.ordinal()] and
     // averageDistances[Use.TEACHING.ordinal()][Use.RECREATION.ordinal()] should hold the same value.
-    private float[][] averageDistances = new float[useLength][useLength];
+    private float[][] averageDistances = new float[USE_LENGTH][USE_LENGTH];
 
     // When adding a new building, it will need to multiply the old average distance by how many building pairs there
     // were, For example, if the previous average distance between a teaching and accommodation building
@@ -97,19 +97,19 @@ public class Satisfaction {
     // each of the 5 teaching buildings. For this reason, it's helpful to keep a count of how many building pairs each
     // average distance is made up of, so that we can know what to multiply the average by, and then increment it and
     // divide the new total distance by the new number of building pairs. This value is stored in this 2D array:
-    private int[][] averageDistancesCount = new int[useLength][useLength];
+    private int[][] averageDistancesCount = new int[USE_LENGTH][USE_LENGTH];
 
     // Stores the weight for each use pair, allowing different building use pairs to give a bigger or smaller bonus
     // than others.
-    private float[][] weightMatrix = new float[useLength][useLength];
+    private float[][] weightMatrix = new float[USE_LENGTH][USE_LENGTH];
 
-    private float[][] averageDistanceScores = new float[useLength][useLength];
+    private float[][] averageDistanceScores = new float[USE_LENGTH][USE_LENGTH];
 
     // These help with completionScore:
 
 
     // Defines how much satisfaction score is gained for having > 0 of each building use type.
-    private float completionScorePerUse = COMPLETION_SCORE_CAP / useLength;
+    private float completionScorePerUse = COMPLETION_SCORE_CAP / USE_LENGTH;
 
 
 
