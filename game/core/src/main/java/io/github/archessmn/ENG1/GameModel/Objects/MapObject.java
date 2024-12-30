@@ -10,11 +10,9 @@ import io.github.archessmn.ENG1.GameModel.GridUtils;
  * It stored information about the object and provides utility classes for interacting with it.
  */
 public class MapObject {
-    public float x;
-    public float y;
+    public Vector2 screenPosition;
 
-    public int gridX;
-    public int gridY;
+    private GridCoordTuple gridCoords;
 
     public float width;
     public float height;
@@ -41,18 +39,19 @@ public class MapObject {
      * @param isBuilding Indicates whether the map object is a building or not
      */
     public MapObject(float x, float y, float width, float height, String spriteName, String objName, boolean isBuilding) {
-        this.x = x;
-        this.y = y;
+        this.screenPosition = new Vector2(x, y);
 
         this.width = width;
         this.height = height;
+
+        updateGridCoords();
 
         this.spriteName = spriteName;
         this.objName = objName;
 
         this.isBuilding = isBuilding;
 
-        this.bounds = new Rectangle(this.x, this.y, this.width, this.height);
+        this.bounds = new Rectangle(this.screenPosition.x, this.screenPosition.y, this.width, this.height);
     }
 
     /**
@@ -61,21 +60,19 @@ public class MapObject {
      */
     public void place() {
         this.snapToGrid();
-        GridCoordTuple gridCoord = GridUtils.getGridCoords(this.x, this.y);
-        this.gridX = gridCoord.x;
-        this.gridY = gridCoord.y;
 
         this.placed = true;
     }
 
     /**
-     * Used to update the position of the object in the world.
-     * @param x The X position to use
-     * @param y The Y position to use
+     * Sets the centre of the object to the position given by the co-ordinates. For example, if the object is 1 wide and high,
+     * and it's top right is given as (1,1), this method will set its position to (0.5, 0.5)
+     * @param x The rightmost (positive) x position
+     * @param y The topmost (positive) y position
      */
-    public void setCenter(float x, float y) {
-        this.x = x - this.width / 2;
-        this.y = y - this.height / 2;
+    public void setCentre(float x, float y) {
+        this.screenPosition.x = x - this.width / 2;
+        this.screenPosition.y = y - this.height / 2;
     }
 
     /**
@@ -83,7 +80,7 @@ public class MapObject {
      * @param x The X position to use
      */
     public void setX(float x) {
-        this.x = x;
+        this.screenPosition.x = x;
     }
 
     /**
@@ -91,7 +88,7 @@ public class MapObject {
      * @param y The Y position to use
      */
     public void setY(float y) {
-        this.y = y;
+        this.screenPosition.y = y;
     }
 
     /**
@@ -99,17 +96,15 @@ public class MapObject {
      * @return The bounding box {@link Rectangle} of the object.
      */
     public Rectangle getBounds() {
-        return this.bounds.set(this.x, this.y, this.width, this.height);
+        return this.bounds.set(this.screenPosition.x, this.screenPosition.y, this.width, this.height);
     }
 
+
     /**
-     * Get the raw coordinates of the grid square the object would
-     * snap to, relative to the entire viewport.
-     * For example the bottom left grid position would be (0.0, 480).
-     * @return A {@link Vector2} of the position on the grid
+     * Refreshes this object's gridCoords with the correct grid square it should be in
      */
-    public Vector2 getRawGridCoords() {
-        return GridUtils.getRawGridCoords(this.x + this.width / 2, this.y + this.height / 2);
+    public void updateGridCoords() {
+        gridCoords = GridUtils.getGridCoords(this.screenPosition.x, this.screenPosition.y);
     }
 
     /**
@@ -119,24 +114,18 @@ public class MapObject {
      * @return A {@link GridCoordTuple} of the grid position
      */
     public GridCoordTuple getGridCoords() {
-        return GridUtils.getGridCoords(this.x + this.width / 2, this.y + this.height / 2);
+        return this.gridCoords;
     }
 
     /**
      * Snaps the object to the grid.
      */
     public void snapToGrid() {
-        Vector2 gridCoords = getRawGridCoords();
-        this.setCenter(gridCoords.x, gridCoords.y);
+        updateGridCoords();
     }
 
-    /**
-     * Determines if a object is in any of the nine squares (including the centre) adjacent to this square
-     * @param other the other object to compare
-     * @return true if the object is adjacent to this one
-     */
-    public boolean isAdjacentTo(MapObject other) {
-        return Math.abs(other.gridX - gridX) <= 1 && Math.abs(other.gridY - gridY) <= 1;
+    public Vector2 getScreenPos() {
+        return screenPosition;
     }
 
     public float getEfficiency() {

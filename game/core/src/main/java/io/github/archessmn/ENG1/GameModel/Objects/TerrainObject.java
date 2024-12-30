@@ -13,7 +13,7 @@ public class TerrainObject extends MapObject {
      * @return The TerrainObject clone
      */
     public TerrainObject makeCopy() {
-        return new TerrainObject(this.x, this.y + 60, this.feature);
+        return new TerrainObject(this.screenPosition.x, this.screenPosition.y + 60, this.feature);
     }
 
     public enum Feature {

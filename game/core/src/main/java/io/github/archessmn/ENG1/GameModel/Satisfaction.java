@@ -266,8 +266,8 @@ public class Satisfaction {
             for (BuildingObject comparisonBuilding : world.getBuildings()) {
                 // Distance is the diagonal distance between the building passed to this method, and the current
                 // comparisonBuilding.
-                float distance = (float) Math.sqrt(Math.pow(building.gridX - comparisonBuilding.gridX, 2) +
-                    Math.pow(building.gridY - comparisonBuilding.gridY, 2));
+                float distance = (float) Math.sqrt(Math.pow(building.getGridCoords().x - comparisonBuilding.getGridCoords().x, 2) +
+                    Math.pow(building.getGridCoords().y - comparisonBuilding.getGridCoords().y, 2));
 
                 // Iterates through each use the comparison building has, except when the building passed to this method
                 // and the comparison building are the same building.
