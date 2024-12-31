@@ -5,10 +5,10 @@ import io.github.archessmn.ENG1.GameModel.Objects.*;
 
 public class Satisfaction {
 
-    World world;
+    private World world;
 
     // The number of items in the Use enum, this value is used often, so it's stored to prevent repeated calculation.
-    public final int useLength = Use.values().length;
+    private final int USE_LENGTH = Use.values().length;
 
     // Between 0 and 100 percent
     //
@@ -24,15 +24,15 @@ public class Satisfaction {
     //    and gives them a clear difference in how they effect satisfaction score.
     //    In other words, this is why a user may place accommodation building y,
     //    instead of accommodation building x.
-    public float satisfactionScore;
+    private float satisfactionScore;
 
     // Satisfaction score is the sum of the following 4 variables, allowing for easier access to each part of the score
     // This also means when one of these values needs to be reset, or altered, the satisfaction score will only update
     // on screen once when that calculation is complete.
-    public float buildingDistancesScore;
-    public float completionScore;
-    public float eventsScore;
-    public float buildingValuesScore;
+    private float buildingDistancesScore;
+    private float completionScore;
+    private float eventsScore;
+    private float buildingValuesScore;
 
     // Here the maximum value for each of these scores is set:
 
@@ -68,27 +68,27 @@ public class Satisfaction {
 
     // The maximum possible distance between two buildings, is the diagonal distance 1 less in both x and y,
     // than the number of tiles on the map
-    float maxDistance = (float) (Math.sqrt(Math.pow(GRID_WIDTH-1, 2) + Math.pow(GRID_HEIGHT-1, 2)));
+    private float maxDistance = (float) (Math.sqrt(Math.pow(GRID_WIDTH-1, 2) + Math.pow(GRID_HEIGHT-1, 2)));
 
     // This is how much of the satisfaction score each building use pair accounts for.
     // The number of undirected use pairs is of the form n + n-1 + n-2... + n-n, as we want the first use connected to
     // all uses, then the second needs to connect to all uses except the first, as that's already been counted, the
     // third use ignores the first and second, and so on. So we use the sum of 1 to n formula for this, which is
     // (n *(n+1)) / 2 We divide the total percent allowed for average distances (40) by this number
-    float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) useLength * ((float) useLength + 1)) / 2);
+    private float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) USE_LENGTH * ((float) USE_LENGTH + 1)) / 2);
 
     private static final float THRESHOLD = 0.4f;
 
     // Allows the user to get the maximum satisfaction for a building use pair, if the pairs' average distance is
     // under 60% of the maximum possible distance. Anything over will give progressively less satisfaction.
-    float maxScoreThreshold = maxDistance * THRESHOLD;
+    private float maxScoreThreshold = maxDistance * THRESHOLD;
 
 
     // This 2D array stores the average distance between a pair of building types as an adjacency matrix
     // For example, you could set averageDistances[Use.RECREATION.ordinal()][Use.TEACHING.ordinal()] to 0
     // However, averageDistances[Use.RECREATION.ordinal()][Use.TEACHING.ordinal()] and
     // averageDistances[Use.TEACHING.ordinal()][Use.RECREATION.ordinal()] should hold the same value.
-    public float[][] averageDistances = new float[useLength][useLength];
+    private float[][] averageDistances = new float[USE_LENGTH][USE_LENGTH];
 
     // When adding a new building, it will need to multiply the old average distance by how many building pairs there
     // were, For example, if the previous average distance between a teaching and accommodation building
@@ -97,19 +97,19 @@ public class Satisfaction {
     // each of the 5 teaching buildings. For this reason, it's helpful to keep a count of how many building pairs each
     // average distance is made up of, so that we can know what to multiply the average by, and then increment it and
     // divide the new total distance by the new number of building pairs. This value is stored in this 2D array:
-    public int[][] averageDistancesCount = new int[useLength][useLength];
+    private int[][] averageDistancesCount = new int[USE_LENGTH][USE_LENGTH];
 
     // Stores the weight for each use pair, allowing different building use pairs to give a bigger or smaller bonus
     // than others.
-    public float[][] weightMatrix = new float[useLength][useLength];
+    private float[][] weightMatrix = new float[USE_LENGTH][USE_LENGTH];
 
-    public float[][] averageDistanceScores = new float[useLength][useLength];
+    private float[][] averageDistanceScores = new float[USE_LENGTH][USE_LENGTH];
 
     // These help with completionScore:
 
 
     // Defines how much satisfaction score is gained for having > 0 of each building use type.
-    public float completionScorePerUse = COMPLETION_SCORE_CAP / useLength;
+    private float completionScorePerUse = COMPLETION_SCORE_CAP / USE_LENGTH;
 
 
 
@@ -467,16 +467,16 @@ public class Satisfaction {
     public void updateEventScore() {
         eventsScore = 0;
         // Events
-        eventsScore += getEventScoreBonus(GameEvent.TreeHype, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 1f );
-        eventsScore += getEventScoreBonus(GameEvent.LectureView, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
-        eventsScore += getEventScoreBonus(GameEvent.RockClimbing, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
+        eventsScore += getEventScoreBonus(GameEvent.TREE_HYPE, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 1f );
+        eventsScore += getEventScoreBonus(GameEvent.LECTURE_VIEW, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
+        eventsScore += getEventScoreBonus(GameEvent.ROCK_CLIMBING, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
 
-        if (world.hasActiveEvent(GameEvent.GymHype)) {
+        if (world.hasActiveEvent(GameEvent.GYM_HYPE)) {
             eventsScore += world.getCountOfSpecificBuilding(GymBuilding.class) * 1f;
         }
 
         float debuffPerBuilding = 2f;
-        if (world.hasActiveEvent(GameEvent.TooManyBuildings)) {
+        if (world.hasActiveEvent(GameEvent.TOO_MANY_BUILDINGS)) {
             eventsScore -= world.getBuildingUseCount(Use.TEACHING) * debuffPerBuilding;
             // This ensures that only teaching buildings over the limit reduce satisfaction. This could be removed to make
             // this event harsher. It sort of makes sense to me that ALL teaching buildings would be negatively affected by
@@ -484,11 +484,11 @@ public class Satisfaction {
             eventsScore += debuffPerBuilding * (world.TOO_MANY_LECTURE_BUILDINGS - 1);
         }
 
-        if (world.hasActiveEvent(GameEvent.TournamentWon)) {
+        if (world.hasActiveEvent(GameEvent.TOURNAMENT_WON)) {
             eventsScore += 15f; // Quite strong. This event is (hopefully) hard to obtain
         }
 
-        if (world.hasActiveEvent(GameEvent.LongBoiSighting)) {
+        if (world.hasActiveEvent(GameEvent.LONG_BOI_SIGHTING)) {
             eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }
 
