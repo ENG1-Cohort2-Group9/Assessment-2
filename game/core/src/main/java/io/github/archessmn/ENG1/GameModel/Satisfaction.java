@@ -15,15 +15,15 @@ public class Satisfaction {
     // There are 4 factors to the score:
     // * Average building distances (40%) average distance for each pair of building types
     // * Completion (10%) Each counter being > 0 gives 2.5%
-    // * Having a total number in the buildings counters, will unlock the full satisfactionScore
-    //    For example, having 1 of each building counter may multiply the score by 0.1
-    //    Whereas having 5 of each building counter may multiply the score by 1.
     // * Events (30%) Events will each have separate effects on this portion of satisfactionScore
     // * Building values (20%) Different buildings will have different values,
     //    e.g. rent price, this allows for more buildings to be implemented,
     //    and gives them a clear difference in how they effect satisfaction score.
     //    In other words, this is why a user may place accommodation building y,
     //    instead of accommodation building x.
+
+    // The final score is also then multiplied depending on whether the total number of buildings placed is within a
+    // certain range.
     private float satisfactionScore;
 
     // Satisfaction score is the sum of the following 4 variables, allowing for easier access to each part of the score
@@ -68,20 +68,20 @@ public class Satisfaction {
 
     // The maximum possible distance between two buildings, is the diagonal distance 1 less in both x and y,
     // than the number of tiles on the map
-    private float maxDistance = (float) (Math.sqrt(Math.pow(GRID_WIDTH-1, 2) + Math.pow(GRID_HEIGHT-1, 2)));
+    private final float maxDistance = (float) (Math.sqrt(Math.pow(GRID_WIDTH-1, 2) + Math.pow(GRID_HEIGHT-1, 2)));
 
     // This is how much of the satisfaction score each building use pair accounts for.
     // The number of undirected use pairs is of the form n + n-1 + n-2... + n-n, as we want the first use connected to
     // all uses, then the second needs to connect to all uses except the first, as that's already been counted, the
     // third use ignores the first and second, and so on. So we use the sum of 1 to n formula for this, which is
     // (n *(n+1)) / 2 We divide the total percent allowed for average distances (40) by this number
-    private float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) USE_LENGTH * ((float) USE_LENGTH + 1)) / 2);
+    private final float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) USE_LENGTH * ((float) USE_LENGTH + 1)) / 2);
 
     private static final float THRESHOLD = 0.4f;
 
     // Allows the user to get the maximum satisfaction for a building use pair, if the pairs' average distance is
     // under 60% of the maximum possible distance. Anything over will give progressively less satisfaction.
-    private float maxScoreThreshold = maxDistance * THRESHOLD;
+    private final float maxScoreThreshold = maxDistance * THRESHOLD;
 
 
     // This 2D array stores the average distance between a pair of building types as an adjacency matrix
@@ -109,7 +109,7 @@ public class Satisfaction {
 
 
     // Defines how much satisfaction score is gained for having > 0 of each building use type.
-    private float completionScorePerUse = COMPLETION_SCORE_CAP / USE_LENGTH;
+    private final float completionScorePerUse = COMPLETION_SCORE_CAP / USE_LENGTH;
 
 
 
@@ -192,31 +192,39 @@ public class Satisfaction {
             satisfactionScore = buildingDistancesScore + completionScore + eventsScore + buildingValuesScore;
         }
 
-
         int number_of_buildings = world.getBuildings().size;
+
+        // This explains the maths of the multiplier, it needs to be understood to make changes to the multiplier's
+        // scaling. The effect of the multiplier is explained after the code.
 
         // If lower <= #buildings <= upper, then both Lower -#buildings and #buildings - upper, will be >=1, being
         // equal to 1 when number_of_buildings is equal to one of the limits.
         // If the number of buildings is below the lower limit, then lower - #buildings will be > 0, this would make
-        // 1 - (lower - #buildings) / goal < 1, it would also mean #buildings - upper < 0, and therefore
-        // 1 - (#buildings - upper) / goal > 1, so the min is 1 - (lower - #buildings) lower.
+        // 1 - ((lower - #buildings) / lower) < 1, it would also mean #buildings - upper < 0, and therefore
+        // 1 - ((#buildings - upper) / upper) > 1, so the min is 1 - (lower - #buildings) lower.
         // The opposite will occur when #buildings > upper.
         // So by taking the min of these two calculations, we always get the correct multiplier.
         // If we then take the min of this and 1, it means when both calculations are >1 or one is >1 and the other =1,
         // The multiplier will be set to one, i.e. when lower <= #buildings <= upper
 
+        // Example 1: lower limit = 30, upper limit = 40, buildings placed = 25:
+        // Multiplier = min(1-(30-25)/30,1-(25-40)/40) = min(1-1/6,1--3/8) = min(5/6,11/8) = 6/7
+        // Example 2: lower limit = 30, upper limit = 40, buildings placed = 60
+        // Multiplier = min(1-(30-60)/30,1-(60-40)/40) = min(1--1,1-0.5) = min(2, 0.5) = 0.5
+
         if (!(number_of_buildings >= LOWER_BUILDING_LIMIT && number_of_buildings <= UPPER_BUILDING_LIMIT)) {
-            satisfactionScore *= Math.min(Math.max(1 -( (float) (LOWER_BUILDING_LIMIT - number_of_buildings) / MAP_COVERAGE_GOAL),
-                1 - ((float) (number_of_buildings - UPPER_BUILDING_LIMIT) / MAP_COVERAGE_GOAL)), 1);
+            satisfactionScore *= Math.min(1 - ((float)(LOWER_BUILDING_LIMIT - number_of_buildings) / LOWER_BUILDING_LIMIT),
+                                1 - ((float)(number_of_buildings - UPPER_BUILDING_LIMIT) / UPPER_BUILDING_LIMIT));
         }
 
 
 
-        // Short version: If the number of buildings is in the allowed range, then the max score is achievable. If the
-        // number of buildings is below that range, the amount of buildings it's below by divided by the coverage goal,
+
+        // Effect: If the number of buildings is in the allowed range, then the max score is achievable. If the
+        // number of buildings is below that range, the amount of buildings it's below by divided by the lower limit,
         // is the % of the score the user can't access, the opposite occurs when the #buildings is above the range.
-        // Example: Goal = 35 buildings, lower limit = 30, upper limit = 40, buildings placed = 25:
-        // min(min(1-(30-25)/35,1-(25-40)/35),1) = min(min(1-1/7,1--3/7),1) = min(min(6/7,10/7),1) = min(6/7,1) = 6/7
+
+
 
     }
 

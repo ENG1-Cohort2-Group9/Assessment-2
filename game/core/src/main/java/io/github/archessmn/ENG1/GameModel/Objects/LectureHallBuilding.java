@@ -5,6 +5,7 @@ package io.github.archessmn.ENG1.GameModel.Objects;
  */
 public class LectureHallBuilding extends BuildingObject {
    public LectureHallBuilding(float x, float y, float currentTime, boolean built) {
-        super(x, y, 60, 60, 10f, currentTime, built,  new Use[] {Use.TEACHING}, "lecturehall.png", "Lecture Theatre");
+        super(x, y, 60, 60, 10f, currentTime, built,  new Use[] {Use.TEACHING},
+            "lecturehall.png", "Lecture Theatre", 250);
     }
 }

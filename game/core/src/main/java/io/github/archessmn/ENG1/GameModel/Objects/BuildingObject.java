@@ -15,6 +15,10 @@ public class BuildingObject extends MapObject {
 
     public final Use[] uses;
 
+    // The number of students a building has capacity for, this is used to incentivise the player to place different
+    // amounts of each building.
+    public int capacity;
+
 
     /**
      * Initialises a new building.
@@ -29,7 +33,9 @@ public class BuildingObject extends MapObject {
      * @param spriteName The file name of the buildings' sprite.
      * @param objName The name of the object in the game space
      */
-    public BuildingObject(float x, float y, float width, float height, float buildingConstructionDuration, float initialBuildTime, boolean built, Use[] uses, String spriteName, String objName) {
+    public BuildingObject(float x, float y, float width, float height, float buildingConstructionDuration,
+                          float initialBuildTime, boolean built, Use[] uses, String spriteName, String objName,
+                          int capacity) {
         super(x, y, width, height, spriteName, objName);
 
         this.initialBuildTime = initialBuildTime;
@@ -38,6 +44,7 @@ public class BuildingObject extends MapObject {
 
         this.built = built;
         this.uses = uses;
+        this.capacity = capacity;
 
         this.unbuiltSpriteName = "construction.png";
     }
@@ -77,5 +84,13 @@ public class BuildingObject extends MapObject {
      */
     public Use[] getUses() {
         return uses;
+    }
+
+    /**
+     * Get the capacity of a building
+     * @return the integer value capacity.
+     */
+    public int getCapacity() {
+        return capacity;
     }
 }
