@@ -8,7 +8,6 @@ import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -26,6 +25,7 @@ import static java.lang.Math.floorDiv;
 public class GameScreen implements Screen {
     public static final int VIEWPORT_WIDTH = 960;
     public static final int VIEWPORT_HEIGHT = 540;
+    private static final int SIDE_PANEL_WIDTH = 300;
 
     private World world;
 
@@ -90,8 +90,7 @@ public class GameScreen implements Screen {
     @Override
     public void show() {
         viewport = new FitViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-        // 300 here represents the pixel width of the UI on the right hand side
-        world = new World(VIEWPORT_WIDTH - 300, VIEWPORT_HEIGHT, new GameEventListener[] {new GameEventListener(this::showEventPopup)});
+        world = new World(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, VIEWPORT_HEIGHT, new GameEventListener[] {new GameEventListener(this::showEventPopup)});
 
         atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
@@ -246,7 +245,7 @@ public class GameScreen implements Screen {
 
         sideMenu = new Table();
         sideMenu.pad(10);
-        rootTable.right().add(sideMenu).expandY().fillY().width(300);
+        rootTable.right().add(sideMenu).expandY().fillY().width(SIDE_PANEL_WIDTH);
 
         sideMenu.add(countDownLabel).expandX().center().colspan(2).row();
         sideMenu.add(timerLabel).expandX().center().colspan(2).row();
@@ -328,7 +327,7 @@ public class GameScreen implements Screen {
             }
         }
         else if (!isClicked && objectToPlace != null) { // Click released
-            if (unprojectedTouchPos.x <= VIEWPORT_WIDTH - 300) {
+            if (unprojectedTouchPos.x <= VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) {
                 world.addMapObject(objectToPlace); // Places the building if it passes all checks
             }
 
@@ -346,7 +345,7 @@ public class GameScreen implements Screen {
 
         float delta = Gdx.graphics.getDeltaTime();
 
-        world.worldProcess(delta);
+        world.process(delta);
 
         // Ends the game when the timer exceeds 5 minutes.
         gameEnded = world.getGameEnded();
@@ -395,7 +394,7 @@ public class GameScreen implements Screen {
 
         drawAssets(batch, assetManager);
         drawSideMenu();
-        renderActiveEvents(batch, font);
+        drawActiveEvents(batch, font);
 
         batch.end();
         stage.draw();
@@ -405,7 +404,7 @@ public class GameScreen implements Screen {
      * Renders icons on the left hand side of the screen to show what events are in effect. Draws from bottom to top,
      * bottom justified, so the most recent icon will be at the top a descending list
      */
-    private void renderActiveEvents(SpriteBatch batch, BitmapFont font) {
+    private void drawActiveEvents(SpriteBatch batch, BitmapFont font) {
         float bottomMargin = 35f;
         float leftMargin = 5f;
         float iconMargin = 5f;
@@ -433,14 +432,14 @@ public class GameScreen implements Screen {
         }
     }
 
-    public void drawAssets(Batch batch, AssetManager assetManager) {
+    private void drawAssets(Batch batch, AssetManager assetManager) {
         // Draws all placed buildings and terrain assets
         for (MapObject mapObject : world.getMapObjects()) {
             drawObject(batch, assetManager, mapObject);
         }
 
         // Snaps the dragged object to the grid and draws it, if selected
-        if (objectToPlace != null && unprojectedTouchPos.x <= VIEWPORT_WIDTH - 300) {
+        if (objectToPlace != null && unprojectedTouchPos.x <= VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) {
             drawObject(batch, assetManager, objectToPlace);
         }
 
@@ -496,16 +495,16 @@ public class GameScreen implements Screen {
      * Draws a grid into the viewport using the {@link ShapeRenderer} passed to it.
      * @param gridRenderer The {@link ShapeRenderer} used to draw the grid.
      */
-    public void drawGrid(ShapeRenderer gridRenderer) {
+    private void drawGrid(ShapeRenderer gridRenderer) {
         gridRenderer.begin(ShapeRenderer.ShapeType.Line);
 
         gridRenderer.setColor(new Color(0x5b7e13ff));
 
-        float gridWidth = (VIEWPORT_WIDTH / 16f);
-        float gridHeight = (VIEWPORT_HEIGHT / 9f);
+        float gridWidth = ( VIEWPORT_WIDTH / (float)GridUtils.GRID_WIDTH);
+        float gridHeight = ( VIEWPORT_HEIGHT / (float)GridUtils.GRID_HEIGHT);
 
         for (int v = 1; v < 9; v++) {
-            gridRenderer.line(0, gridHeight * v, VIEWPORT_WIDTH - 300, gridHeight * v);
+            gridRenderer.line(0, gridHeight * v, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, gridHeight * v);
         }
 
         for (int h = 1; h < 11; h++) {
@@ -515,7 +514,7 @@ public class GameScreen implements Screen {
         gridRenderer.end();
     }
 
-    public void drawSideMenu() {
+    private void drawSideMenu() {
         // Draws a 5-minute countdown timer for the games length
         // If it's a whole minute, it displays :00 for the seconds
         // Otherwise it gets the remainder of gameTimer divided by 60 for the seconds.
@@ -523,10 +522,10 @@ public class GameScreen implements Screen {
         timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTime / 60) + 1, (int) ((gameTime % 60) / (60 / (double) 365)) + 1));
 
         if (60 - (int) gameTime % 60 == 60) {
-            countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":00");
+            countDownLabel.setText(floorDiv((int)(World.GAME_LENGTH_SECONDS) - (int) gameTime, 60) + ":00");
         }
         else {
-            countDownLabel.setText(floorDiv(300 - (int) gameTime, 60) + ":" + String.format("%02d", 60 - (int) gameTime % 60));
+            countDownLabel.setText(floorDiv((int)(World.GAME_LENGTH_SECONDS) - (int) gameTime, 60) + ":" + String.format("%02d", 60 - (int) gameTime % 60));
         }
 
         // Update the satisfaction summary section
@@ -592,7 +591,7 @@ public class GameScreen implements Screen {
     }
 
 
-    public void showEventPopup(GameEvent event) {
+    private void showEventPopup(GameEvent event) {
         currentEvent = event;
         timeEventShownAt = world.getCurrentTime();
         // This is always called AFTER the event is handled by world. Therefore, we can check activeEvents to find out

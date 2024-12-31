@@ -3,100 +3,127 @@ allowmixing
 
 Package "Game model" {
     class World {
-        width
-        height
-        'buildings
-        buildingUseCounts
-        addBuilding(building)
-        tickBuildings()
-        getBuilding(id)
-        doesBuildingOverlap(id)
-        calculateScore()
+        GAME_LENGTH_SECONDS
+        currentTime
+        generateTerrainFeatures()
+        addMapObject()
+        updateWorldState()
+        process()
+        handleEvent()
+        closeBuilding()
+        modifyEfficiency()
+        addActiveEvent()
+        saveScore()
     }
-    class GridUtils {
-        getRawGridCoords(x, y)
-        getGridCoords()
+    class MapObjectHolder {
+        add()
+        remove()
+        getByUse()
+        getByType()
+        getByFeature()
+        getByGrid()
+        spaceIsOccupied()
     }
-
-    class Building {
-        x
-        y
-        gridX
-        gridY
-        width
-        height
-        initialBuildTime
-        timeUntilBuilt
+    abstract class MapObject {
         placed
-        built
-        buildingType
+        screenPosition
+        gridCoords
+        width
+        height
         bounds
-        spritePath
-        unbuiltSpritePath
-        tick(deltaTime)
-        place()
-        'Note that these are still included, they just shouldn't have been in this diagram
-        'setCenter()
-        'getBounds()
-        'getRawGridCoords()
-        'getGridCoords()
-        makeCopy()
+        spriteName
         snapToGrid()
+        clone()
+    }
+    class TerrainObject {
+        feature
+    }
+    class BuildingObject {
+        built
+        unbuiltSpriteName
+        uses
+        resetConstruction()
     }
     class GymBuilding
     class HallsBuilding
     class LectureHallBuilding
-    class OfficeBuilding
+    class Pub
     class PiazzaBuilding
-
     class EventManager {
         processEvents(deltaTime)
-    }
-    class GameEvent {
-        title
-        description
-        rarity
-        modifiers
+        disableEvent()
+        enableEvent()
     }
 
     class AchievementManager {
-        assignAchievementListener()
+
     }
-    class Achievement {
-        title
-        description
+
+    class Satisfaction {
+        BUILDING_DISTANCES_SCORE_CAP
+        COMPLETION_SCORE_CAP
+        EVENTS_SCORE_CAP
+        BUILDING_VALUES_SCORE_CAP
+        updateScore()
+        updateAverageDistances()
+    }
+    class GridUtils {
+        GRID_WIDTH
+        GRID_HEIGHT
+        getGridSquareScreenCoords()
+        getGridCoords()
     }
 }
 
 Package "Interface" {
-    class Main {
-        render()
+    class ScreenManager {
+        process()
+    }
+    class GameScreen {
+        VIEWPORT_WIDTH
+        VIEWPORT_HEIGHT
+        draw()
         input()
-        drawBuildings()
+        logic()
+        setUpSideMenu()
         drawGrid()
+        drawActiveEvents()
+    }
+    class MenuScreen {
+        draw()
+        input()
+        logic()
+    }
+    class LeaderboardScreen {
+        draw()
+        input()
+        logic()
     }
 }
 
-Package "LibGDX" {
-    component "LibGDX input handling"
-    component "LibGDX rendering functions"
- }
+ScreenManager -- GameScreen
+ScreenManager -- MenuScreen
+ScreenManager -- LeaderboardScreen
 
-Main -- World
-"LibGDX" -- Main
+GameScreen -- World
 
 World -- GridUtils
-World -- Building
 World -- EventManager
 World -- AchievementManager
+World -- MapObjectHolder
+World -- Satisfaction
 
-GameEvent -- EventManager
-Achievement -- AchievementManager
+MapObjectHolder -- MapObject
+MapObjectHolder -- BuildingObject
+MapObjectHolder -- TerrainObject
 
-Building -- GymBuilding
-Building -- HallsBuilding
-Building -- LectureHallBuilding
-Building -- OfficeBuilding
-Building -- PiazzaBuilding
+MapObject -- BuildingObject
+MapObject -- TerrainObject
+
+BuildingObject -- GymBuilding
+BuildingObject -- HallsBuilding
+BuildingObject -- LectureHallBuilding
+BuildingObject -- Pub
+BuildingObject -- PiazzaBuilding
 
 @enduml

@@ -117,7 +117,7 @@ public class World {
         if (mapObject.getGridCoords().x < GridUtils.GRID_WIDTH && mapObject.getGridCoords().y < GridUtils.GRID_HEIGHT && !doesObjectOverlap(mapObject)) {
             mapObject.place();
             if (mapObject instanceof BuildingObject buildingObject) {
-                buildingObject.resetBuildingConstruction(currentTime);
+                buildingObject.resetConstruction(currentTime);
                 mapObjects.add(buildingObject);
             } else if (mapObject instanceof TerrainObject terrainAsset) {
                 mapObjects.add(terrainAsset);
@@ -218,7 +218,7 @@ public class World {
      * Keeps the world running, updating its internal clock and buildings
      * @param deltaTime time since the last frame in seconds
      */
-    public void worldProcess(float deltaTime) {
+    public void process(float deltaTime) {
         currentTime += deltaTime;
         updateBuildings(deltaTime);
         eventManager.processEvents(currentTime);
@@ -337,7 +337,7 @@ public class World {
      * Mark a building as under construction for {@code timeSeconds} seconds
      */
     public void closeBuilding(BuildingObject building, float timeSeconds) {
-        building.resetBuildingConstruction(currentTime, timeSeconds);
+        building.resetConstruction(currentTime, timeSeconds);
 
         updateWorldState(building, true);
     }

@@ -14,7 +14,6 @@ public class BuildingObject extends MapObject {
     private float buildingCompletionTime;
 
     public final Use[] uses;
-    final int UseSize;
 
 
     /**
@@ -39,7 +38,6 @@ public class BuildingObject extends MapObject {
 
         this.built = built;
         this.uses = uses;
-        this.UseSize = Use.values().length;
 
         this.unbuiltSpriteName = "construction.png";
     }
@@ -48,7 +46,7 @@ public class BuildingObject extends MapObject {
      * Sets the building back to un-built and begins construction again
      * @param newInitialConstructionTime The time at which the building will begin construction
      */
-    public void resetBuildingConstruction(float newInitialConstructionTime) {
+    public void resetConstruction(float newInitialConstructionTime) {
         this.built = false;
         this.initialBuildTime = newInitialConstructionTime;
         this.buildingCompletionTime = initialBuildTime + constructionDuration;
@@ -59,7 +57,7 @@ public class BuildingObject extends MapObject {
      * @param newInitialConstructionTime The time at which the building will begin construction
      * @param newConstructionTime The time the building will take to finish construction
      */
-    public void resetBuildingConstruction(float newInitialConstructionTime, float newConstructionTime) {
+    public void resetConstruction(float newInitialConstructionTime, float newConstructionTime) {
         this.built = false;
         this.initialBuildTime = newInitialConstructionTime;
         this.buildingCompletionTime = initialBuildTime + newConstructionTime;

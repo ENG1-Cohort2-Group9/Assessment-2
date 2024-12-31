@@ -7,9 +7,9 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class EventManager {
-    boolean[] eventsEnabled = new boolean[GameEvent.values().length]; // Whether each event can happen (assuming it has not already)
-    boolean[] eventsOccurred = new boolean[GameEvent.values().length]; // True if an event has happened
-    GameEventListener[] listeners;
+    private boolean[] eventsEnabled = new boolean[GameEvent.values().length]; // Whether each event can happen (assuming it has not already)
+    private boolean[] eventsOccurred = new boolean[GameEvent.values().length]; // True if an event has happened
+    private GameEventListener[] listeners;
 
     private Random random = new Random();
     private float maxRandomVal = 0f;
