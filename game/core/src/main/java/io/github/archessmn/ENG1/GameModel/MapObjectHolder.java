@@ -4,7 +4,6 @@ import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Objects.BuildingObject;
 import io.github.archessmn.ENG1.GameModel.Objects.MapObject;
 import io.github.archessmn.ENG1.GameModel.Objects.TerrainObject;
-import io.github.archessmn.ENG1.GameModel.Objects.Pub;
 import io.github.archessmn.ENG1.GameModel.Objects.Use;
 
 import java.util.HashMap;
@@ -137,8 +136,8 @@ public class MapObjectHolder {
     /**
      * Returns all MapObjects of type, {@code type}, or an empty array if no placed objects have this type.
      * @param type The class of an object, given by ClassName.class. Note that objects can be retrieved by superclass
-     *             and subclass (for example you can find a {@link Pub} in the list of {@link Pub}s,
-     *             {@link BuildingObject}s, and {@link MapObject}s
+     *             and subclass (e.g. you can find a {@link BuildingObject} in the list of {@link BuildingObject}s,
+     *             and {@link MapObject}s
      * @return An array of the type specified by {@code type}
      */
     @SuppressWarnings("unchecked")

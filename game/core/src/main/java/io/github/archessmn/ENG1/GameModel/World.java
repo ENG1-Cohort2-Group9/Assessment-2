@@ -226,7 +226,7 @@ public class World {
         for (int i = 0; i < activeEventEndTime.length; i++) {
             if (currentTime > activeEventEndTime[i]) {
                 // Special effect for "Gym hype" to enable the possibility of winning the tournament if the user has placed enough gyms.
-                if (i == GameEvent.GYM_HYPE.ordinal() && getCountOfSpecificBuilding(GymBuilding.class) >= GYMS_FOR_TOURNAMENT_WIN) {
+                if (i == GameEvent.GYM_HYPE.ordinal() && getCountOfSpecificBuilding(BuildingName.GYM) >= GYMS_FOR_TOURNAMENT_WIN) {
                     eventManager.enableEvent(GameEvent.TOURNAMENT_WON);
                 }
 
@@ -405,8 +405,19 @@ public class World {
         return activeEvents[event.ordinal()] != null;
     }
 
-    public <T extends BuildingObject> int getCountOfSpecificBuilding(Class<T> buildingClass) {
-        return mapObjects.getByType(buildingClass).size;
+    public int getCountOfSpecificBuilding(BuildingName name) {
+        int count = 0;
+
+        for (int i = 0; i < GridUtils.GRID_WIDTH; i++) {
+            for (int j = 0; j < GridUtils.GRID_HEIGHT; j++) {
+                if (mapObjects.getByGrid(i, j) instanceof BuildingObject) {
+                    if (((BuildingObject) mapObjects.getByGrid(i, j)).getType() == name) {
+                        count += 1;
+                    }
+                }
+            }
+        }
+        return count;
     }
 
     /**

@@ -100,11 +100,11 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         selectableBuildings = new Array<>();
-        selectableBuildings.add(new HallsBuilding(710, 90, 0, true));
-        selectableBuildings.add(new GymBuilding(710, 90, 0, true));
-        selectableBuildings.add(new LectureHallBuilding(710, 90, 0, true));
-        selectableBuildings.add(new PiazzaBuilding(710, 90, 0, true));
-        selectableBuildings.add(new Pub(710, 90, 0, true));
+        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.HALLS));
+        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.GYM));
+        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.LECTURE_HALL));
+        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.PIAZZA));
+        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.PUB));
         selectableTerrains = new Array<>();
         selectableTerrains.add(new TerrainObject(849, 90, TerrainObject.Feature.LAKE));
         selectableTerrains.add(new TerrainObject(849, 90, TerrainObject.Feature.ROCK));
