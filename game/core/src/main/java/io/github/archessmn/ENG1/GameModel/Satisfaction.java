@@ -46,7 +46,7 @@ public class Satisfaction {
     private static final int GRID_HEIGHT = 9;
 
     // The coverage goal is the target for what % of the map should have a building on it.
-    private static final float MAP_COVERAGE_GOAL = 0.35f;
+    private static final float MAP_COVERAGE_GOAL = 0.25f;
     // The coverage allowance gives a set leeway for the coverage, so that getting the maximum satisfaction isn't
     // practically impossible.
     private static final float MAP_COVERAGE_ALLOWANCE = 0.05f;
@@ -175,10 +175,10 @@ public class Satisfaction {
      */
     public void calculateSatisfactionScore() {
 
-        buildingDistancesScore = applyCap(buildingDistancesScore, BUILDING_DISTANCES_SCORE_CAP);
-        completionScore = applyCap(completionScore, COMPLETION_SCORE_CAP);
-        eventsScore = applyCap(eventsScore, EVENTS_SCORE_CAP);
-        buildingValuesScore = applyCap(buildingValuesScore, BUILDING_VALUES_SCORE_CAP);
+        buildingDistancesScore = MathUtils.clamp(buildingDistancesScore, 0f, BUILDING_DISTANCES_SCORE_CAP);
+        completionScore = MathUtils.clamp(completionScore, 0f, COMPLETION_SCORE_CAP);
+        eventsScore = MathUtils.clamp(eventsScore, 0f, EVENTS_SCORE_CAP);
+        buildingValuesScore = MathUtils.clamp(buildingValuesScore, 0f, BUILDING_VALUES_SCORE_CAP);
 
 
 
@@ -194,53 +194,20 @@ public class Satisfaction {
 
         int number_of_buildings = world.getBuildings().size;
 
-        // This explains the maths of the multiplier, it needs to be understood to make changes to the multiplier's
-        // scaling. The effect of the multiplier is explained after the code.
+        // The final satisfactionScore is multiplied relative to the amount of buildings expected on the map, as shown
+        // in the 2 examples below.
 
-        // If lower <= #buildings <= upper, then both Lower -#buildings and #buildings - upper, will be >=1, being
-        // equal to 1 when number_of_buildings is equal to one of the limits.
-        // If the number of buildings is below the lower limit, then lower - #buildings will be > 0, this would make
-        // 1 - ((lower - #buildings) / lower) < 1, it would also mean #buildings - upper < 0, and therefore
-        // 1 - ((#buildings - upper) / upper) > 1, so the min is 1 - (lower - #buildings) lower.
-        // The opposite will occur when #buildings > upper.
-        // So by taking the min of these two calculations, we always get the correct multiplier.
-        // If we then take the min of this and 1, it means when both calculations are >1 or one is >1 and the other =1,
-        // The multiplier will be set to one, i.e. when lower <= #buildings <= upper
-
-        // Example 1: lower limit = 30, upper limit = 40, buildings placed = 25:
-        // Multiplier = min(1-(30-25)/30,1-(25-40)/40) = min(1-1/6,1--3/8) = min(5/6,11/8) = 6/7
-        // Example 2: lower limit = 30, upper limit = 40, buildings placed = 60
-        // Multiplier = min(1-(30-60)/30,1-(60-40)/40) = min(1--1,1-0.5) = min(2, 0.5) = 0.5
+        // Example 1: lower limit = 30, upper limit = 40, buildings placed = 25, Balance = 0.25:
+        // Multiplier = min(1-((30-25)/30)*0.25,1-((25-40)/40)*0.25) = min(1-1/24,1--3/32) = min(23/24,35/32) = 23/24
+        // Example 2: lower limit = 30, upper limit = 40, buildings placed = 60, Balance = 0.25:
+        // Multiplier = min(1-((30-60)/30)*0.25,1-((60-40)/40)*0.25) = min(1--1/4,1-1/8) = min(5/4, 7/8) = 7/8
 
         if (!(number_of_buildings >= LOWER_BUILDING_LIMIT && number_of_buildings <= UPPER_BUILDING_LIMIT)) {
-            satisfactionScore *= Math.min(1 - ((float)(LOWER_BUILDING_LIMIT - number_of_buildings) / LOWER_BUILDING_LIMIT),
-                                1 - ((float)(number_of_buildings - UPPER_BUILDING_LIMIT) / UPPER_BUILDING_LIMIT));
+            // Used with the multiplier to effect how strong the multiplier is.
+            float BALANCE_FACTOR = 0.25f;
+            satisfactionScore *= Math.min(1 - (((float)(LOWER_BUILDING_LIMIT - number_of_buildings) / LOWER_BUILDING_LIMIT)* BALANCE_FACTOR),
+                                1 - (((float)(number_of_buildings - UPPER_BUILDING_LIMIT) / UPPER_BUILDING_LIMIT))* BALANCE_FACTOR);
         }
-
-
-
-
-        // Effect: If the number of buildings is in the allowed range, then the max score is achievable. If the
-        // number of buildings is below that range, the amount of buildings it's below by divided by the lower limit,
-        // is the % of the score the user can't access, the opposite occurs when the #buildings is above the range.
-
-
-
-    }
-
-
-
-    /**
-     * Helper method to apply cap each component of satisfactionScore.
-     * @param score the current score
-     * @param cap the maximum allowed value for the score
-     * @return the capped score
-     */
-    private float applyCap(double score, float cap) {
-        if (score <= 0) {
-            return 0;
-        }
-        return (float) Math.min(score, cap);
     }
 
 
@@ -480,7 +447,7 @@ public class Satisfaction {
         eventsScore += getEventScoreBonus(GameEvent.ROCK_CLIMBING, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
 
         if (world.hasActiveEvent(GameEvent.GYM_HYPE)) {
-            eventsScore += world.getCountOfSpecificBuilding(GymBuilding.class) * 1f;
+            eventsScore += world.getCountOfSpecificBuilding(BuildingName.GYM) * 1f;
         }
 
         float debuffPerBuilding = 2f;
@@ -500,7 +467,6 @@ public class Satisfaction {
             eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }
 
-        eventsScore = MathUtils.clamp(eventsScore, 0f, 30f);
     }
 
 }
