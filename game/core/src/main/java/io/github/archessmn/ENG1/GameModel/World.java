@@ -406,18 +406,7 @@ public class World {
     }
 
     public int getCountOfSpecificBuilding(BuildingName name) {
-        int count = 0;
-
-        for (int i = 0; i < GridUtils.GRID_WIDTH; i++) {
-            for (int j = 0; j < GridUtils.GRID_HEIGHT; j++) {
-                if (mapObjects.getByGrid(i, j) instanceof BuildingObject) {
-                    if (((BuildingObject) mapObjects.getByGrid(i, j)).getType() == name) {
-                        count += 1;
-                    }
-                }
-            }
-        }
-        return count;
+        return mapObjects.getByType(name).size;
     }
 
     /**
