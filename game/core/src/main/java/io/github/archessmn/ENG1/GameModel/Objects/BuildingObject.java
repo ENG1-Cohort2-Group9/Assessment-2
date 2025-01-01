@@ -10,7 +10,7 @@ public class BuildingObject extends MapObject {
     public final String unbuiltSpriteName;
 
     private float initialBuildTime;
-    private float constructionDuration;
+    private final float constructionDuration;
     private float buildingCompletionTime;
 
     public final Use[] uses;
@@ -19,32 +19,27 @@ public class BuildingObject extends MapObject {
     // amounts of each building.
     public int capacity;
 
+    public BuildingName type;
+
 
     /**
      * Initialises a new building.
      * @param x The X coordinate to place the building at.
      * @param y The Y coordinate to place the building at.
-     * @param width Width of the building.
-     * @param height Height of the building.
-     * @param buildingConstructionDuration How long construction takes
      * @param initialBuildTime The time at which the building will start construction
-     * @param built Whether the building should be marked as built upon creation.
-     * @param uses The use the building has, used for updating building counters.
-     * @param spriteName The file name of the buildings' sprite.
-     * @param objName The name of the object in the game space
+     * @param type The enum type of the building, storing other associated values for the building.
      */
-    public BuildingObject(float x, float y, float width, float height, float buildingConstructionDuration,
-                          float initialBuildTime, boolean built, Use[] uses, String spriteName, String objName,
-                          int capacity) {
-        super(x, y, width, height, spriteName, objName);
+    public BuildingObject(float x, float y, float initialBuildTime, BuildingName type) {
+        super(x, y, type.getWidth(), type.getHeight(), type.getSpriteName(), type.getObjName());
 
         this.initialBuildTime = initialBuildTime;
-        this.constructionDuration = buildingConstructionDuration;
-        this.buildingCompletionTime = initialBuildTime + buildingConstructionDuration;
+        this.constructionDuration = type.getBuildingConstructionDuration();
+        this.buildingCompletionTime = initialBuildTime + type.getBuildingConstructionDuration();
 
-        this.built = built;
-        this.uses = uses;
-        this.capacity = capacity;
+        this.built = false;
+        this.uses = type.getUses();
+        this.capacity = type.getCapacity();
+        this.type = type;
 
         this.unbuiltSpriteName = "construction.png";
     }
@@ -92,5 +87,9 @@ public class BuildingObject extends MapObject {
      */
     public int getCapacity() {
         return capacity;
+    }
+
+    public BuildingName getType() {
+        return type;
     }
 }
