@@ -174,9 +174,11 @@ public class GameScreen implements Screen {
             public void clicked(InputEvent event, float x, float y) {
                 if (highlightedTile instanceof BuildingObject) {
                     world.demolishBuilding((BuildingObject) highlightedTile);
+                    highlightedTile = null;
                 }
-                else {
+                else if (highlightedTile instanceof TerrainObject) {
                     world.destroyTerrain((TerrainObject) highlightedTile);
+                    highlightedTile = null;
                 }
             }
         });
