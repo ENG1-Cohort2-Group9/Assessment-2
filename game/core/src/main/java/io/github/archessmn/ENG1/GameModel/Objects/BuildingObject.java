@@ -17,7 +17,7 @@ public class BuildingObject extends MapObject {
 
     // The number of students a building has capacity for, this is used to incentivise the player to place different
     // amounts of each building.
-    public int capacity;
+    public int[] capacity;
 
     public BuildingName type;
 
@@ -82,11 +82,11 @@ public class BuildingObject extends MapObject {
     }
 
     /**
-     * Get the capacity of a building
+     * Get the capacity of a building for a specific use.
      * @return the integer value capacity.
      */
-    public int getCapacity() {
-        return capacity;
+    public int getUseCapacity(Use use) {
+        return capacity[use.ordinal()];
     }
 
     public BuildingName getType() {
