@@ -234,7 +234,7 @@ public class GameScreen implements Screen {
         satisfactionVarLabel.add(new Label("Building Distance:", labelStyle));
         satisfactionVarLabel.add(new Label("Campus Completion:", labelStyle));
         satisfactionVarLabel.add(new Label("Event Response:", labelStyle));
-        satisfactionVarLabel.add(new Label("Building Diversity:", labelStyle));
+        satisfactionVarLabel.add(new Label("Building Capacity:", labelStyle));
 
         satisfactionCountLabel.add(new Label("000%", labelStyle));
         satisfactionCountLabel.add(new Label("000%", labelStyle));
