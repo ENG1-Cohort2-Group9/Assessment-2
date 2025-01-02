@@ -298,18 +298,23 @@ public class Satisfaction {
             for (Use use2 : Use.values()) {
                 // Only iterates over the upper triangle of the adjacency matrix
                 if (use2.ordinal() >= use1.ordinal()) {
-                    // score is used to prevent duplicate calculation
-                    float score = calculateScoreBonus(getWeight(use1, use2), use1, use2);
-                    // Add the new score for this use pair, and subtract the previous score for this use pair
-                    // from buildingDistancesScore
-                    buildingDistancesScore += score - averageDistanceScores[use1.ordinal()][use2.ordinal()];
-                    // Save the new score for this use pair so the above line will work when next the use pair is
-                    // next updated.
-                    averageDistanceScores[use1.ordinal()][use2.ordinal()] = score;
+                    // Prevents adding score for the distance between the same uses, when only one of building of that
+                    // use is placed down.
+                    if (averageDistances[use1.ordinal()][use2.ordinal()] != 0) {
+                        // score is used to prevent duplicate calculation
+                        float score = calculateScoreBonus(getWeight(use1, use2), use1, use2);
+                        // Add the new score for this use pair, and subtract the previous score for this use pair
+                        // from buildingDistancesScore
+                        buildingDistancesScore += score - averageDistanceScores[use1.ordinal()][use2.ordinal()];
+                        // Save the new score for this use pair so the above line will work when next the use pair is
+                        // next updated.
+                        averageDistanceScores[use1.ordinal()][use2.ordinal()] = score;
+                    }
+
                 }
-                // Same logic is used as the if statement, but since only the upper triangle of the adjacency
+                // Same logic is used as above, but since only the upper triangle of the adjacency
                 // matrices are used, use1 and use2 need to be swapped if use1 is larger than use2.
-                else {
+                else if (averageDistances[use2.ordinal()][use1.ordinal()] != 0) {
                     float score = calculateScoreBonus(getWeight(use2, use1), use2, use1);
                     buildingDistancesScore += score - averageDistanceScores[use2.ordinal()][use1.ordinal()];
                     averageDistanceScores[use2.ordinal()][use1.ordinal()] = score;
