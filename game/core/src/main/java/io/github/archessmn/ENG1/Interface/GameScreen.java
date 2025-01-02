@@ -300,12 +300,12 @@ public class GameScreen implements Screen {
         // A check to see if any building/terrain assets have been clicked
         if (Gdx.input.justTouched()) {
             // Loops through all placed map objects to see if they have been clicked
-            for (MapObject mapObject : world.getMapObjects()) {
-                if (mapObject.getBounds().contains(unprojectedTouchPos)) {
-                    highlightedTile = mapObject;
-                    highlightTimer = 5f;
-                    break;
-                }
+            GridCoordTuple clickedGridSquare = GridUtils.getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
+            MapObject clickedObject = world.getMapObjectAt(clickedGridSquare);
+
+            if (clickedObject != null) {
+                highlightedTile = clickedObject;
+                highlightTimer = 5f;
             }
 
             // Initiates the dragging feature for when a menu building has been selected

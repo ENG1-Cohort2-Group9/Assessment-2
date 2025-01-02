@@ -147,7 +147,7 @@ public class MapObjectHolder {
     }
 
     /**
-     * @return The MapObject at the specified grid position
+     * @return The MapObject at the specified grid position, null if it is not occupied
      */
     public MapObject getByGrid(int gridX, int gridY) {
         return gridLookup[gridX][gridY];
