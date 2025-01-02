@@ -20,6 +20,8 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.archessmn.ENG1.GameModel.*;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
+import java.util.HashMap;
+
 import static java.lang.Math.floorDiv;
 
 public class GameScreen implements Screen {
@@ -80,6 +82,7 @@ public class GameScreen implements Screen {
     private final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
 
     private String uniName = "Guest";
+
 
 
 
@@ -404,6 +407,8 @@ public class GameScreen implements Screen {
         drawAssets(batch, assetManager);
         drawSideMenu();
         drawActiveEvents(batch, font);
+        drawConstructionPercents();
+
 
         batch.end();
         stage.draw();
@@ -611,6 +616,18 @@ public class GameScreen implements Screen {
 
         paused = true;
     }
+
+
+    private void drawConstructionPercents() {
+        for(BuildingObject building : world.getBuildings()) {
+            if (!building.isBuilt()) {
+                font.draw(batch, String.format("%.0f%%",building.getConstructionPercent(world)),
+                        building.getBounds().getX(), building.getBounds().getY());
+
+            }
+        }
+    }
+
 
     @Override
     public void dispose() {

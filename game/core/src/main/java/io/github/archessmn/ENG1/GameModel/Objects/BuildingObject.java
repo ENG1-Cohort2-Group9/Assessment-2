@@ -1,5 +1,7 @@
 package io.github.archessmn.ENG1.GameModel.Objects;
 
+import io.github.archessmn.ENG1.GameModel.World;
+
 /**
  * Base class for each building type,
  * stores information about the building and provides utility classes for interacting with it.
@@ -92,4 +94,15 @@ public class BuildingObject extends MapObject {
     public BuildingName getType() {
         return type;
     }
+
+    public boolean isBuilt() {
+        return built;
+    }
+
+    public float getConstructionPercent(World world) {
+
+        return 100 - 100 * (buildingCompletionTime - world.getCurrentTime())/ constructionDuration;
+    }
+
+
 }
