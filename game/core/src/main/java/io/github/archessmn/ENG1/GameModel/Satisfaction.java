@@ -16,11 +16,8 @@ public class Satisfaction {
     // * Average building distances (40%) average distance for each pair of building types
     // * Completion (10%) Each counter being > 0 gives 2.5%
     // * Events (30%) Events will each have separate effects on this portion of satisfactionScore
-    // * Building values (20%) Different buildings will have different values,
-    //    e.g. rent price, this allows for more buildings to be implemented,
-    //    and gives them a clear difference in how they effect satisfaction score.
-    //    In other words, this is why a user may place accommodation building y,
-    //    instead of accommodation building x.
+    // * Building Capacities (20%) Different buildings have different capacities, the player needs to ensure there is
+    // * enough room for all the students on the campus.
 
     // The final score is also then multiplied depending on whether the total number of buildings placed is within a
     // certain range.
@@ -32,14 +29,14 @@ public class Satisfaction {
     private float buildingDistancesScore;
     private float completionScore;
     private float eventsScore;
-    private float buildingValuesScore;
+    private float buildingCapacityScore;
 
     // Here the maximum value for each of these scores is set:
 
     public static final float BUILDING_DISTANCES_SCORE_CAP = 40;
     public static final float COMPLETION_SCORE_CAP = 10;
     public static final float EVENTS_SCORE_CAP = 30;
-    public static final float BUILDING_VALUES_SCORE_CAP = 20;
+    public static final float BUILDING_CAPACITY_SCORE_CAP = 20;
 
     // The map currently is 11x9 tiles
     private static final int GRID_WIDTH = 11;
@@ -74,7 +71,7 @@ public class Satisfaction {
     // The number of undirected use pairs is of the form n + n-1 + n-2... + n-n, as we want the first use connected to
     // all uses, then the second needs to connect to all uses except the first, as that's already been counted, the
     // third use ignores the first and second, and so on. So we use the sum of 1 to n formula for this, which is
-    // (n *(n+1)) / 2 We divide the total percent allowed for average distances (40) by this number
+    // (n *(n+1)) / 2 We divide the BUILDING_DISTANCES_SCORE_CAP by this number
     private final float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) USE_LENGTH * ((float) USE_LENGTH + 1)) / 2);
 
     private static final float THRESHOLD = 0.4f;
@@ -111,6 +108,11 @@ public class Satisfaction {
     // Defines how much satisfaction score is gained for having > 0 of each building use type.
     private final float completionScorePerUse = COMPLETION_SCORE_CAP / USE_LENGTH;
 
+    // These help with buildingValuesScore:
+
+    // Stores the total capacities for each building use, where the 1st value in the Use enum (TEACHING as of writing),
+    // Is stored as the first value in useCapacities. i.e. the total capacity of teaching buildings
+    private int[] useCapacities = new int[USE_LENGTH];
 
 
     /**
@@ -127,10 +129,15 @@ public class Satisfaction {
      * @param placed True if the building was built, false if it was demolished.
      */
     public void updateScore(BuildingObject building, boolean placed) {
-        updateAverageDistances(building, placed);
+        // updateFactor the integer equivalent of placed, it is explained in each of the methods using it.
+        int updateFactor = -1;
+        if (placed) {updateFactor = 1;}
+        updateAverageDistances(building, updateFactor);
         updateBuildingDistancesScore(building);
-        updateCompletionScore();
+        updateCompletionScore(updateFactor);
         updateEventScore();
+        updateUseCapacities(building, updateFactor);
+        calculateBuildingCapacityScore();
         calculateSatisfactionScore();
     }
 
@@ -158,7 +165,7 @@ public class Satisfaction {
      * @return An array with the 4 summary variables.
      */
     public float[] getSatisfactionScoreBreakdown() {
-        return new float[] { buildingDistancesScore, completionScore, eventsScore, buildingValuesScore };
+        return new float[] { buildingDistancesScore, completionScore, eventsScore, buildingCapacityScore };
     }
 
     /**
@@ -167,7 +174,7 @@ public class Satisfaction {
      * @return An array with the 4 summary variable caps.
      */
     public float[] getSatisfactionScoreCap() {
-        return new float[] { BUILDING_DISTANCES_SCORE_CAP, COMPLETION_SCORE_CAP, EVENTS_SCORE_CAP, BUILDING_VALUES_SCORE_CAP };
+        return new float[] { BUILDING_DISTANCES_SCORE_CAP, COMPLETION_SCORE_CAP, EVENTS_SCORE_CAP, BUILDING_CAPACITY_SCORE_CAP};
     }
 
     /**
@@ -178,18 +185,18 @@ public class Satisfaction {
         buildingDistancesScore = MathUtils.clamp(buildingDistancesScore, 0f, BUILDING_DISTANCES_SCORE_CAP);
         completionScore = MathUtils.clamp(completionScore, 0f, COMPLETION_SCORE_CAP);
         eventsScore = MathUtils.clamp(eventsScore, 0f, EVENTS_SCORE_CAP);
-        buildingValuesScore = MathUtils.clamp(buildingValuesScore, 0f, BUILDING_VALUES_SCORE_CAP);
+        buildingCapacityScore = MathUtils.clamp(buildingCapacityScore, 0f, BUILDING_CAPACITY_SCORE_CAP);
 
 
 
 
-        // If no accommodation buildings are placed yet, the buildingDistancesScore is ignored.
-        // (Since no one lives on campus to care about it)
+        // If no accommodation buildings are placed, the buildingDistancesScore and buildingCapacityScore are ignored.
+        // (Since no one lives on campus to care about them)
         if (world.getBuildingUseCount(Use.ACCOMMODATION) == 0) {
-            satisfactionScore = completionScore + eventsScore + buildingValuesScore;
+            satisfactionScore = completionScore + eventsScore;
         }
         else {
-            satisfactionScore = buildingDistancesScore + completionScore + eventsScore + buildingValuesScore;
+            satisfactionScore = buildingDistancesScore + completionScore + eventsScore + buildingCapacityScore;
         }
 
         int number_of_buildings = world.getBuildings().size;
@@ -216,24 +223,17 @@ public class Satisfaction {
      * and in the description of averageDistances.
      * @param building The building that was added to/removed from the map, its uses are iterated through to know which
      *                 building use pairs need to have their average distances updated.
+     * @param updateFactor is 1 if the building passed to this method was just placed, -1 if it was removed.
+     * <p>
+     *                     When it is 1, the distance found for each use pair is added to the corresponding
+     *                     averageDistance index, the new total distance is divided by (numberOfPairs + 1) to find the
+     *                     new averageDistance, and the corresponding averageDistancesCount is incremented by 1.
+     * <p>
+     *                     When it is -1, the distance found for each use pair is subtracted from the corresponding
+     *                     averageDistance index, the new total distance is divided by (numberOfPairs - 1) to find the
+     *                     new averageDistance, and the corresponding averageDistancesCount is decremented by 1.
      */
-    public void updateAverageDistances(BuildingObject building, boolean placed) {
-        // updateFactor is 1 if the building passed to this method was just placed, -1 if it was removed.
-
-        // When it is 1, the distance found for each use pair is added to the corresponding averageDistance
-        // index, the new total distance is divided by (numberOfPairs + 1) to find the new averageDistance, and the
-        // corresponding averageDistancesCount is incremented by 1.
-
-        // When it is -1, the distance found for each use pair is subtracted from the corresponding averageDistance
-        // index, the new total distance is divided by (numberOfPairs - 1) to find the new averageDistance, and the
-        // corresponding averageDistancesCount is decremented by 1.
-        int updateFactor;
-        if (placed) {
-            updateFactor = 1;
-        }
-        else {
-            updateFactor = -1;
-        }
+    public void updateAverageDistances(BuildingObject building, int updateFactor) {
 
         // Iterates through each use the building passed to this method has
         for (Use use1 : building.getUses()) {
@@ -262,7 +262,7 @@ public class Satisfaction {
                         // Update the average distance between the current pair of uses.
                         // If statement ensures that only the upper triangle of the adjacency matrix is actually
                         // updated, meaning use pairs are only ever updated and later checked, where the first use
-                        // is <= to the second use. (based of the ordinal of the use)
+                        // is <= to the second use. (based off the ordinal of the use)
                         if (use1.ordinal() < use2.ordinal()) {
                             numberOfPairs = averageDistancesCount[use1.ordinal()][use2.ordinal()];
                             averageDistances[use1.ordinal()][use2.ordinal()] = (averageDistances[use1.ordinal()][use2.ordinal()]
@@ -334,8 +334,8 @@ public class Satisfaction {
         if (world.getBuildingUseCount(use1) == 0 || world.getBuildingUseCount(use2) == 0) {
             return 0;
         }
-        // If the distance between the use pair is under the maxScoreThreshold, the max satisfaction is given, as long
-        // as the distance is greater than 0.
+
+        // If the distance between the use pair is under the maxScoreThreshold, the max satisfaction is given.
         else if (averageDistances[use1.ordinal()][use2.ordinal()] <= maxScoreThreshold) {
             return percentPerUsePair * multiplier;
         }
@@ -395,17 +395,20 @@ public class Satisfaction {
 
 
     /**
-     * For each building placed the completionScore is incremented by completionScorePerUse
+     * For each useCount > 0 the completionScore is incremented by completionScorePerUse
+     * @param updateFactor Used to skip recalculation when a building was added, and completionScore is already maxed.
      */
-    public void updateCompletionScore() {
-
-        // Reset completionScore to 0, and add the completionScorePerUse for each use > 0
-        // Unfortunately this calculation cannot be skipped once the COMPLETION_SCORE_CAP is reached, as building
-        // demolition allows the user to go back down to 0 for a building use.
-        completionScore = 0;
-        for (Use use : Use.values()) {
-            if (world.getBuildingUseCount(use) != 0) {
-                completionScore += completionScorePerUse;
+    public void updateCompletionScore(int updateFactor) {
+        // If a building was deleted, or completionScore isn't currently maxed, then it is recalculated.
+        // But if completionScore is maxed, and a building was added, then it must still be maxed, so the calculation
+        // can be skipped.
+        if (completionScore < COMPLETION_SCORE_CAP || updateFactor == -1) {
+            // Reset completionScore to 0, and add the completionScorePerUse for each use > 0
+            completionScore = 0;
+            for (Use use : Use.values()) {
+                if (world.getBuildingUseCount(use) != 0) {
+                    completionScore += completionScorePerUse;
+                }
             }
         }
     }
@@ -467,6 +470,48 @@ public class Satisfaction {
             eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
         }
 
+    }
+
+
+    /**
+     * Calculates the buildingCapacityScore using the average capacity of all non ACCOMMODATION uses, and comparing that
+     * to the ACCOMMODATION capacity.
+     */
+    public void calculateBuildingCapacityScore() {
+        // The number of students attending the university.
+        int students = useCapacities[Use.ACCOMMODATION.ordinal()];
+        // Set the averageCapacity to students negated, as it will be added back on in the for loop.
+        float averageCapacity = -1 * students;
+        for (int capacity : useCapacities) {
+            // Adds the minimum value between capacity and students, prevents excess capacity for one use benefiting
+            // the score.
+            averageCapacity += Math.min(capacity, students);
+        }
+        // This gives the average capacity of the building uses, ignoring the accommodation capacity.
+        averageCapacity /= Use.values().length - 1;
+
+        // Sets buildingCapacityScore to its cap if there is enough space for the students
+        if (averageCapacity < students) {
+            buildingCapacityScore = BUILDING_CAPACITY_SCORE_CAP * (averageCapacity / students);
+        }
+        else {
+            buildingCapacityScore = BUILDING_CAPACITY_SCORE_CAP;
+        }
+
+
+    }
+
+
+    /**
+     * Updates the total capacity for each use the building passed to this method has.
+     * @param building The building just added or removed from the map.
+     * @param updateFactor 1 if the building was added to the map, -1 if it was removed. This toggles whether the
+     *                     capacity is added or subtracted from the total capacity for each specific use.
+     */
+    public void updateUseCapacities(BuildingObject building, int updateFactor) {
+        for(Use use : building.getUses()) {
+            useCapacities[use.ordinal()] += updateFactor * building.getUseCapacity(use);
+        }
     }
 
 }
