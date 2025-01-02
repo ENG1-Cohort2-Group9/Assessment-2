@@ -300,7 +300,7 @@ public class GameScreen implements Screen {
         isClicked = Gdx.input.isTouched();
 
         // A check to see if any building/terrain assets have been clicked
-        if (Gdx.input.justTouched()) {
+        if (Gdx.input.justTouched() && unprojectedPosIsInsideScreen(unprojectedTouchPos)) {
             // Loops through all placed map objects to see if they have been clicked
             GridCoordTuple clickedGridSquare = GridUtils.getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
             MapObject clickedObject = world.getMapObjectAt(clickedGridSquare);
@@ -336,10 +336,17 @@ public class GameScreen implements Screen {
             objectToPlace = null;
         }
 
-        if (objectToPlace != null) { // Track building to mouse position for drag
+        if (objectToPlace != null && unprojectedPosIsInsideScreen(unprojectedTouchPos)) { // Track building to mouse position for drag
             objectToPlace.setCentre(touchPos.x, touchPos.y);
             objectToPlace.updateGridCoords();
         }
+    }
+
+    /**
+     * @return True if the given (unprojected) position is within the bounds of the screen (including the UI)
+     */
+    private boolean unprojectedPosIsInsideScreen(Vector2 position) {
+        return position.x < VIEWPORT_WIDTH && position.y < VIEWPORT_HEIGHT && position.x > 0 && position.y > 0;
     }
 
     private void logic() {
