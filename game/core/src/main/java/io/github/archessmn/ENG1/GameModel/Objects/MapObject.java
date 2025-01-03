@@ -1,6 +1,5 @@
 package io.github.archessmn.ENG1.GameModel.Objects;
 
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import io.github.archessmn.ENG1.GameModel.GridCoordTuple;
 import io.github.archessmn.ENG1.GameModel.GridUtils;
@@ -21,8 +20,6 @@ public abstract class MapObject implements Cloneable {
     public final String objName;
 
     public boolean placed = false;
-
-    public Rectangle bounds;
 
     private float efficiency = 0.5f;
 
@@ -46,8 +43,6 @@ public abstract class MapObject implements Cloneable {
 
         this.spriteName = spriteName;
         this.objName = objName;
-
-        this.bounds = new Rectangle(this.screenPosition.x, this.screenPosition.y, this.width, this.height);
     }
 
     /**
@@ -71,6 +66,15 @@ public abstract class MapObject implements Cloneable {
         this.screenPosition.y = y - this.height / 2;
     }
 
+
+    /**
+     * @return True if the given position is within the bounds of this mapObject
+     */
+    public boolean contains(Vector2 screenPosition) {
+        return screenPosition.x >= this.screenPosition.x && screenPosition.x <= this.screenPosition.x + width
+            && screenPosition.y >= this.screenPosition.y && screenPosition.y <= this.screenPosition.y + height;
+    }
+
     /**
      * Sets the X position of the object
      * @param x The X position to use
@@ -86,15 +90,6 @@ public abstract class MapObject implements Cloneable {
     public void setY(float y) {
         this.screenPosition.y = y;
     }
-
-    /**
-     * Calculates and returns the bounding box of the object.
-     * @return The bounding box {@link Rectangle} of the object.
-     */
-    public Rectangle getBounds() {
-        return this.bounds.set(this.screenPosition.x, this.screenPosition.y, this.width, this.height);
-    }
-
 
     /**
      * Refreshes this object's gridCoords with the correct grid square it should be in
@@ -114,8 +109,19 @@ public abstract class MapObject implements Cloneable {
         return this.gridCoords;
     }
 
-    public Vector2 getScreenPos() {
+    /**
+     * Get this object's position on screen, unrelated to its grid position
+     */
+    public Vector2 getUnsnappedScreenPos() {
         return screenPosition;
+    }
+
+    /**
+     * Get this objects position on screen, snapped to the grid. Updates the grid coordinates of this object
+     */
+    public Vector2 getSnappedScreenPosition() {
+        updateGridCoords();
+        return GridUtils.getGridSquareScreenCoords(gridCoords);
     }
 
     public float getEfficiency() {
@@ -132,7 +138,6 @@ public abstract class MapObject implements Cloneable {
         // Make a deep copy
         ((MapObject)clone).screenPosition = new Vector2(screenPosition.x, screenPosition.y);
         ((MapObject)clone).gridCoords = new GridCoordTuple(gridCoords.x, gridCoords.y);
-        ((MapObject)clone).bounds = new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
 
         return clone;
     }

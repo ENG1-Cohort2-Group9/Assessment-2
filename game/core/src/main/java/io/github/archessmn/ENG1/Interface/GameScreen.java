@@ -20,8 +20,6 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.archessmn.ENG1.GameModel.*;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
-import java.util.HashMap;
-
 import static java.lang.Math.floorDiv;
 
 public class GameScreen implements Screen {
@@ -316,14 +314,14 @@ public class GameScreen implements Screen {
             // Initiates the dragging feature for when a menu building has been selected
             BuildingObject currentBuilding = selectableBuildings.get(selectableBuildingsIndex);
             TerrainObject currentTerrain = selectableTerrains.get(selectableTerrainsIndex);
-            if (currentBuilding.getBounds().contains(unprojectedTouchPos)) {
+            if (currentBuilding.contains(unprojectedTouchPos)) {
                 try {
                     objectToPlace = (BuildingObject) selectableBuildings.get(selectableBuildingsIndex).clone();
                 } catch (CloneNotSupportedException e) {
                     throw new RuntimeException(e);
                 }
             }
-            else if (currentTerrain.getBounds().contains(unprojectedTouchPos)) {
+            else if (currentTerrain.contains(unprojectedTouchPos)) {
                 try {
                     objectToPlace = (TerrainObject) selectableTerrains.get(selectableTerrainsIndex).clone();
                 } catch (CloneNotSupportedException e) {
@@ -470,7 +468,7 @@ public class GameScreen implements Screen {
             }
         }
 
-        Vector2 position = GridUtils.getGridSquareScreenCoords(mapObject.getGridCoords());
+        Vector2 position = mapObject.getSnappedScreenPosition();
         sprite.setSize(mapObject.width, mapObject.height);
         sprite.setPosition(position.x, position.y);
         sprite.draw(batch);
@@ -499,7 +497,7 @@ public class GameScreen implements Screen {
     private void drawSelectableObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
         Sprite sprite = new Sprite(assetManager.get(mapObject.spriteName, Texture.class));
 
-        Vector2 position = mapObject.getScreenPos();
+        Vector2 position = mapObject.getUnsnappedScreenPos();
         sprite.setSize(mapObject.width, mapObject.height);
         sprite.setPosition(position.x, position.y);
         sprite.draw(batch);
@@ -622,8 +620,7 @@ public class GameScreen implements Screen {
         for(BuildingObject building : world.getBuildings()) {
             if (!building.isBuilt()) {
                 font.draw(batch, String.format("%.0f%%",building.getConstructionPercent(world)),
-                        building.getBounds().getX(), building.getBounds().getY());
-
+                        building.getSnappedScreenPosition().x, building.getSnappedScreenPosition().y);
             }
         }
     }
