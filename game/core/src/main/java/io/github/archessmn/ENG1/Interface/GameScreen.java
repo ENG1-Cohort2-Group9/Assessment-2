@@ -340,14 +340,14 @@ public class GameScreen implements Screen {
             // Initiates the dragging feature for when a menu building has been selected
             BuildingObject currentBuilding = selectableBuildings.get(selectableBuildingsIndex);
             TerrainObject currentTerrain = selectableTerrains.get(selectableTerrainsIndex);
-            if (currentBuilding.getBounds().contains(unprojectedTouchPos) && !demolishMode) {
+            if (currentBuilding.contains(unprojectedTouchPos) && !demolishMode) {
                 try {
                     objectToPlace = (BuildingObject) selectableBuildings.get(selectableBuildingsIndex).clone();
                 } catch (CloneNotSupportedException e) {
                     throw new RuntimeException(e);
                 }
             }
-            else if (currentTerrain.getBounds().contains(unprojectedTouchPos) && !demolishMode) {
+            else if (currentTerrain.contains(unprojectedTouchPos) && !demolishMode) {
                 try {
                     objectToPlace = (TerrainObject) selectableTerrains.get(selectableTerrainsIndex).clone();
                 } catch (CloneNotSupportedException e) {

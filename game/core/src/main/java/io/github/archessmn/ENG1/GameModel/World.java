@@ -332,24 +332,6 @@ public class World {
         updateWorldState(building, true);
     }
 
-    /**
-     * Multiplies a building's efficiency by {@code multiplier} indefinitely, affecting satisfaction
-     */
-    public void modifyEfficiency(BuildingObject building, float multiplier) {
-        modifyEfficiency(building, multiplier, GAME_LENGTH_SECONDS + 1);
-    }
-
-    /**
-     * Multiplies a building's efficiency by {@code multiplier} for {@code timeSeconds}, affecting satisfaction
-     */
-    public void modifyEfficiency(BuildingObject building, float multiplier, float timeSeconds) {
-        activeModifiers.add(new EfficiencyModifier(currentTime + timeSeconds, multiplier, building));
-        building.setEfficiency(building.getEfficiency() * multiplier);
-
-        // We do not update the world state here as the objects on the map have not changed
-        satisfaction.updateScore();
-    }
-
     public void destroyMapObject(MapObject mapObject) {
         mapObjects.remove(mapObject);
 
