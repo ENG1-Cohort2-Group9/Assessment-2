@@ -1,0 +1,17 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+participant EventManger
+actor User
+
+EventManger -> User : Event begins
+activate User
+User -> EventSatisfaction : User reacts correctly
+EventSatisfaction -> EventSatisfaction : Satisfaction increases
+User -> EventSatisfaction : User reacts incorrectly
+EventSatisfaction -> EventSatisfaction : Satisfaction decreases
+EventManger -> User : Event ends
+deactivate User
+User -> EventSatisfaction !! : User makes a change
+note right : no effect
+
+@enduml
