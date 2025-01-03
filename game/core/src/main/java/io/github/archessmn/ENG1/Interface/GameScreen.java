@@ -20,8 +20,6 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.archessmn.ENG1.GameModel.*;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
-import java.util.HashMap;
-
 import static java.lang.Math.floorDiv;
 
 public class GameScreen implements Screen {
@@ -126,8 +124,6 @@ public class GameScreen implements Screen {
         assetManager.load("tree.png", Texture.class);
         assetManager.load("construction.png", Texture.class);
         assetManager.load("missing_texture.png", Texture.class);
-        assetManager.load("plus.png", Texture.class);
-        assetManager.load("minus.png", Texture.class);
         assetManager.load("LectureView.png", Texture.class);
         assetManager.load("Flooding.png", Texture.class);
         assetManager.load("GymHype.png", Texture.class);
@@ -135,6 +131,7 @@ public class GameScreen implements Screen {
         assetManager.load("TreeHype.png", Texture.class);
         assetManager.load("TooManyBuildings.png", Texture.class);
         assetManager.load("RockClimbing.png", Texture.class);
+        assetManager.load("LongBoi.png", Texture.class);
         assetManager.load("ActiveEventBg.png", Texture.class);
 
         assetManager.finishLoading();
@@ -316,14 +313,14 @@ public class GameScreen implements Screen {
             // Initiates the dragging feature for when a menu building has been selected
             BuildingObject currentBuilding = selectableBuildings.get(selectableBuildingsIndex);
             TerrainObject currentTerrain = selectableTerrains.get(selectableTerrainsIndex);
-            if (currentBuilding.getBounds().contains(unprojectedTouchPos)) {
+            if (currentBuilding.contains(unprojectedTouchPos)) {
                 try {
                     objectToPlace = (BuildingObject) selectableBuildings.get(selectableBuildingsIndex).clone();
                 } catch (CloneNotSupportedException e) {
                     throw new RuntimeException(e);
                 }
             }
-            else if (currentTerrain.getBounds().contains(unprojectedTouchPos)) {
+            else if (currentTerrain.contains(unprojectedTouchPos)) {
                 try {
                     objectToPlace = (TerrainObject) selectableTerrains.get(selectableTerrainsIndex).clone();
                 } catch (CloneNotSupportedException e) {
@@ -470,36 +467,20 @@ public class GameScreen implements Screen {
             }
         }
 
-        Vector2 position = GridUtils.getGridSquareScreenCoords(mapObject.getGridCoords());
+        Vector2 position = mapObject.getSnappedScreenPosition();
         sprite.setSize(mapObject.width, mapObject.height);
         sprite.setPosition(position.x, position.y);
         sprite.draw(batch);
-
-        Sprite efficiencySprite = null;
-        // Draw '+' or '-' if building efficiency is not the default value, 0.5
-        if (mapObject.getEfficiency() > 0.5f) {
-            efficiencySprite = new Sprite(assetManager.get("plus.png", Texture.class));
-        }
-        else if (mapObject.getEfficiency() < 0.5f) {
-            efficiencySprite = new Sprite(assetManager.get("minus.png", Texture.class));
-        }
-        else {
-            return;
-        }
-
-        efficiencySprite.setSize(mapObject.width * 0.25f, mapObject.height * 0.25f);
-        efficiencySprite.setPosition(position.x + mapObject.width * 0.75f, position.y + mapObject.height * 0.75f);
-        efficiencySprite.draw(batch);
     }
 
     /**
      * Unique drawing function required to draw buildings offset from the grid. Fewer checks are required for selectable
-     * objects (e.g. they will never be under construction or have efficiency modifiers)
+     * objects (e.g. they will never be under construction)
      */
     private void drawSelectableObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
         Sprite sprite = new Sprite(assetManager.get(mapObject.spriteName, Texture.class));
 
-        Vector2 position = mapObject.getScreenPos();
+        Vector2 position = mapObject.getUnsnappedScreenPos();
         sprite.setSize(mapObject.width, mapObject.height);
         sprite.setPosition(position.x, position.y);
         sprite.draw(batch);
@@ -619,12 +600,9 @@ public class GameScreen implements Screen {
 
 
     private void drawConstructionPercents() {
-        for(BuildingObject building : world.getBuildings()) {
-            if (!building.isBuilt()) {
-                font.draw(batch, String.format("%.0f%%",building.getConstructionPercent(world)),
-                        building.getBounds().getX(), building.getBounds().getY());
-
-            }
+        for(BuildingObject building : world.getBuildings(false)) {
+            font.draw(batch, String.format("%.0f%%",building.getConstructionPercent(world)),
+                    building.getSnappedScreenPosition().x, building.getSnappedScreenPosition().y);
         }
     }
 
