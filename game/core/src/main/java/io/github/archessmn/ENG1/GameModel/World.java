@@ -113,7 +113,7 @@ public class World {
      * @return true if the placement was successful
      */
     public boolean addMapObject(MapObject mapObject) {
-        mapObject.snapToGrid();
+        mapObject.updateGridCoords();
         if (mapObject.getGridCoords().x < GridUtils.GRID_WIDTH && mapObject.getGridCoords().y < GridUtils.GRID_HEIGHT && !doesObjectOverlap(mapObject)) {
             mapObject.place();
             if (mapObject instanceof BuildingObject buildingObject) {
@@ -549,6 +549,13 @@ public class World {
 
     public Array<MapObject> getMapObjects() {
         return mapObjects.getAll();
+    }
+
+    /**
+     * Get the map object at the grid square specified, or null if the space is empty
+     */
+    public MapObject getMapObjectAt(GridCoordTuple gridCoords) {
+        return mapObjects.getByGrid(gridCoords.x, gridCoords.y);
     }
 
     public Array<BuildingObject> getBuildings() {

@@ -25,16 +25,15 @@ public class GridUtils {
     }
 
     /**
-     * Get the grid square the given coordinates would snap to.
-     * For example, the top left grid position would be (0, 8).
+     * Get the grid square containing the given coordinates. The top left grid position is (0, 8).
      * @param x The centre X coordinate of the object
      * @param y The centre Y coordinate of the object
      * @return A {@link GridCoordTuple} with coordinates in the grid.
      */
     public static GridCoordTuple getGridCoords(float x, float y) {
 
-        int gridX = Math.round((x / VIEWPORT_WIDTH) * GRID_WIDTH);
-        int gridY = Math.round((y / VIEWPORT_HEIGHT) * GRID_HEIGHT);
+        int gridX = (int)((x / VIEWPORT_WIDTH) * GRID_WIDTH);
+        int gridY = (int)((y / VIEWPORT_HEIGHT) * GRID_HEIGHT);
 
         return new GridCoordTuple(gridX, gridY);
     }

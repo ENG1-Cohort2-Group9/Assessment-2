@@ -78,15 +78,23 @@ public class MapObjectHolder {
         featureIndex.computeIfAbsent(terrainObject.feature, c -> new Array<>()).add(terrainObject);
     }
 
+    private void removeTypeFromList(Class<? extends MapObject> type) {
+
+    }
+
     /**
      * Removes all references in this object to a BapObject
      * @throws IllegalArgumentException If the MapObject is not found where expected
      */
     public void remove(MapObject mapObject) {
-        Array<MapObject> containingArray = typeIndex.get(mapObject.getClass());
-        if (containingArray != null) {
-            containingArray.removeValue(mapObject, true);
-        } else {throw new IllegalArgumentException("MapObject not found in list");}
+        // Remove from lists (For example a Pub will be in the list of MapObjects, BuildingObjects, and Pubs)
+        for (Array<MapObject> list : typeIndex.values()) {
+            if (list.contains(mapObject, true)) {
+                list.removeValue(mapObject, true);
+            }
+        }
+
+        // Remove from grid
         if (gridLookup[mapObject.getGridCoords().x][mapObject.getGridCoords().y] == mapObject) {
             gridLookup[mapObject.getGridCoords().x][mapObject.getGridCoords().y] = null;
         } else {throw new IllegalArgumentException("MapObject not found on grid");}
@@ -147,7 +155,7 @@ public class MapObjectHolder {
     }
 
     /**
-     * @return The MapObject at the specified grid position
+     * @return The MapObject at the specified grid position, null if it is not occupied
      */
     public MapObject getByGrid(int gridX, int gridY) {
         return gridLookup[gridX][gridY];

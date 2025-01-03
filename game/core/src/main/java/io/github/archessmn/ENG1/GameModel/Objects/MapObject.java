@@ -10,7 +10,7 @@ import io.github.archessmn.ENG1.GameModel.GridUtils;
  * It stored information about the object and provides utility classes for interacting with it.
  */
 public abstract class MapObject implements Cloneable {
-    private Vector2 screenPosition;
+    private Vector2 screenPosition; // The position on screen of the bottom left corner of the sprite
 
     private GridCoordTuple gridCoords;
 
@@ -55,7 +55,7 @@ public abstract class MapObject implements Cloneable {
      * the grid and update its grid coordinates to match its position.
      */
     public void place() {
-        this.snapToGrid();
+        this.updateGridCoords();
 
         this.placed = true;
     }
@@ -100,7 +100,7 @@ public abstract class MapObject implements Cloneable {
      * Refreshes this object's gridCoords with the correct grid square it should be in
      */
     public void updateGridCoords() {
-        gridCoords = GridUtils.getGridCoords(this.screenPosition.x, this.screenPosition.y);
+        gridCoords = GridUtils.getGridCoords(this.screenPosition.x + width / 2, this.screenPosition.y + height / 2);
     }
 
     /**
@@ -111,13 +111,6 @@ public abstract class MapObject implements Cloneable {
      */
     public GridCoordTuple getGridCoords() {
         return this.gridCoords;
-    }
-
-    /**
-     * Snaps the object to the grid.
-     */
-    public void snapToGrid() {
-        updateGridCoords();
     }
 
     public Vector2 getScreenPos() {

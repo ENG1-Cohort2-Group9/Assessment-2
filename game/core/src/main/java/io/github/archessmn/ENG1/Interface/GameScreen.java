@@ -174,9 +174,11 @@ public class GameScreen implements Screen {
             public void clicked(InputEvent event, float x, float y) {
                 if (highlightedTile instanceof BuildingObject) {
                     world.demolishBuilding((BuildingObject) highlightedTile);
+                    highlightedTile = null;
                 }
-                else {
+                else if (highlightedTile instanceof TerrainObject) {
                     world.destroyTerrain((TerrainObject) highlightedTile);
+                    highlightedTile = null;
                 }
             }
         });
@@ -298,14 +300,14 @@ public class GameScreen implements Screen {
         isClicked = Gdx.input.isTouched();
 
         // A check to see if any building/terrain assets have been clicked
-        if (Gdx.input.justTouched()) {
+        if (Gdx.input.justTouched() && unprojectedPosIsInsideScreen(unprojectedTouchPos)) {
             // Loops through all placed map objects to see if they have been clicked
-            for (MapObject mapObject : world.getMapObjects()) {
-                if (mapObject.getBounds().contains(unprojectedTouchPos)) {
-                    highlightedTile = mapObject;
-                    highlightTimer = 5f;
-                    break;
-                }
+            GridCoordTuple clickedGridSquare = GridUtils.getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
+            MapObject clickedObject = world.getMapObjectAt(clickedGridSquare);
+
+            if (clickedObject != null) {
+                highlightedTile = clickedObject;
+                highlightTimer = 5f;
             }
 
             // Initiates the dragging feature for when a menu building has been selected
@@ -334,10 +336,17 @@ public class GameScreen implements Screen {
             objectToPlace = null;
         }
 
-        if (objectToPlace != null) { // Track building to mouse position for drag
+        if (objectToPlace != null && unprojectedPosIsInsideScreen(unprojectedTouchPos)) { // Track building to mouse position for drag
             objectToPlace.setCentre(touchPos.x, touchPos.y);
             objectToPlace.updateGridCoords();
         }
+    }
+
+    /**
+     * @return True if the given (unprojected) position is within the bounds of the screen (including the UI)
+     */
+    private boolean unprojectedPosIsInsideScreen(Vector2 position) {
+        return position.x < VIEWPORT_WIDTH && position.y < VIEWPORT_HEIGHT && position.x > 0 && position.y > 0;
     }
 
     private void logic() {
