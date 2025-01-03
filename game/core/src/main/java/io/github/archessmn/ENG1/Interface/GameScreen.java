@@ -20,6 +20,8 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.archessmn.ENG1.GameModel.*;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
+import java.util.HashMap;
+
 import static java.lang.Math.floorDiv;
 
 public class GameScreen implements Screen {
@@ -83,6 +85,7 @@ public class GameScreen implements Screen {
 
 
 
+
     public GameScreen(ScreenManager main) {
         this.game = main;
     }
@@ -100,11 +103,11 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         selectableBuildings = new Array<>();
-        selectableBuildings.add(new HallsBuilding(710, 90, 0, true));
-        selectableBuildings.add(new GymBuilding(710, 90, 0, true));
-        selectableBuildings.add(new LectureHallBuilding(710, 90, 0, true));
-        selectableBuildings.add(new PiazzaBuilding(710, 90, 0, true));
-        selectableBuildings.add(new Pub(710, 90, 0, true));
+        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.HALLS));
+        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.GYM));
+        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.LECTURE_HALL));
+        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.PIAZZA));
+        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.PUB));
         selectableTerrains = new Array<>();
         selectableTerrains.add(new TerrainObject(849, 90, TerrainObject.Feature.LAKE));
         selectableTerrains.add(new TerrainObject(849, 90, TerrainObject.Feature.ROCK));
@@ -236,7 +239,7 @@ public class GameScreen implements Screen {
         satisfactionVarLabel.add(new Label("Building Distance:", labelStyle));
         satisfactionVarLabel.add(new Label("Campus Completion:", labelStyle));
         satisfactionVarLabel.add(new Label("Event Response:", labelStyle));
-        satisfactionVarLabel.add(new Label("Building Diversity:", labelStyle));
+        satisfactionVarLabel.add(new Label("Building Capacity:", labelStyle));
 
         satisfactionCountLabel.add(new Label("000%", labelStyle));
         satisfactionCountLabel.add(new Label("000%", labelStyle));
@@ -404,6 +407,8 @@ public class GameScreen implements Screen {
         drawAssets(batch, assetManager);
         drawSideMenu();
         drawActiveEvents(batch, font);
+        drawConstructionPercents();
+
 
         batch.end();
         stage.draw();
@@ -611,6 +616,18 @@ public class GameScreen implements Screen {
 
         paused = true;
     }
+
+
+    private void drawConstructionPercents() {
+        for(BuildingObject building : world.getBuildings()) {
+            if (!building.isBuilt()) {
+                font.draw(batch, String.format("%.0f%%",building.getConstructionPercent(world)),
+                        building.getBounds().getX(), building.getBounds().getY());
+
+            }
+        }
+    }
+
 
     @Override
     public void dispose() {

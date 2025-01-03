@@ -1,11 +1,7 @@
 package io.github.archessmn.ENG1.GameModel;
 
 import com.badlogic.gdx.utils.Array;
-import io.github.archessmn.ENG1.GameModel.Objects.BuildingObject;
-import io.github.archessmn.ENG1.GameModel.Objects.MapObject;
-import io.github.archessmn.ENG1.GameModel.Objects.TerrainObject;
-import io.github.archessmn.ENG1.GameModel.Objects.Pub;
-import io.github.archessmn.ENG1.GameModel.Objects.Use;
+import io.github.archessmn.ENG1.GameModel.Objects.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +14,7 @@ import java.util.Map;
 public class MapObjectHolder {
     private HashMap<Class<? extends MapObject>, Array<MapObject>> typeIndex = new HashMap<>(); // Get objects by their class
     private HashMap<Use, Array<BuildingObject>> useIndex = new HashMap<>(); // Get objects by their use. Note that only BuildingObjects have a Use
+    private HashMap<BuildingName, Array<BuildingObject>> buildingIndex = new HashMap<>(); // Get buildings by their type.
     private HashMap<TerrainObject.Feature, Array<TerrainObject>> featureIndex = new HashMap<>(); // Get objects by their feature. Note that only TerrainObjects have a Feature
     private MapObject[][] gridLookup; // Get objects by their map co-ordinates
 
@@ -66,6 +63,7 @@ public class MapObjectHolder {
         for (Use use : buildingObject.getUses()) {
             useIndex.computeIfAbsent(use, c -> new Array<>()).add(buildingObject);
         }
+        buildingIndex.computeIfAbsent(buildingObject.type, c -> new Array<>()).add(buildingObject);
     }
 
     /**
@@ -113,6 +111,11 @@ public class MapObjectHolder {
                 containingArray.removeValue(buildingObject, true);
             }
         }
+
+        Array<BuildingObject> containingArray = buildingIndex.get(buildingObject.type);
+        if (containingArray != null) {
+            containingArray.removeValue(buildingObject, true);
+        }
     }
 
     /**
@@ -145,13 +148,22 @@ public class MapObjectHolder {
     /**
      * Returns all MapObjects of type, {@code type}, or an empty array if no placed objects have this type.
      * @param type The class of an object, given by ClassName.class. Note that objects can be retrieved by superclass
-     *             and subclass (for example you can find a {@link Pub} in the list of {@link Pub}s,
-     *             {@link BuildingObject}s, and {@link MapObject}s
+     *             and subclass (e.g. you can find a {@link BuildingObject} in the list of {@link BuildingObject}s,
+     *             and {@link MapObject}s
      * @return An array of the type specified by {@code type}
      */
     @SuppressWarnings("unchecked")
     public <T extends MapObject> Array<T> getByType(Class<? extends MapObject> type) {
         return (Array<T>)typeIndex.getOrDefault(type, new Array<>());
+    }
+
+    /**
+     * Returns all Buildings of type, {@code type}, or an empty array if no placed buildings have this type.
+     * @param type The type of building, e.g. building.type
+     * @return An array of the BuildingObjects
+     */
+    public Array<BuildingObject> getByType(BuildingName type) {
+        return buildingIndex.getOrDefault(type, new Array<>());
     }
 
     /**
