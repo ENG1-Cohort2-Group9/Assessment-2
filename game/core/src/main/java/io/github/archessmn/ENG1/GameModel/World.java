@@ -210,7 +210,7 @@ public class World {
             }
         }
 
-        satisfaction.updateScore();
+        satisfaction.updateScore(terrain, !wasRemoved);
     }
 
 
@@ -230,9 +230,9 @@ public class World {
                     eventManager.enableEvent(GameEvent.TOURNAMENT_WON);
                 }
 
+                satisfaction.updateScore(activeEvents[i], false);
                 activeEvents[i] = null;
                 activeEventEndTime[i] = GAME_LENGTH_SECONDS + 1;
-                satisfaction.updateScore();
             }
         }
         // Maintain active modifiers, removing them when necessary
@@ -242,7 +242,6 @@ public class World {
                 building.setEfficiency(building.getEfficiency() / activeModifiers.get(i).multiplier());
                 activeModifiers.removeIndex(i);
                 i--;
-                satisfaction.updateScore();
             }
         }
     }
@@ -357,7 +356,7 @@ public class World {
         building.setEfficiency(building.getEfficiency() * multiplier);
 
         // We do not update the world state here as the objects on the map have not changed
-        satisfaction.updateScore();
+
     }
 
     public void demolishBuilding(BuildingObject building) {
@@ -398,7 +397,7 @@ public class World {
         activeEventEndTime[event.ordinal()] = currentTime + timeSeconds;
 
         // We do not update the world state here as the objects on the map have not changed
-        satisfaction.updateScore();
+        satisfaction.updateScore(event, true);
     }
 
     public boolean hasActiveEvent(GameEvent event) {
@@ -437,6 +436,25 @@ public class World {
             }
         }
         return false;
+    }
+
+    /**
+     * @return The objects on the map in any of the 8 spaces around the point specified. Returns an empty array if none
+     * are found.
+     */
+    public Array<MapObject> getMapObjectsAroundPosition(GridCoordTuple coords) {
+        Array<MapObject> mapObjects = new Array<>();
+        for (int x = Math.max(0, coords.x - 1); x <= Math.min(GridUtils.GRID_WIDTH - 1, coords.y + 1); x++) {
+            for (int y = Math.max(0, coords.y - 1); y <= Math.min(GridUtils.GRID_HEIGHT - 1, coords.y + 1); y++) {
+                if (x != coords.x && y != coords.y) {
+                    MapObject mapObject = getMapObjectAt(coords);
+                    if (mapObject != null) {
+                        mapObjects.add(mapObject);
+                    }
+                }
+            }
+        }
+        return mapObjects;
     }
 
     /**

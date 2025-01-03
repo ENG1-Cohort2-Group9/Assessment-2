@@ -104,5 +104,17 @@ public class BuildingObject extends MapObject {
         return 100 - 100 * (buildingCompletionTime - world.getCurrentTime())/ constructionDuration;
     }
 
+    /**
+     * @return True if this building has the use specified
+     */
+    public boolean hasUse(Use use) {
+        for (int i = 0; i < uses.length; i++) {
+            if (uses[i] == use) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
 }
