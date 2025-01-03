@@ -470,10 +470,10 @@ public class Satisfaction {
     public void updateEventScore(MapObject mapObject, boolean wasPlaced) {
         // Events
         eventsScore += getEventScoreBonus(mapObject, wasPlaced, GameEvent.TREE_HYPE, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 1f );
-        eventsScore += getEventScoreBonus(mapObject, wasPlaced, GameEvent.LECTURE_VIEW, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
+        eventsScore += getEventScoreBonus(mapObject, wasPlaced, GameEvent.LECTURE_VIEW, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 0.25f );
         eventsScore += getEventScoreBonus(mapObject, wasPlaced, GameEvent.ROCK_CLIMBING, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
 
-        float gymHypeBonus = 1f;
+        float gymHypeBonus = 0.5f;
         if (world.hasActiveEvent(GameEvent.GYM_HYPE) && mapObject instanceof BuildingObject building && building.getType() == BuildingName.GYM) {
             eventsScore += wasPlaced ? gymHypeBonus : -gymHypeBonus;
         }
@@ -488,7 +488,7 @@ public class Satisfaction {
         float debuffPerBuilding = 2f;
         if (wasAdded) {
             switch (activeEvent) {
-                case TOURNAMENT_WON -> eventsScore += 15f;
+                case TOURNAMENT_WON -> eventsScore += 7.5f;
                 case TOO_MANY_BUILDINGS ->
                     eventsScore -= ((world.getBuildingUseCount(Use.TEACHING) - world.TOO_MANY_LECTURE_BUILDINGS) * debuffPerBuilding);
                 case LONG_BOI_SIGHTING -> eventsScore += EVENTS_SCORE_CAP;
