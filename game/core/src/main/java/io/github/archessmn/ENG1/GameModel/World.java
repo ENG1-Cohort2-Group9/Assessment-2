@@ -29,7 +29,6 @@ public class World {
     // Stores events that have prolonged effects. Indices are preset for quicker lookup, even though instantaneous events are never stored here so the array can never be full.
     private GameEvent[] activeEvents = new GameEvent[GameEvent.values().length];
     private float[] activeEventEndTime = new float[GameEvent.values().length];
-    Array<EfficiencyModifier> activeModifiers = new Array<>();
 
     private float currentTime;
     private EventManager eventManager;
@@ -235,15 +234,6 @@ public class World {
                 activeEventEndTime[i] = GAME_LENGTH_SECONDS + 1;
             }
         }
-        // Maintain active modifiers, removing them when necessary
-        for (int i = 0; i < activeModifiers.size; i++) {
-            if (currentTime > activeModifiers.get(i).endTime()) {
-                BuildingObject building = activeModifiers.get(i).affectedBuilding();
-                building.setEfficiency(building.getEfficiency() / activeModifiers.get(i).multiplier());
-                activeModifiers.removeIndex(i);
-                i--;
-            }
-        }
     }
 
     /**
@@ -279,11 +269,6 @@ public class World {
                     closeBuilding(building, 30f);
                 }
                 addActiveEvent(GameEvent.FLOODING, 30);
-                break;
-            case SMELLY:
-                if (mapObjects.getBuildings().size > 0) {
-                    modifyEfficiency(getRandomBuilding(mapObjects.getBuildings()), 0.5f);
-                }
                 break;
             case SEAGULL:
                 if (mapObjects.getBuildings().size > 0) {
@@ -339,24 +324,6 @@ public class World {
         building.resetConstruction(currentTime, timeSeconds);
 
         updateWorldState(building, true);
-    }
-
-    /**
-     * Multiplies a building's efficiency by {@code multiplier} indefinitely, affecting satisfaction
-     */
-    public void modifyEfficiency(BuildingObject building, float multiplier) {
-        modifyEfficiency(building, multiplier, GAME_LENGTH_SECONDS + 1);
-    }
-
-    /**
-     * Multiplies a building's efficiency by {@code multiplier} for {@code timeSeconds}, affecting satisfaction
-     */
-    public void modifyEfficiency(BuildingObject building, float multiplier, float timeSeconds) {
-        activeModifiers.add(new EfficiencyModifier(currentTime + timeSeconds, multiplier, building));
-        building.setEfficiency(building.getEfficiency() * multiplier);
-
-        // We do not update the world state here as the objects on the map have not changed
-
     }
 
     public void demolishBuilding(BuildingObject building) {

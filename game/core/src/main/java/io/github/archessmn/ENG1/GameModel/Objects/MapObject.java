@@ -21,8 +21,6 @@ public abstract class MapObject implements Cloneable {
 
     public boolean placed = false;
 
-    private float efficiency = 0.5f;
-
 
     /**
      * Initialises a new map object.
@@ -122,14 +120,6 @@ public abstract class MapObject implements Cloneable {
     public Vector2 getSnappedScreenPosition() {
         updateGridCoords();
         return GridUtils.getGridSquareScreenCoords(gridCoords);
-    }
-
-    public float getEfficiency() {
-        return efficiency;
-    }
-
-    public void setEfficiency(float efficiency) {
-        this.efficiency = efficiency;
     }
 
     @Override
