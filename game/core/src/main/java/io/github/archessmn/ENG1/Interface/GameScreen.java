@@ -131,6 +131,7 @@ public class GameScreen implements Screen {
         assetManager.load("TreeHype.png", Texture.class);
         assetManager.load("TooManyBuildings.png", Texture.class);
         assetManager.load("RockClimbing.png", Texture.class);
+        assetManager.load("LongBoi.png", Texture.class);
         assetManager.load("ActiveEventBg.png", Texture.class);
 
         assetManager.finishLoading();
