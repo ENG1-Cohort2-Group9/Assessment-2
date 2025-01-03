@@ -12,7 +12,7 @@ public class BuildingObject extends MapObject {
     public final String unbuiltSpriteName;
 
     private float initialBuildTime;
-    private final float constructionDuration;
+    private float constructionDuration;
     private float buildingCompletionTime;
 
     public final Use[] uses;
@@ -59,12 +59,11 @@ public class BuildingObject extends MapObject {
     /**
      * Sets the building back to un-built and begins construction again
      * @param newInitialConstructionTime The time at which the building will begin construction
-     * @param newConstructionTime The time the building will take to finish construction
+     * @param newConstructionDuration The time the building will take to finish construction
      */
-    public void resetConstruction(float newInitialConstructionTime, float newConstructionTime) {
-        this.built = false;
-        this.initialBuildTime = newInitialConstructionTime;
-        this.buildingCompletionTime = initialBuildTime + newConstructionTime;
+    public void resetConstruction(float newInitialConstructionTime, float newConstructionDuration) {
+        this.constructionDuration = newConstructionDuration;
+        resetConstruction(newInitialConstructionTime);
     }
 
     /**
@@ -102,6 +101,18 @@ public class BuildingObject extends MapObject {
     public float getConstructionPercent(World world) {
 
         return 100 - 100 * (buildingCompletionTime - world.getCurrentTime())/ constructionDuration;
+    }
+
+    /**
+     * @return True if this building has the use specified
+     */
+    public boolean hasUse(Use use) {
+        for (int i = 0; i < uses.length; i++) {
+            if (uses[i] == use) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

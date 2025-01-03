@@ -181,6 +181,18 @@ public class MapObjectHolder {
     }
 
     /**
+     * @return An array of all currently {@code built} (or not built if false) buildings
+     */
+    public Array<BuildingObject> getBuildings(boolean built) {
+        Array<BuildingObject> output = new Array<>();
+        for (BuildingObject buildingObject : getBuildings()) {
+            if (buildingObject.built == built)
+                output.add(buildingObject);
+        }
+        return output;
+    }
+
+    /**
      * Wrapper of {@link #getByType(Class<? extends MapObject>) getByType} for more friendly access to all terrain objects
      */
     public Array<TerrainObject> getTerrainObjects() {

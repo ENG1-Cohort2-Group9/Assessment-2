@@ -1,6 +1,7 @@
 package io.github.archessmn.ENG1.GameModel;
 
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
 public class Satisfaction {
@@ -28,7 +29,8 @@ public class Satisfaction {
     // on screen once when that calculation is complete.
     private float buildingDistancesScore;
     private float completionScore;
-    private float eventsScore;
+    private float eventsScore; // This value can go below 0 and above the cap
+    private float cappedEventsScore; // This is equal to eventsScore with its range restricted
     private float buildingCapacityScore;
 
     // Here the maximum value for each of these scores is set:
@@ -124,28 +126,33 @@ public class Satisfaction {
     }
 
     /**
-     * When a building is built or demolished, this method calls the relevant functions to update satisfaction score.
-     * @param building The building that was just built/demolished.
-     * @param placed True if the building was built, false if it was demolished.
+     * When a mapObject is built or demolished, this method calls the relevant functions to update satisfaction score.
+     * @param mapObject The mapObject that was just built/demolished.
+     * @param placed True if the mapObject was built, false if it was demolished.
      */
-    public void updateScore(BuildingObject building, boolean placed) {
+    public void updateScore(MapObject mapObject, boolean placed) {
         // updateFactor the integer equivalent of placed, it is explained in each of the methods using it.
         int updateFactor = -1;
         if (placed) {updateFactor = 1;}
-        updateAverageDistances(building, updateFactor);
-        updateBuildingDistancesScore(building);
-        updateCompletionScore(updateFactor);
-        updateEventScore();
-        updateUseCapacities(building, updateFactor);
-        calculateBuildingCapacityScore();
+        if (mapObject instanceof BuildingObject building) {
+            updateAverageDistances(building, updateFactor);
+            updateBuildingDistancesScore(building);
+            updateCompletionScore(updateFactor);
+            updateUseCapacities(building, updateFactor);
+            calculateBuildingCapacityScore();
+        }
+
+        updateEventScore(mapObject, placed);
         calculateSatisfactionScore();
     }
 
     /**
      * When an event needs to update the score, this method calls the relevant methods.
+     * @param activeEvent The event in question
+     * @param added True if the activeEvent has been added, false if removed
      */
-    public void updateScore() {
-        updateEventScore();
+    public void updateScore(GameEvent activeEvent, boolean added) {
+        updateEventScore(activeEvent, added);
         calculateSatisfactionScore();
     }
 
@@ -165,7 +172,7 @@ public class Satisfaction {
      * @return An array with the 4 summary variables.
      */
     public float[] getSatisfactionScoreBreakdown() {
-        return new float[] { buildingDistancesScore, completionScore, eventsScore, buildingCapacityScore };
+        return new float[] { buildingDistancesScore, completionScore, cappedEventsScore, buildingCapacityScore };
     }
 
     /**
@@ -184,7 +191,7 @@ public class Satisfaction {
 
         buildingDistancesScore = MathUtils.clamp(buildingDistancesScore, 0f, BUILDING_DISTANCES_SCORE_CAP);
         completionScore = MathUtils.clamp(completionScore, 0f, COMPLETION_SCORE_CAP);
-        eventsScore = MathUtils.clamp(eventsScore, 0f, EVENTS_SCORE_CAP);
+        cappedEventsScore = MathUtils.clamp(eventsScore, 0f, EVENTS_SCORE_CAP);
         buildingCapacityScore = MathUtils.clamp(buildingCapacityScore, 0f, BUILDING_CAPACITY_SCORE_CAP);
 
 
@@ -193,13 +200,13 @@ public class Satisfaction {
         // If no accommodation buildings are placed, the buildingDistancesScore and buildingCapacityScore are ignored.
         // (Since no one lives on campus to care about them)
         if (world.getBuildingUseCount(Use.ACCOMMODATION) == 0) {
-            satisfactionScore = completionScore + eventsScore;
+            satisfactionScore = completionScore + cappedEventsScore;
         }
         else {
-            satisfactionScore = buildingDistancesScore + completionScore + eventsScore + buildingCapacityScore;
+            satisfactionScore = buildingDistancesScore + completionScore + cappedEventsScore + buildingCapacityScore;
         }
 
-        int number_of_buildings = world.getBuildings().size;
+        int number_of_buildings = world.getBuildings(true).size;
 
         // The final satisfactionScore is multiplied relative to the amount of buildings expected on the map, as shown
         // in the 2 examples below.
@@ -238,7 +245,7 @@ public class Satisfaction {
         // Iterates through each use the building passed to this method has
         for (Use use1 : building.getUses()) {
             // Iterates through all buildings currently placed on the map
-            for (BuildingObject comparisonBuilding : world.getBuildings()) {
+            for (BuildingObject comparisonBuilding : world.getBuildings(true)) {
                 // Distance is the diagonal distance between the building passed to this method, and the current
                 // comparisonBuilding.
                 float distance = (float) Math.sqrt(Math.pow(building.getGridCoords().x - comparisonBuilding.getGridCoords().x, 2) +
@@ -422,6 +429,8 @@ public class Satisfaction {
     /**
      * Gets the satisfaction score bonus for an active event in which buildings of use {@code use} near any of a group
      * of terrain features adds +{@code scoreBonus} for each. If the event is not active, the result will be 0.
+     * @param mapObject The mapObject that has just been placed or removed
+     * @param wasPlaced True if the mapObject has been placed, false if removed
      * @param event The event in question.
      * @param features The features the building type must be near to produce a bonus. If a building is near multiple
      *                 terrain features, the satisfaction is increased for each one.
@@ -430,15 +439,20 @@ public class Satisfaction {
      *                   {@value EVENTS_SCORE_CAP}
      * @return The total satisfaction score increase.
      */
-    private float getEventScoreBonus(GameEvent event, TerrainObject.Feature[] features, Use use, float scoreBonus) {
+    private float getEventScoreBonus(MapObject mapObject, boolean wasPlaced, GameEvent event, TerrainObject.Feature[] features, Use use, float scoreBonus) {
         float total = 0;
         if (world.hasActiveEvent(event)) {
-            for (TerrainObject.Feature feature : features) {
-                for (BuildingObject building : world.getBuildingsNearTerrain(feature)) {
-                    for (Use buildingUse : building.getUses()) {
-                        if (buildingUse == use) {
-                            total += scoreBonus;
-                        }
+            if (mapObject instanceof BuildingObject building) {
+                for (TerrainObject.Feature feature : features) {
+                    if (building.hasUse(use) && world.isBuildingNearTerrain(building, feature)) {
+                        total += wasPlaced ? scoreBonus : -scoreBonus;
+                    }
+                }
+            } else if (mapObject instanceof TerrainObject terrain) {
+                Array<MapObject> neighbours = world.getMapObjectsAroundPosition(terrain.getGridCoords());
+                for (MapObject neighbour : neighbours) {
+                    if (neighbour instanceof BuildingObject building && building.hasUse(use)) {
+                        total += wasPlaced ? scoreBonus : -scoreBonus;
                     }
                 }
             }
@@ -446,35 +460,44 @@ public class Satisfaction {
         return total;
     }
 
-
-    public void updateEventScore() {
-        eventsScore = 0;
+    /**
+     * Updates the stored event score. The aim is that only actions taken while an event is active can affect the score.
+     * For instance, if the event TreeHype occurs, a permanent bonus can be gained by placing buildings near trees during
+     * that time. If these buildings are later removed, the bonus is not affected
+     * @param mapObject The mapObject that has just been placed or removed
+     * @param wasPlaced True if the mapObject has been placed, false if removed
+     */
+    public void updateEventScore(MapObject mapObject, boolean wasPlaced) {
         // Events
-        eventsScore += getEventScoreBonus(GameEvent.TREE_HYPE, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 1f );
-        eventsScore += getEventScoreBonus(GameEvent.LECTURE_VIEW, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
-        eventsScore += getEventScoreBonus(GameEvent.ROCK_CLIMBING, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
+        eventsScore += getEventScoreBonus(mapObject, wasPlaced, GameEvent.TREE_HYPE, new TerrainObject.Feature[]{TerrainObject.Feature.TREE}, Use.ACCOMMODATION, 1f );
+        eventsScore += getEventScoreBonus(mapObject, wasPlaced, GameEvent.LECTURE_VIEW, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 0.25f );
+        eventsScore += getEventScoreBonus(mapObject, wasPlaced, GameEvent.ROCK_CLIMBING, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
 
-        if (world.hasActiveEvent(GameEvent.GYM_HYPE)) {
-            eventsScore += world.getCountOfSpecificBuilding(BuildingName.GYM) * 1f;
+        float gymHypeBonus = 0.5f;
+        if (world.hasActiveEvent(GameEvent.GYM_HYPE) && mapObject instanceof BuildingObject building && building.getType() == BuildingName.GYM) {
+            eventsScore += wasPlaced ? gymHypeBonus : -gymHypeBonus;
         }
 
+    }
+
+    /**
+     * Apply a one-time update to the event score when the {@code activeEvent} occurs
+     * @param wasAdded True if the event has just occured, false if it has just been removed
+     */
+    public void updateEventScore(GameEvent activeEvent, boolean wasAdded) {
         float debuffPerBuilding = 2f;
-        if (world.hasActiveEvent(GameEvent.TOO_MANY_BUILDINGS)) {
-            eventsScore -= world.getBuildingUseCount(Use.TEACHING) * debuffPerBuilding;
-            // This ensures that only teaching buildings over the limit reduce satisfaction. This could be removed to make
-            // this event harsher. It sort of makes sense to me that ALL teaching buildings would be negatively affected by
-            // overcrowding, but that would make this event very punishing
-            eventsScore += debuffPerBuilding * (world.TOO_MANY_LECTURE_BUILDINGS - 1);
+        if (wasAdded) {
+            switch (activeEvent) {
+                case TOURNAMENT_WON -> eventsScore += 7.5f;
+                case TOO_MANY_BUILDINGS ->
+                    eventsScore -= ((world.getBuildingUseCount(Use.TEACHING) - world.TOO_MANY_LECTURE_BUILDINGS) * debuffPerBuilding);
+                case LONG_BOI_SIGHTING -> eventsScore += EVENTS_SCORE_CAP;
+            }
+        } else {
+            switch (activeEvent) {
+                case LONG_BOI_SIGHTING -> eventsScore -= EVENTS_SCORE_CAP;
+            }
         }
-
-        if (world.hasActiveEvent(GameEvent.TOURNAMENT_WON)) {
-            eventsScore += 15f; // Quite strong. This event is (hopefully) hard to obtain
-        }
-
-        if (world.hasActiveEvent(GameEvent.LONG_BOI_SIGHTING)) {
-            eventsScore = EVENTS_SCORE_CAP; // This event is very powerful, but only lasts a short time
-        }
-
     }
 
 

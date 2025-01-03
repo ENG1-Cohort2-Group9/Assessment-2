@@ -136,6 +136,7 @@ public class GameScreen implements Screen {
         assetManager.load("TreeHype.png", Texture.class);
         assetManager.load("TooManyBuildings.png", Texture.class);
         assetManager.load("RockClimbing.png", Texture.class);
+        assetManager.load("LongBoi.png", Texture.class);
         assetManager.load("ActiveEventBg.png", Texture.class);
 
         assetManager.finishLoading();
@@ -489,36 +490,20 @@ public class GameScreen implements Screen {
             sprite = new Sprite(assetManager.get("rubble.png", Texture.class));
         }
 
-        Vector2 position = GridUtils.getGridSquareScreenCoords(mapObject.getGridCoords());
+        Vector2 position = mapObject.getSnappedScreenPosition();
         sprite.setSize(mapObject.width, mapObject.height);
         sprite.setPosition(position.x, position.y);
         sprite.draw(batch);
-
-        Sprite efficiencySprite = null;
-        // Draw '+' or '-' if building efficiency is not the default value, 0.5
-        if (mapObject.getEfficiency() > 0.5f) {
-            efficiencySprite = new Sprite(assetManager.get("plus.png", Texture.class));
-        }
-        else if (mapObject.getEfficiency() < 0.5f) {
-            efficiencySprite = new Sprite(assetManager.get("minus.png", Texture.class));
-        }
-        else {
-            return;
-        }
-
-        efficiencySprite.setSize(mapObject.width * 0.25f, mapObject.height * 0.25f);
-        efficiencySprite.setPosition(position.x + mapObject.width * 0.75f, position.y + mapObject.height * 0.75f);
-        efficiencySprite.draw(batch);
     }
 
     /**
      * Unique drawing function required to draw buildings offset from the grid. Fewer checks are required for selectable
-     * objects (e.g. they will never be under construction or have efficiency modifiers)
+     * objects (e.g. they will never be under construction)
      */
     private void drawSelectableObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
         Sprite sprite = new Sprite(assetManager.get(mapObject.spriteName, Texture.class));
 
-        Vector2 position = mapObject.getScreenPos();
+        Vector2 position = mapObject.getUnsnappedScreenPos();
         sprite.setSize(mapObject.width, mapObject.height);
         sprite.setPosition(position.x, position.y);
         sprite.draw(batch);
