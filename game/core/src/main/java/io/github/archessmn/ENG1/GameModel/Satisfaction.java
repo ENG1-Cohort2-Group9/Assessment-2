@@ -172,7 +172,7 @@ public class Satisfaction {
      * @return An array with the 4 summary variables.
      */
     public float[] getSatisfactionScoreBreakdown() {
-        return new float[] { buildingDistancesScore, completionScore, eventsScore, buildingCapacityScore };
+        return new float[] { buildingDistancesScore, completionScore, cappedEventsScore, buildingCapacityScore };
     }
 
     /**
@@ -444,7 +444,7 @@ public class Satisfaction {
         if (world.hasActiveEvent(event)) {
             if (mapObject instanceof BuildingObject building) {
                 for (TerrainObject.Feature feature : features) {
-                    if (world.isBuildingNearTerrain(building, feature)) {
+                    if (building.hasUse(use) && world.isBuildingNearTerrain(building, feature)) {
                         total += wasPlaced ? scoreBonus : -scoreBonus;
                     }
                 }
@@ -473,8 +473,9 @@ public class Satisfaction {
         eventsScore += getEventScoreBonus(mapObject, wasPlaced, GameEvent.LECTURE_VIEW, new TerrainObject.Feature[]{TerrainObject.Feature.TREE, TerrainObject.Feature.LAKE}, Use.TEACHING, 1f );
         eventsScore += getEventScoreBonus(mapObject, wasPlaced, GameEvent.ROCK_CLIMBING, new TerrainObject.Feature[]{TerrainObject.Feature.ROCK}, Use.ACCOMMODATION, 1f );
 
+        float gymHypeBonus = 1f;
         if (world.hasActiveEvent(GameEvent.GYM_HYPE) && mapObject instanceof BuildingObject building && building.getType() == BuildingName.GYM) {
-            eventsScore += 1f;
+            eventsScore += wasPlaced ? gymHypeBonus : -gymHypeBonus;
         }
 
     }
@@ -497,7 +498,6 @@ public class Satisfaction {
                 case LONG_BOI_SIGHTING -> eventsScore -= EVENTS_SCORE_CAP;
             }
         }
-
     }
 
 

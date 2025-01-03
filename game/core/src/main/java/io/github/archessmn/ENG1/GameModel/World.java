@@ -224,7 +224,7 @@ public class World {
         eventManager.processEvents(currentTime);
         // Maintain active events, removing them when necessary
         for (int i = 0; i < activeEventEndTime.length; i++) {
-            if (currentTime > activeEventEndTime[i]) {
+            if (activeEvents[i] != null && currentTime > activeEventEndTime[i]) {
                 // Special effect for "Gym hype" to enable the possibility of winning the tournament if the user has placed enough gyms.
                 if (i == GameEvent.GYM_HYPE.ordinal() && getCountOfSpecificBuilding(BuildingName.GYM) >= GYMS_FOR_TOURNAMENT_WIN) {
                     eventManager.enableEvent(GameEvent.TOURNAMENT_WON);
@@ -428,7 +428,7 @@ public class World {
      * @return True if the building is near this type of terrain feature
      */
     public boolean isBuildingNearTerrain(BuildingObject building, TerrainObject.Feature feature) {
-        for (int x = Math.max(0, building.getGridCoords().x - 1); x <= Math.min(GridUtils.GRID_WIDTH - 1, building.getGridCoords().y + 1); x++) {
+        for (int x = Math.max(0, building.getGridCoords().x - 1); x <= Math.min(GridUtils.GRID_WIDTH - 1, building.getGridCoords().x + 1); x++) {
             for (int y = Math.max(0, building.getGridCoords().y - 1); y <= Math.min(GridUtils.GRID_HEIGHT - 1, building.getGridCoords().y + 1); y++) {
                 if (mapObjects.getByGrid(x,y) instanceof TerrainObject && ((TerrainObject) mapObjects.getByGrid(x,y)).feature == feature) {
                     return true;
@@ -444,10 +444,10 @@ public class World {
      */
     public Array<MapObject> getMapObjectsAroundPosition(GridCoordTuple coords) {
         Array<MapObject> mapObjects = new Array<>();
-        for (int x = Math.max(0, coords.x - 1); x <= Math.min(GridUtils.GRID_WIDTH - 1, coords.y + 1); x++) {
+        for (int x = Math.max(0, coords.x - 1); x <= Math.min(GridUtils.GRID_WIDTH - 1, coords.x + 1); x++) {
             for (int y = Math.max(0, coords.y - 1); y <= Math.min(GridUtils.GRID_HEIGHT - 1, coords.y + 1); y++) {
                 if (x != coords.x && y != coords.y) {
-                    MapObject mapObject = getMapObjectAt(coords);
+                    MapObject mapObject = getMapObjectAt(new GridCoordTuple(x,y));
                     if (mapObject != null) {
                         mapObjects.add(mapObject);
                     }
