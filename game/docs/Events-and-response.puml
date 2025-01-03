@@ -6,12 +6,12 @@ actor User
 EventManger -> User : Event begins
 activate User
 User -> EventSatisfaction : User reacts correctly
-EventSatisfaction -> EventSatisfaction : Satisfaction increases
+EventSatisfaction -> User : Satisfaction increases
 User -> EventSatisfaction : User reacts incorrectly
-EventSatisfaction -> EventSatisfaction : Satisfaction decreases
+EventSatisfaction -> User : Satisfaction decreases or is unchanged
 EventManger -> User : Event ends
 deactivate User
-User -> EventSatisfaction !! : User makes a change
-note right : no effect
+User -> EventSatisfaction : User makes a change
+note right : No effect
 
 @enduml
