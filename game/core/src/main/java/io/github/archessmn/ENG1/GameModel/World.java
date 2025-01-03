@@ -543,9 +543,20 @@ public class World {
         return mapObjects.getByGrid(gridCoords.x, gridCoords.y);
     }
 
+    /**
+     * @return all buildings
+     */
     public Array<BuildingObject> getBuildings() {
         return mapObjects.getBuildings();
     }
+
+    /**
+     * @return all {@code built} (or not built if false) buildings
+     */
+    public Array<BuildingObject> getBuildings(boolean built) {
+        return mapObjects.getBuildings(built);
+    }
+
 
     /**
      * Get the game time at which this active event will be removed. If the event is not active, returns {@value GAME_LENGTH_SECONDS} + 1

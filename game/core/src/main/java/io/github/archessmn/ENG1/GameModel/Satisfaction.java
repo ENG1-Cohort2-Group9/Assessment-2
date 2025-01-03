@@ -206,7 +206,7 @@ public class Satisfaction {
             satisfactionScore = buildingDistancesScore + completionScore + cappedEventsScore + buildingCapacityScore;
         }
 
-        int number_of_buildings = world.getBuildings().size;
+        int number_of_buildings = world.getBuildings(true).size;
 
         // The final satisfactionScore is multiplied relative to the amount of buildings expected on the map, as shown
         // in the 2 examples below.
@@ -245,7 +245,7 @@ public class Satisfaction {
         // Iterates through each use the building passed to this method has
         for (Use use1 : building.getUses()) {
             // Iterates through all buildings currently placed on the map
-            for (BuildingObject comparisonBuilding : world.getBuildings()) {
+            for (BuildingObject comparisonBuilding : world.getBuildings(true)) {
                 // Distance is the diagonal distance between the building passed to this method, and the current
                 // comparisonBuilding.
                 float distance = (float) Math.sqrt(Math.pow(building.getGridCoords().x - comparisonBuilding.getGridCoords().x, 2) +

@@ -600,11 +600,9 @@ public class GameScreen implements Screen {
 
 
     private void drawConstructionPercents() {
-        for(BuildingObject building : world.getBuildings()) {
-            if (!building.isBuilt()) {
-                font.draw(batch, String.format("%.0f%%",building.getConstructionPercent(world)),
-                        building.getSnappedScreenPosition().x, building.getSnappedScreenPosition().y);
-            }
+        for(BuildingObject building : world.getBuildings(false)) {
+            font.draw(batch, String.format("%.0f%%",building.getConstructionPercent(world)),
+                    building.getSnappedScreenPosition().x, building.getSnappedScreenPosition().y);
         }
     }
 

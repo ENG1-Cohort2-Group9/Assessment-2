@@ -94,7 +94,6 @@ public abstract class MapObject implements Cloneable {
      */
     public void updateGridCoords() {
         gridCoords = GridUtils.getGridCoords(this.screenPosition.x + width / 2, this.screenPosition.y + height / 2);
-        System.out.println();
     }
 
     /**
