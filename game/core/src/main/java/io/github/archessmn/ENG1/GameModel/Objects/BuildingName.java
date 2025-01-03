@@ -11,7 +11,7 @@ public enum BuildingName {
     LECTURE_HALL(10f, "lecturehall.png", new Use[] {Use.TEACHING},
         new int[] {250}, "Lecture Theatre", 60, 60),
     PIAZZA(10f, "piazza.png", new Use[] {Use.TEACHING, Use.CAFETERIA},
-        new int[] {250, 100}, "Piazza", 60, 60),
+        new int[] {125, 50}, "Piazza", 60, 60),
     PUB(10f, "pub.png", new Use[] {Use.CAFETERIA, Use.RECREATION},
         new int[] {100, 150}, "Pub", 60, 60);
 
