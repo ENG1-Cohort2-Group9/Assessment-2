@@ -81,7 +81,7 @@ public class MapObjectHolder {
     }
 
     /**
-     * Removes all references in this object to a BapObject
+     * Removes all references in this object to a MapObject
      * @throws IllegalArgumentException If the MapObject is not found where expected
      */
     public void remove(MapObject mapObject) {

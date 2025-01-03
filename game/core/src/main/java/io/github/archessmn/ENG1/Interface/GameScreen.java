@@ -3,6 +3,8 @@ package io.github.archessmn.ENG1.Interface;
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Cursor;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
@@ -20,14 +22,14 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.archessmn.ENG1.GameModel.*;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
-import java.util.HashMap;
-
 import static java.lang.Math.floorDiv;
 
 public class GameScreen implements Screen {
     public static final int VIEWPORT_WIDTH = 960;
     public static final int VIEWPORT_HEIGHT = 540;
     private static final int SIDE_PANEL_WIDTH = 300;
+    private static final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
+    private static final float DEMOLISH_COOLDOWN = 0.25f;
 
     private World world;
 
@@ -48,7 +50,8 @@ public class GameScreen implements Screen {
     private Vector2 unprojectedTouchPos;
     private boolean isClicked = false;
 
-    private BitmapFont font;
+    private BitmapFont headingFont;
+    private BitmapFont bodyFont;
 
     private MapObject objectToPlace = null;
     private Array<BuildingObject> selectableBuildings = new Array<>();
@@ -56,30 +59,28 @@ public class GameScreen implements Screen {
     private int selectableBuildingsIndex = 0;
     private int selectableTerrainsIndex = 0;
 
-    private MapObject highlightedTile = null;
-    private float highlightTimer = 5f;
-
     private boolean paused = true;
     private boolean gameEnded = false;
+    private boolean demolishMode = false;
 
     private Stage stage;
     private Table sideMenu;
     private Label countDownLabel;
     private Label timerLabel;
-    private Label highlightedBuildingLabel;
     private Label selectedBuildingLabel;
     private Label selectedTerrainLabel;
-    private TextButton actionButton;
-    private final Array<Label> satisfactionCountLabel = new Array<>();
-    private final Array<Label> satisfactionVarLabel = new Array<>();
+    private TextButton demolishButton;
+    private final Array<Label> satisfactionCountLabels = new Array<>();
+    private final Array<Label> satisfactionVarLabels = new Array<>();
     private float timeEventShownAt = -10f;
     private GameEvent currentEvent = null;
     private Array<Tuple<String, Integer>> displayedActiveEventTimes = new Array<>();
 
     private float[] satisfactionScoreCaps;
 
+    private float demolishCooldownTimer = 0f;
+
     private final ScreenManager game;
-    private final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
 
     private String uniName = "Guest";
 
@@ -103,15 +104,15 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         selectableBuildings = new Array<>();
-        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.HALLS));
-        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.GYM));
-        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.LECTURE_HALL));
-        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.PIAZZA));
-        selectableBuildings.add(new BuildingObject(710, 90, 0, BuildingName.PUB));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.HALLS));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.GYM));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.LECTURE_HALL));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.PIAZZA));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.PUB));
         selectableTerrains = new Array<>();
-        selectableTerrains.add(new TerrainObject(849, 90, TerrainObject.Feature.LAKE));
-        selectableTerrains.add(new TerrainObject(849, 90, TerrainObject.Feature.ROCK));
-        selectableTerrains.add(new TerrainObject(849, 90, TerrainObject.Feature.TREE));
+        selectableTerrains.add(new TerrainObject(849, 150, TerrainObject.Feature.LAKE));
+        selectableTerrains.add(new TerrainObject(849, 150, TerrainObject.Feature.ROCK));
+        selectableTerrains.add(new TerrainObject(849, 150, TerrainObject.Feature.TREE));
         setupSideMenu();
 
         assetManager = new AssetManager();
@@ -125,7 +126,7 @@ public class GameScreen implements Screen {
         assetManager.load("rock.png", Texture.class);
         assetManager.load("tree.png", Texture.class);
         assetManager.load("construction.png", Texture.class);
-        assetManager.load("missing_texture.png", Texture.class);
+        assetManager.load("rubble.png", Texture.class);
         assetManager.load("plus.png", Texture.class);
         assetManager.load("minus.png", Texture.class);
         assetManager.load("LectureView.png", Texture.class);
@@ -138,13 +139,6 @@ public class GameScreen implements Screen {
         assetManager.load("ActiveEventBg.png", Texture.class);
 
         assetManager.finishLoading();
-
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ui/Arial.ttf"));
-        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.size = (int) (0.05f * Gdx.graphics.getHeight());
-        font = generator.generateFont(parameter);
-        font.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
-        generator.dispose();
 
         shapeRenderer = new ShapeRenderer();
         gridRenderer = new ShapeRenderer();
@@ -166,23 +160,18 @@ public class GameScreen implements Screen {
 
         countDownLabel = new Label("Timer", labelStyle);
         timerLabel = new Label("Timer", labelStyle);
-        highlightedBuildingLabel = new Label("Building", labelStyle);
 
         selectedBuildingLabel = new Label("{Building}", labelStyle);
         selectedTerrainLabel = new Label("{Terrain}", labelStyle);
+        selectedBuildingLabel.setFontScale(0.9f);
+        selectedTerrainLabel.setFontScale(0.9f);
 
-        actionButton = new TextButton("{Action}", textButtonStyle);
-        actionButton.addListener(new ClickListener() {
+        demolishButton = new TextButton("Demolish Mode: OFF", textButtonStyle);
+        demolishButton.setColor(Color.DARK_GRAY);
+        demolishButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                if (highlightedTile instanceof BuildingObject) {
-                    world.demolishBuilding((BuildingObject) highlightedTile);
-                    highlightedTile = null;
-                }
-                else if (highlightedTile instanceof TerrainObject) {
-                    world.destroyTerrain((TerrainObject) highlightedTile);
-                    highlightedTile = null;
-                }
+                demolishMode = !demolishMode;
             }
         });
 
@@ -236,15 +225,15 @@ public class GameScreen implements Screen {
         });
 
 
-        satisfactionVarLabel.add(new Label("Building Distance:", labelStyle));
-        satisfactionVarLabel.add(new Label("Campus Completion:", labelStyle));
-        satisfactionVarLabel.add(new Label("Event Response:", labelStyle));
-        satisfactionVarLabel.add(new Label("Building Capacity:", labelStyle));
+        satisfactionVarLabels.add(new Label("Building Distance:", labelStyle));
+        satisfactionVarLabels.add(new Label("Campus Completion:", labelStyle));
+        satisfactionVarLabels.add(new Label("Event Response:", labelStyle));
+        satisfactionVarLabels.add(new Label("Building Diversity:", labelStyle));
 
-        satisfactionCountLabel.add(new Label("000%", labelStyle));
-        satisfactionCountLabel.add(new Label("000%", labelStyle));
-        satisfactionCountLabel.add(new Label("000%", labelStyle));
-        satisfactionCountLabel.add(new Label("000%", labelStyle));
+        satisfactionCountLabels.add(new Label("000%", labelStyle));
+        satisfactionCountLabels.add(new Label("000%", labelStyle));
+        satisfactionCountLabels.add(new Label("000%", labelStyle));
+        satisfactionCountLabels.add(new Label("000%", labelStyle));
 
         satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCap();
 
@@ -253,19 +242,18 @@ public class GameScreen implements Screen {
         rootTable.right().add(sideMenu).expandY().fillY().width(SIDE_PANEL_WIDTH);
 
         sideMenu.add(countDownLabel).expandX().center().colspan(2).row();
-        sideMenu.add(timerLabel).expandX().center().colspan(2).row();
+        sideMenu.add(timerLabel).expandX().center().colspan(2).padBottom(10).row();
         sideMenu.add(new Label("\nCAMPUS SATISFACTION SUMMARY", labelStyle)).left().colspan(2).row();
         for (int i = 0; i < 4; i++) {
-            sideMenu.add(satisfactionVarLabel.get(i)).left();
-            sideMenu.add(satisfactionCountLabel.get(i)).right().row();
+            satisfactionVarLabels.get(i).setFontScale(0.95f);
+            satisfactionCountLabels.get(i).setFontScale(0.95f);
+            sideMenu.add(satisfactionVarLabels.get(i)).left();
+            sideMenu.add(satisfactionCountLabels.get(i)).right().row();
         }
-        sideMenu.add(new Label("\nSELECTED TILE", labelStyle)).left().colspan(2).row();
-        sideMenu.add(highlightedBuildingLabel).left().colspan(2).row();
-        sideMenu.add(actionButton).left().colspan(2).row();
 
         // Creates the table that contains the build and terrain selection
-        Table mapObjectTable = new Table().padBottom(20);
-        sideMenu.add(mapObjectTable).fillX().colspan(2);
+        Table mapObjectTable = new Table().padBottom(40).padTop(20);
+        sideMenu.add(mapObjectTable).fillX().colspan(2).row();
         mapObjectTable.add(new Label("\nBUILDINGS", labelStyle)).expandX().center().padBottom(10);
         mapObjectTable.add(new Label("\nTERRAIN", labelStyle)).expandX().center().padBottom(10).row();
         mapObjectTable.add(buildingUpButton).expandX().center().padBottom(40);
@@ -274,6 +262,8 @@ public class GameScreen implements Screen {
         mapObjectTable.add(selectedTerrainLabel).expandX().center().padTop(40).uniform().row();
         mapObjectTable.add(buildingDownButton).expandX().center().padTop(10);
         mapObjectTable.add(terrainDownButton).expandX().center().padTop(10).row();
+
+        sideMenu.add(demolishButton).colspan(2).expandX().row();
     }
 
     @Override
@@ -287,10 +277,34 @@ public class GameScreen implements Screen {
     public void resize(int width, int height) {
         viewport.update(width, height, true);
         stage.getViewport().update(width, height, true);
+
+        // Generates the heading and body font
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ui/Arial.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+
+        parameter.size = (int) (0.05f * Gdx.graphics.getHeight());
+        parameter.shadowColor = Color.BLACK;
+        parameter.shadowOffsetX = 2;
+        parameter.shadowOffsetY = 2;
+        headingFont = generator.generateFont(parameter);
+        headingFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
+
+        parameter.size = (int) (0.04f * Gdx.graphics.getHeight());
+        parameter.shadowColor = Color.CLEAR;
+        parameter.shadowOffsetX = 0;
+        parameter.shadowOffsetY = 0;
+        parameter.color = Color.DARK_GRAY;
+        parameter.borderColor = Color.WHITE;
+        parameter.borderWidth = 1;
+        bodyFont = generator.generateFont(parameter);
+        bodyFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
+
+        generator.dispose();
     }
 
     private void input() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) paused = !paused;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.D)) demolishMode = !demolishMode;
 
         if (gameEnded) {
             objectToPlace = null;
@@ -302,28 +316,37 @@ public class GameScreen implements Screen {
 
         isClicked = Gdx.input.isTouched();
 
-        // A check to see if any building/terrain assets have been clicked
-        if (Gdx.input.justTouched() && unprojectedPosIsInsideScreen(unprojectedTouchPos)) {
-            // Loops through all placed map objects to see if they have been clicked
+        // Checks for MapObject demolition
+        if (Gdx.input.justTouched() && unprojectedPosIsInsideScreen(unprojectedTouchPos) && demolishMode) {
             GridCoordTuple clickedGridSquare = GridUtils.getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
             MapObject clickedObject = world.getMapObjectAt(clickedGridSquare);
 
             if (clickedObject != null) {
-                highlightedTile = clickedObject;
-                highlightTimer = 5f;
+                demolishCooldownTimer = DEMOLISH_COOLDOWN;
+                clickedObject.beginDemolition(world.getCurrentTime(), world.DEMOLITION_TIME);
             }
+        }
 
+        // Manages the demolish cooldown timer
+        if (demolishCooldownTimer > 0f) {
+            demolishCooldownTimer -= Gdx.graphics.getDeltaTime();
+        }
+        else {
+            demolishCooldownTimer = 0f;
+        }
+
+        if (Gdx.input.justTouched() && unprojectedPosIsInsideScreen(unprojectedTouchPos)) {
             // Initiates the dragging feature for when a menu building has been selected
             BuildingObject currentBuilding = selectableBuildings.get(selectableBuildingsIndex);
             TerrainObject currentTerrain = selectableTerrains.get(selectableTerrainsIndex);
-            if (currentBuilding.getBounds().contains(unprojectedTouchPos)) {
+            if (currentBuilding.getBounds().contains(unprojectedTouchPos) && !demolishMode) {
                 try {
                     objectToPlace = (BuildingObject) selectableBuildings.get(selectableBuildingsIndex).clone();
                 } catch (CloneNotSupportedException e) {
                     throw new RuntimeException(e);
                 }
             }
-            else if (currentTerrain.getBounds().contains(unprojectedTouchPos)) {
+            else if (currentTerrain.getBounds().contains(unprojectedTouchPos) && !demolishMode) {
                 try {
                     objectToPlace = (TerrainObject) selectableTerrains.get(selectableTerrainsIndex).clone();
                 } catch (CloneNotSupportedException e) {
@@ -331,7 +354,7 @@ public class GameScreen implements Screen {
                 }
             }
         }
-        else if (!isClicked && objectToPlace != null) { // Click released
+        else if (!isClicked && objectToPlace != null && !demolishMode) { // Click released
             if (unprojectedTouchPos.x <= VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) {
                 world.addMapObject(objectToPlace); // Places the building if it passes all checks
             }
@@ -345,25 +368,18 @@ public class GameScreen implements Screen {
         }
     }
 
-    /**
-     * @return True if the given (unprojected) position is within the bounds of the screen (including the UI)
-     */
-    private boolean unprojectedPosIsInsideScreen(Vector2 position) {
-        return position.x < VIEWPORT_WIDTH && position.y < VIEWPORT_HEIGHT && position.x > 0 && position.y > 0;
-    }
-
     private void logic() {
-        if (paused || gameEnded) return;
-
-        float delta = Gdx.graphics.getDeltaTime();
-
-        world.process(delta);
-
         // Ends the game when the timer exceeds 5 minutes.
         gameEnded = world.getGameEnded();
         if (gameEnded) {
             world.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
         }
+
+        if (paused || gameEnded) return;
+
+        float delta = Gdx.graphics.getDeltaTime();
+
+        world.process(delta);
 
         for (int i = 0; i < displayedActiveEventTimes.size; i++) {
             if (world.getCurrentTime() > displayedActiveEventTimes.get(i).y) {
@@ -405,10 +421,10 @@ public class GameScreen implements Screen {
         batch.begin();
 
         drawAssets(batch, assetManager);
-        drawSideMenu();
-        drawActiveEvents(batch, font);
+        updateSideMenu();
+        drawActiveEvents(batch);
         drawConstructionPercents();
-
+        drawWorldUI();
 
         batch.end();
         stage.draw();
@@ -418,7 +434,7 @@ public class GameScreen implements Screen {
      * Renders icons on the left hand side of the screen to show what events are in effect. Draws from bottom to top,
      * bottom justified, so the most recent icon will be at the top a descending list
      */
-    private void drawActiveEvents(SpriteBatch batch, BitmapFont font) {
+    private void drawActiveEvents(SpriteBatch batch) {
         float bottomMargin = 35f;
         float leftMargin = 5f;
         float iconMargin = 5f;
@@ -439,7 +455,7 @@ public class GameScreen implements Screen {
 
             // Only show the timer if it will end within the game time
             if (pair.y < World.GAME_LENGTH_SECONDS) {
-                font.draw(batch, (pair.y - MathUtils.round(world.getCurrentTime())) + "s", leftMargin + screenIconSize, iconYPos);
+                bodyFont.draw(batch, (pair.y - MathUtils.round(world.getCurrentTime())) + "s", leftMargin + screenIconSize, iconYPos);
             }
 
             iconYPos += screenIconSize + iconMargin;
@@ -468,6 +484,9 @@ public class GameScreen implements Screen {
             if (!buildingObject.built) {
                 sprite = new Sprite(assetManager.get(buildingObject.unbuiltSpriteName, Texture.class));
             }
+        }
+        if (mapObject.placed && mapObject.toBeDemolished) {
+            sprite = new Sprite(assetManager.get("rubble.png", Texture.class));
         }
 
         Vector2 position = GridUtils.getGridSquareScreenCoords(mapObject.getGridCoords());
@@ -528,7 +547,10 @@ public class GameScreen implements Screen {
         gridRenderer.end();
     }
 
-    private void drawSideMenu() {
+    /**
+     * Updates the relevant text on the side menu
+     */
+    private void updateSideMenu() {
         // Draws a 5-minute countdown timer for the games length
         // If it's a whole minute, it displays :00 for the seconds
         // Otherwise it gets the remainder of gameTimer divided by 60 for the seconds.
@@ -546,61 +568,70 @@ public class GameScreen implements Screen {
         float[] scores = world.satisfaction.getSatisfactionScoreBreakdown();
         for (int i = 0; i < scores.length; i++) {
             float score = (scores[i] / satisfactionScoreCaps[i]) * 100;
-            satisfactionCountLabel.get(i).setText(String.format("%02d", (int) score) + "%");
+            satisfactionCountLabels.get(i).setText(String.format("%01d", (int) score) + "%");
         }
 
-        // Update the main satisfaction score
-        font.draw(batch, "Student Satisfaction: " + (int) world.satisfaction.getSatisfactionScore() + "%", 10, 30);
+        // Changes the cursor and demolish button appearance
+        if (!demolishMode) {
+            demolishButton.setText("Demolish Mode: OFF");
+            demolishButton.setColor(Color.DARK_GRAY);
+
+            Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
+        }
+        else {
+            demolishButton.setText("Demolish Mode: ON");
+            demolishButton.setColor(Color.RED);
+
+            Pixmap pm = new Pixmap(Gdx.files.internal("ui/demolishCursor.png"));
+            Gdx.graphics.setCursor(Gdx.graphics.newCursor(pm, 0, 16));
+            pm.dispose();
+        }
 
         // Changes the selected label text to whatever is currently selected
         selectedBuildingLabel.setText(selectableBuildings.get(selectableBuildingsIndex).objName);
         selectedTerrainLabel.setText(selectableTerrains.get(selectableTerrainsIndex).objName);
+    }
 
-        // Displays options in the menu, whenever a tile is highlighted
-        if (highlightedTile != null && highlightTimer <= 5f) {
-            highlightTimer -= Gdx.graphics.getDeltaTime();
+    /**
+     * Draws all UI elements that appear in the world
+     */
+    private void drawWorldUI() {
+        // Update the main satisfaction score
+        headingFont.draw(batch, "Student Satisfaction: " + (int) world.satisfaction.getSatisfactionScore() + "%", 20, 40);
 
-            highlightedBuildingLabel.setVisible(true);
-            actionButton.setVisible(true);
-
-            highlightedBuildingLabel.setText(highlightedTile.objName);
-            if (highlightedTile instanceof BuildingObject) {
-                actionButton.setText("Demolish");
-            }
-            else {
-                actionButton.setText("Destroy");
-            }
-        }
-        else { // Hides the options when the tile is no longer highlighted after 5 seconds
-            highlightedBuildingLabel.setVisible(false);
-            actionButton.setVisible(false);
-        }
-
-        // Controls the highlight timer (5 seconds)
-        if (highlightTimer <= 0f) {
-            highlightTimer = 5f;
-            highlightedTile = null;
-        }
-
-        // Displays building overlap text
+        // Displays object overlap text
         if (objectToPlace != null) {
             if (world.doesObjectOverlap(objectToPlace)) {
-                font.draw(batch, "Buildings Overlap", 20, 520);
+                headingFont.draw(batch, "Something is already there...", 20, 520);
             }
+        }
+
+        if (paused) {
+            headingFont.draw(batch, "TIMER PAUSED: press P to resume", 20, 460);
+        }
+
+        if (gameEnded) {
+            headingFont.draw(batch, "End of the game!", 20, 460);
+        }
+
+        if (demolishMode) {
+            batch.end();
+
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
+            shapeRenderer.rectLine(0, 4, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH + 4, 4, 8, Color.FIREBRICK, Color.FIREBRICK);
+            shapeRenderer.rectLine(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, 4, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, VIEWPORT_HEIGHT - 4, 8, Color.FIREBRICK, Color.FIREBRICK);
+            shapeRenderer.rectLine(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH + 4, VIEWPORT_HEIGHT - 4, 0, VIEWPORT_HEIGHT - 4, 8, Color.FIREBRICK, Color.FIREBRICK);
+            shapeRenderer.rectLine(4, VIEWPORT_HEIGHT - 4, 4, 4, 8, Color.FIREBRICK, Color.FIREBRICK);
+            shapeRenderer.end();
+
+            batch.begin();
         }
 
         // Show event text (if there is one)
         if (currentEvent != null && world.getCurrentTime() < timeEventShownAt + EVENT_NOTIFICATION_TIME) {
-            font.draw(batch, currentEvent.title, 20, 525);
-            font.draw(batch, currentEvent.description, 20, 495);
-        }
-
-        if (paused) {
-            font.draw(batch, "PAUSED: press P to resume", 20, 460);
-        }
-
-        if (gameEnded) {
-            font.draw(batch, "End of the game!", 20, 460);
+            headingFont.draw(batch, currentEvent.title, 20, 525);
+            headingFont.draw(batch, currentEvent.description, 20, 495);
         }
     }
 
@@ -619,22 +650,28 @@ public class GameScreen implements Screen {
 
 
     private void drawConstructionPercents() {
-        for(BuildingObject building : world.getBuildings()) {
-            if (!building.isBuilt()) {
-                font.draw(batch, String.format("%.0f%%",building.getConstructionPercent(world)),
-                        building.getBounds().getX(), building.getBounds().getY());
-
+        for (BuildingObject building : world.getBuildings()) {
+            if (!building.isBuilt() && !building.toBeDemolished) {
+                Vector2 buildingPos = GridUtils.getGridSquareScreenCoords(building.getGridCoords());
+                bodyFont.draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
             }
         }
     }
 
+    /**
+     * @return True if the given (unprojected) position is within the bounds of the screen (including the UI)
+     */
+    private boolean unprojectedPosIsInsideScreen(Vector2 position) {
+        return position.x < VIEWPORT_WIDTH && position.y < VIEWPORT_HEIGHT && position.x > 0 && position.y > 0;
+    }
 
     @Override
     public void dispose() {
         shapeRenderer.dispose();
         gridRenderer.dispose();
         batch.dispose();
-        font.dispose();
+        headingFont.dispose();
+        bodyFont.dispose();
         assetManager.dispose();
     }
 
