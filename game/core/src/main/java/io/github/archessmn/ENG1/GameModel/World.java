@@ -333,12 +333,12 @@ public class World {
     }
 
     public void destroyMapObject(MapObject mapObject) {
-        mapObjects.remove(mapObject);
-
         if (mapObject instanceof BuildingObject buildingObject && buildingObject.built) {
+            mapObjects.remove(buildingObject);
             updateWorldState(buildingObject, true);
         }
         else if (mapObject instanceof TerrainObject terrainObject) {
+            mapObjects.remove(terrainObject);
             updateWorldState(terrainObject, true);
         }
     }
