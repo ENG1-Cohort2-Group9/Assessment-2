@@ -475,6 +475,7 @@ public class GameScreen implements Screen {
 
         // Draws the currently displayed building and terrain assets, in the side menu
         drawSelectableObject(batch, assetManager, selectableBuildings.get(selectableBuildingsIndex));
+        drawSelectedBuildingCapacities();
         drawSelectableObject(batch, assetManager, selectableTerrains.get(selectableTerrainsIndex));
     }
 
@@ -639,6 +640,14 @@ public class GameScreen implements Screen {
                 Vector2 buildingPos = GridUtils.getGridSquareScreenCoords(building.getGridCoords());
                 bodyFont.draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
             }
+        }
+    }
+
+    private void drawSelectedBuildingCapacities() {
+        BuildingObject building = selectableBuildings.get(selectableBuildingsIndex);
+        for (Use use : building.getUses()) {
+            System.out.println(use.getStringName() + " capacity: " + building.getUseCapacity(use) + " students");
+
         }
     }
 
