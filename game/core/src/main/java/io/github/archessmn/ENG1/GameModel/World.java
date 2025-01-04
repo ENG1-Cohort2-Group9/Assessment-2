@@ -140,8 +140,7 @@ public class World {
     public void updateMapObjects(float deltaTime) {
         // Some of the methods for satisfaction score use the building, these methods don't edit the building
         // but libGDX seems to get confused and break if a for (BuildingObject building : buildings) loop is used.
-        for (int i = 0; i < mapObjects.getAll().size; i++) {
-            MapObject mapObject = mapObjects.getAll().get(i);
+        for (MapObject mapObject : mapObjects.getAll()) {
             if (mapObject instanceof BuildingObject buildingObject) {
                 if (!buildingObject.built && buildingObject.isComplete(currentTime)) {
                     // This will only trigger once (see '&& !building.built')
