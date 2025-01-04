@@ -35,10 +35,10 @@ public class Satisfaction {
 
     // Here the maximum value for each of these scores is set:
 
-    public static final float BUILDING_DISTANCES_SCORE_CAP = 40;
-    public static final float COMPLETION_SCORE_CAP = 10;
-    public static final float EVENTS_SCORE_CAP = 30;
-    public static final float BUILDING_CAPACITY_SCORE_CAP = 20;
+    private static final float BUILDING_DISTANCES_SCORE_CAP = 40;
+    private static final float COMPLETION_SCORE_CAP = 10;
+    private static final float EVENTS_SCORE_CAP = 30;
+    private static final float BUILDING_CAPACITY_SCORE_CAP = 20;
 
     // The map currently is 11x9 tiles
     private static final int GRID_WIDTH = 11;
@@ -241,19 +241,18 @@ public class Satisfaction {
      *                     new averageDistance, and the corresponding averageDistancesCount is decremented by 1.
      */
     public void updateAverageDistances(BuildingObject building, int updateFactor) {
-
         // Iterates through each use the building passed to this method has
         for (Use use1 : building.getUses()) {
             // Iterates through all buildings currently placed on the map
             for (BuildingObject comparisonBuilding : world.getBuildings(true)) {
-                // Distance is the diagonal distance between the building passed to this method, and the current
-                // comparisonBuilding.
-                float distance = (float) Math.sqrt(Math.pow(building.getGridCoords().x - comparisonBuilding.getGridCoords().x, 2) +
-                    Math.pow(building.getGridCoords().y - comparisonBuilding.getGridCoords().y, 2));
-
                 // Iterates through each use the comparison building has, except when the building passed to this method
                 // and the comparison building are the same building.
-                if (distance != 0) {
+                if (building.getSnappedScreenPosition().x != comparisonBuilding.getSnappedScreenPosition().x ||
+                    building.getSnappedScreenPosition().y != comparisonBuilding.getSnappedScreenPosition().y) {
+                    // Distance is the diagonal distance between the building passed to this method, and the current
+                    // comparisonBuilding.
+                    float distance = (float) Math.sqrt(Math.pow(building.getGridCoords().x - comparisonBuilding.getGridCoords().x, 2) +
+                        Math.pow(building.getGridCoords().y - comparisonBuilding.getGridCoords().y, 2));
                     for (Use use2 : comparisonBuilding.getUses()) {
                         // The averageDistancesCount array stores average distances, this is calculated as each use
                         // count in the use pair multiplied together. (e.g., 5 teaching * 3 accommodation = 15 pairs).
@@ -272,19 +271,29 @@ public class Satisfaction {
                         // is <= to the second use. (based off the ordinal of the use)
                         if (use1.ordinal() < use2.ordinal()) {
                             numberOfPairs = averageDistancesCount[use1.ordinal()][use2.ordinal()];
-                            averageDistances[use1.ordinal()][use2.ordinal()] = (averageDistances[use1.ordinal()][use2.ordinal()]
-                                * numberOfPairs + distance * updateFactor) / (numberOfPairs + updateFactor);
-
-                            // Update the number of building pairs used for the average distance between use1 and use2
-                            averageDistancesCount[use1.ordinal()][use2.ordinal()] += updateFactor;
+                            if (numberOfPairs + updateFactor > 0) {
+                                averageDistances[use1.ordinal()][use2.ordinal()] = (averageDistances[use1.ordinal()][use2.ordinal()]
+                                    * numberOfPairs + distance * updateFactor) / (numberOfPairs + updateFactor);
+                                // Update the number of building pairs used for the average distance between use1 and use2
+                                averageDistancesCount[use1.ordinal()][use2.ordinal()] += updateFactor;
+                            }
+                            else {
+                                averageDistances[use1.ordinal()][use2.ordinal()] = 0;
+                                averageDistancesCount[use1.ordinal()][use2.ordinal()] = 0;
+                            }
                         }
                         else {
                             numberOfPairs = averageDistancesCount[use2.ordinal()][use1.ordinal()];
+                            if (numberOfPairs + updateFactor > 0) {
                             averageDistances[use2.ordinal()][use1.ordinal()] = (averageDistances[use2.ordinal()][use1.ordinal()]
                                 * numberOfPairs + distance * updateFactor) / (numberOfPairs + updateFactor);
-
                             // Update the number of building pairs used for the average distance between use2 and use1
                             averageDistancesCount[use2.ordinal()][use1.ordinal()] += updateFactor;
+                            }
+                            else {
+                                averageDistances[use2.ordinal()][use1.ordinal()] = 0;
+                                averageDistancesCount[use2.ordinal()][use1.ordinal()] = 0;
+                            }
                         }
                     }
                 }
@@ -305,9 +314,6 @@ public class Satisfaction {
             for (Use use2 : Use.values()) {
                 // Only iterates over the upper triangle of the adjacency matrix
                 if (use2.ordinal() >= use1.ordinal()) {
-                    // Prevents adding score for the distance between the same uses, when only one of building of that
-                    // use is placed down.
-                    if (averageDistances[use1.ordinal()][use2.ordinal()] != 0) {
                         // score is used to prevent duplicate calculation
                         float score = calculateScoreBonus(getWeight(use1, use2), use1, use2);
                         // Add the new score for this use pair, and subtract the previous score for this use pair
@@ -316,12 +322,11 @@ public class Satisfaction {
                         // Save the new score for this use pair so the above line will work when next the use pair is
                         // next updated.
                         averageDistanceScores[use1.ordinal()][use2.ordinal()] = score;
-                    }
 
                 }
                 // Same logic is used as above, but since only the upper triangle of the adjacency
                 // matrices are used, use1 and use2 need to be swapped if use1 is larger than use2.
-                else if (averageDistances[use2.ordinal()][use1.ordinal()] != 0) {
+                else {
                     float score = calculateScoreBonus(getWeight(use2, use1), use2, use1);
                     buildingDistancesScore += score - averageDistanceScores[use2.ordinal()][use1.ordinal()];
                     averageDistanceScores[use2.ordinal()][use1.ordinal()] = score;
@@ -342,8 +347,10 @@ public class Satisfaction {
      * @return The score bonus from the average distance between the use pair passed to this method.
      */
     public float calculateScoreBonus(float multiplier, Use use1, Use use2) {
-        // Prevents adding to satisfaction score for buildings uses that aren't yet placed.
-        if (world.getBuildingUseCount(use1) == 0 || world.getBuildingUseCount(use2) == 0) {
+        // Prevents adding to satisfaction score for buildings uses that aren't yet placed, or for the distance between
+        // buildings of the same use, when only building with that use is placed down.
+        if (world.getBuildingUseCount(use1) == 0 || world.getBuildingUseCount(use2) == 0 ||
+            (use1 == use2 && world.getBuildingUseCount(use1) == 1)) {
             return 0;
         }
 
@@ -373,19 +380,28 @@ public class Satisfaction {
             for (Use use2 : Use.values()) {
                 // Only iterates over the upper triangle of the adjacency matrix
                 if (use2.ordinal() >= use1.ordinal()) {
-                    if (use1 == Use.TEACHING && use2 == Use.ACCOMMODATION) {
+                    if (use1 == Use.ACCOMMODATION && use2 == Use.ACCOMMODATION) {
                         weightMatrix[use1.ordinal()][use2.ordinal()] = 1.5f;
-                    } else if (use1 == Use.TEACHING && use2 == Use.TEACHING) {
-                        weightMatrix[use1.ordinal()][use2.ordinal()] = 1.5f;
-                    } else if (use1 == Use.ACCOMMODATION && use2 == Use.ACCOMMODATION) {
-                        weightMatrix[use1.ordinal()][use2.ordinal()] = 1.5f;
-                    } else if (use1 == Use.ACCOMMODATION && use2 == Use.CAFETERIA) {
+                    }
+                    else if (use1 == Use.TEACHING && use2 == Use.TEACHING) {
+                        weightMatrix[use1.ordinal()][use2.ordinal()] = 1.25f;
+                    }
+                    else if (use1 == use2) {
+                        weightMatrix[use1.ordinal()][use2.ordinal()] = 0f;
+                    }
+                    else if (use1 == Use.TEACHING && use2 == Use.ACCOMMODATION) {
+                        weightMatrix[use1.ordinal()][use2.ordinal()] = 1.25f;
+                    }
+                     else if (use1 == Use.ACCOMMODATION && use2 == Use.CAFETERIA) {
                         weightMatrix[use1.ordinal()][use2.ordinal()] = 2.25f;
-                    } else if (use1 == Use.ACCOMMODATION && use2 == Use.RECREATION) {
-                        weightMatrix[use1.ordinal()][use2.ordinal()] = 1.75f;
-                    } else if (use1 == Use.CAFETERIA && use2 == Use.RECREATION) {
-                        weightMatrix[use1.ordinal()][use2.ordinal()] = 0.5f;
-                    } else {
+                    }
+                     else if (use1 == Use.ACCOMMODATION && use2 == Use.RECREATION) {
+                        weightMatrix[use1.ordinal()][use2.ordinal()] = 1.5f;
+                    }
+                     else if (use1 == Use.CAFETERIA && use2 == Use.RECREATION) {
+                        weightMatrix[use1.ordinal()][use2.ordinal()] = 0.25f;
+                    }
+                     else {
                         weightMatrix[use1.ordinal()][use2.ordinal()] = 1.0f; // Default weight
                     }
                 }
