@@ -40,17 +40,8 @@ public class MapObjectHolder {
         typeIndex.computeIfAbsent(mapObject.getClass(), c -> new Array<>()).add(mapObject);
         gridLookup[mapObject.getGridCoords().x][mapObject.getGridCoords().y] = mapObject;
 
-        // The following two statements check if the object is a generic class. If it is not, the generic class array is
-        // updated with the object. This allows objects to be retrieved by superclass and subclass (for example you can
-        // find a 'Pub' in the list of Pubs, Buildings, and MapObjects
-        if (mapObject.getClass() != MapObject.class) {
-            typeIndex.computeIfAbsent(MapObject.class, c -> new Array<>()).add(mapObject);
-        }
-        if (mapObject instanceof BuildingObject && mapObject.getClass() != BuildingObject.class) {
-            typeIndex.computeIfAbsent(BuildingObject.class, c -> new Array<>()).add(mapObject);
-        }
-
-
+        // Add this object to the list of MapObjects so that all types of object are retrieved when getByType(MapObject.class) is called
+        typeIndex.computeIfAbsent(MapObject.class, c -> new Array<>()).add(mapObject);
     }
 
     /**
@@ -74,10 +65,6 @@ public class MapObjectHolder {
         add((MapObject)terrainObject);
 
         featureIndex.computeIfAbsent(terrainObject.feature, c -> new Array<>()).add(terrainObject);
-    }
-
-    private void removeTypeFromList(Class<? extends MapObject> type) {
-
     }
 
     /**
