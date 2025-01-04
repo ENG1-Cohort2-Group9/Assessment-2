@@ -4,15 +4,15 @@ package io.github.archessmn.ENG1.GameModel.Objects;
  * The name of a building, as well as corresponding variables for that building.
  */
 public enum BuildingName {
-    GYM(10f, "gym.png", new Use[] {Use.RECREATION},
+    GYM(1f, "gym.png", new Use[] {Use.RECREATION},
         new int[] {150}, "Gym", 60, 60),
-    HALLS(10f, "halls.png", new Use[] {Use.ACCOMMODATION},
+    HALLS(1f, "halls.png", new Use[] {Use.ACCOMMODATION},
         new int[] {500}, "Halls", 60, 60),
-    LECTURE_HALL(10f, "lecturehall.png", new Use[] {Use.TEACHING},
+    LECTURE_HALL(1f, "lecturehall.png", new Use[] {Use.TEACHING},
         new int[] {250}, "Lecture Theatre", 60, 60),
-    PIAZZA(10f, "piazza.png", new Use[] {Use.TEACHING, Use.CAFETERIA},
-        new int[] {250, 100}, "Piazza", 60, 60),
-    PUB(10f, "pub.png", new Use[] {Use.CAFETERIA, Use.RECREATION},
+    PIAZZA(1f, "piazza.png", new Use[] {Use.TEACHING, Use.CAFETERIA},
+        new int[] {125, 50}, "Piazza", 60, 60),
+    PUB(1f, "pub.png", new Use[] {Use.CAFETERIA, Use.RECREATION},
         new int[] {100, 150}, "Pub", 60, 60);
 
     private final float buildingConstructionDuration;
