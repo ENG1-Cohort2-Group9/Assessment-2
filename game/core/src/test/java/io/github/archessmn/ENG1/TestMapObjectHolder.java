@@ -1,5 +1,6 @@
 package io.github.archessmn.ENG1;
 
+import com.badlogic.gdx.maps.Map;
 import io.github.archessmn.ENG1.GameModel.GridCoordTuple;
 import io.github.archessmn.ENG1.GameModel.MapObjectHolder;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
@@ -46,9 +47,9 @@ public class TestMapObjectHolder {
 
     @Test
     public void testAddNewClass() {
-        class NewMapObjectType extends TerrainObject {
+        class NewMapObjectType extends MapObject {
             public NewMapObjectType(GridCoordTuple position) {
-                super(position, Feature.TREE);
+                super(position, 60, 60, "none", "none");
             }
         }
         NewMapObjectType newMapObject = new NewMapObjectType(new GridCoordTuple(10,1));
@@ -58,7 +59,7 @@ public class TestMapObjectHolder {
         mapObjectHolder.add(newMapObject);
 
         assertEquals(1, mapObjectHolder.getByType(NewMapObjectType.class).size, "NewMapObjectType list not updated correctly");
-        assertEquals(mapObjLenBefore + 1, mapObjectHolder.getByType(NewMapObjectType.class).size, "MapObject list not updated correctly");
+        assertEquals(mapObjLenBefore + 1, mapObjectHolder.getByType(MapObject.class).size, "MapObject list not updated correctly");
     }
 
     @Test
