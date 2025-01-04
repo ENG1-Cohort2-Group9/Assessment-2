@@ -20,6 +20,8 @@ public abstract class MapObject implements Cloneable {
     public final String objName;
 
     public boolean placed = false;
+    public boolean toBeDemolished = false;
+    public float demolitionCompletionTime;
 
 
     /**
@@ -51,6 +53,23 @@ public abstract class MapObject implements Cloneable {
         this.updateGridCoords();
 
         this.placed = true;
+    }
+
+    /**
+     * Called when the object is to begin the process of demolition. This will start a
+     * timer, of which the object will be demolished at the end of it.
+     */
+    public void beginDemolition(float currentTime, float demolitionTime) {
+        this.toBeDemolished = true;
+        this.demolitionCompletionTime = currentTime + demolitionTime;
+    }
+
+    /**
+     * @return True if the building has finished construction
+     * @param currentTime The current game time in seconds
+     */
+    public boolean isDemolished(float currentTime) {
+        return currentTime >= demolitionCompletionTime;
     }
 
     /**

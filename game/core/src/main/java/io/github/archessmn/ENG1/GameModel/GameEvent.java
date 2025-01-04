@@ -22,7 +22,7 @@ public enum GameEvent {
         this.title = title;
         this.description = description;
         this.chance = chance;
-        this.iconName = "missing_texture.png";
+        this.iconName = "missingTexture.png";
     }
 
     private GameEvent(String title, String description, float chance, String iconName) {

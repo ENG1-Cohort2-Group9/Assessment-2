@@ -81,10 +81,12 @@ public class MapObjectHolder {
     }
 
     /**
-     * Removes all references in this object to a BapObject
+     * Removes all references in this object to a MapObject. The function is private to prevent isolated use. Instead, use
+     * {@link #remove(TerrainObject) remove(TerrainObject)} or {@link #remove(BuildingObject) remove(BuildingObject)} to remove
+     * these objects correctly.
      * @throws IllegalArgumentException If the MapObject is not found where expected
      */
-    public void remove(MapObject mapObject) {
+    private void remove(MapObject mapObject) {
         // Remove from lists (For example a Pub will be in the list of MapObjects, BuildingObjects, and Pubs)
         for (Array<MapObject> list : typeIndex.values()) {
             if (list.contains(mapObject, true)) {

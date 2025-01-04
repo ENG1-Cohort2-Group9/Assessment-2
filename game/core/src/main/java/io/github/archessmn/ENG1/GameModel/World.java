@@ -36,6 +36,7 @@ public class World {
 
     public final int TOO_MANY_LECTURE_BUILDINGS = 15; // How many lecture buildings are needed to allow the "too many buildings" event to occur
     private final int GYMS_FOR_TOURNAMENT_WIN = 10; // The number of gyms needed to allow the university to win a sports event.
+    public final int DEMOLITION_TIME = 3; // How many in game days it will take for an object to be demolished
 
     /**
      * Initialises the game world with optional extra event listeners for event handling outside of this class
@@ -134,18 +135,22 @@ public class World {
 
 
     /**
-     * Update all buildings' states
+     * Update all MapObjects' states
      */
-    public void updateBuildings(float deltaTime) {
+    public void updateMapObjects(float deltaTime) {
         // Some of the methods for satisfaction score use the building, these methods don't edit the building
         // but libGDX seems to get confused and break if a for (BuildingObject building : buildings) loop is used.
-        for (int i = 0; i < mapObjects.getBuildings().size; i++) {
-            BuildingObject building = mapObjects.getBuildings().get(i);
-            if (!building.built && building.isComplete(currentTime)) {
-                // This will only trigger once (see '&& !building.built')
-                building.built = true;
+        for (MapObject mapObject : mapObjects.getAll()) {
+            if (mapObject instanceof BuildingObject buildingObject) {
+                if (!buildingObject.built && buildingObject.isComplete(currentTime)) {
+                    // This will only trigger once (see '&& !building.built')
+                    buildingObject.built = true;
+                    updateWorldState(buildingObject, false);
+                }
+            }
 
-                updateWorldState(building, false);
+            if (mapObject.toBeDemolished && mapObject.isDemolished(currentTime)) {
+                destroyMapObject(mapObject);
             }
         }
     }
@@ -219,7 +224,7 @@ public class World {
      */
     public void process(float deltaTime) {
         currentTime += deltaTime;
-        updateBuildings(deltaTime);
+        updateMapObjects(deltaTime);
         eventManager.processEvents(currentTime);
         // Maintain active events, removing them when necessary
         for (int i = 0; i < activeEventEndTime.length; i++) {
@@ -281,7 +286,7 @@ public class World {
             case TREE_DAMAGE:
                 Array<BuildingObject> buildingsNearTrees = getBuildingsNearTerrain(TerrainObject.Feature.TREE);
                 if (buildingsNearTrees.size > 0) {
-                    demolishBuilding(getRandomBuilding(buildingsNearTrees));
+                    destroyMapObject(getRandomBuilding(buildingsNearTrees));
                 }
                 break;
             case GOOSE_ATTACK:
@@ -326,18 +331,15 @@ public class World {
         updateWorldState(building, true);
     }
 
-    public void demolishBuilding(BuildingObject building) {
-        mapObjects.remove(building);
-
-        if (building.built) { // We only update the world state if this building has been completed. Otherwise, it will not have changed the world space in the first place
-            updateWorldState(building, true);
+    public void destroyMapObject(MapObject mapObject) {
+        if (mapObject instanceof BuildingObject buildingObject){
+            mapObjects.remove(buildingObject);
+            if (buildingObject.built) updateWorldState(buildingObject, true);
         }
-    }
-
-    public void destroyTerrain(TerrainObject terrainObject) {
-        mapObjects.remove(terrainObject);
-
-        updateWorldState(terrainObject, true);
+        else if (mapObject instanceof TerrainObject terrainObject) {
+            mapObjects.remove(terrainObject);
+            updateWorldState(terrainObject, true);
+        }
     }
 
     public BuildingObject getRandomBuilding(Array<BuildingObject> buildings) {
