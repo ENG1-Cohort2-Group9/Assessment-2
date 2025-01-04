@@ -150,4 +150,9 @@ public abstract class MapObject implements Cloneable {
 
         return clone;
     }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + "at ( " + screenPosition.x + ", " + screenPosition.y + " )";
+    }
 }

@@ -137,5 +137,8 @@ public class BuildingObject extends MapObject {
         return false;
     }
 
-
+    @Override
+    public String toString() {
+        return this.objName + " " + super.toString();
+    }
 }
