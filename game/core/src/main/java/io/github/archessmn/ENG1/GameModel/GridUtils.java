@@ -14,7 +14,7 @@ public class GridUtils {
     public final static int GRID_HEIGHT = 9;
 
     /**
-     * Get the screen coordinates of the bottom left of the grid square the given screen coordinates would snap to.
+     * Get the screen coordinates of the bottom left of the grid square specified.
      * @param coords the grid square in question.
      * @return A {@link Vector2} with coordinates of the bottom left of a grid square on the screen.
      */
