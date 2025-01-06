@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestGridUtils {
 
-    float gridSquareSize = (float)GameScreen.VIEWPORT_WIDTH / GridUtils.GRID_WIDTH;
+    float gridSquareSize = (float)GameScreen.MAP_WIDTH / GridUtils.GRID_WIDTH;
 
     @Test
     public void testScreenCoords() {
