@@ -22,6 +22,8 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.archessmn.ENG1.GameModel.*;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
+import java.util.Objects;
+
 import static java.lang.Math.floorDiv;
 
 public class GameScreen implements Screen {
@@ -33,7 +35,7 @@ public class GameScreen implements Screen {
 
     private World world;
 
-    private AssetManager assetManager;
+    private static AssetManager assetManager;
 
     private TextureAtlas atlas;
     private Skin skin;
@@ -52,6 +54,7 @@ public class GameScreen implements Screen {
 
     private BitmapFont headingFont;
     private BitmapFont bodyFont;
+    private BitmapFont constructionFont;
 
     private MapObject objectToPlace = null;
     private Array<BuildingObject> selectableBuildings = new Array<>();
@@ -61,9 +64,9 @@ public class GameScreen implements Screen {
 
     private boolean paused = true;
     private boolean gameEnded = false;
-    private boolean demolishMode = false;
 
     private Stage stage;
+    private Table rootTable;
     private Table sideMenu;
     private Label countDownLabel;
     private Label timerLabel;
@@ -71,15 +74,19 @@ public class GameScreen implements Screen {
     private Label selectedTerrainLabel;
     private Label selectedBuildingCapacityLabel;
     private TextButton demolishButton;
-    private Pixmap demolishCursor;
     private final Array<Label> satisfactionCountLabels = new Array<>();
     private final Array<Label> satisfactionVarLabels = new Array<>();
+
+    private static Sprite notificationBackground;
+    private static Sprite notificationImage;
+
     private float timeEventShownAt = -10f;
     private GameEvent currentEvent = null;
     private Array<Tuple<String, Integer>> displayedActiveEventTimes = new Array<>();
 
     private float[] satisfactionScoreCaps;
 
+    private boolean demolishMode = false;
     private float demolishCooldownTimer = 0f;
 
     private final ScreenManager game;
@@ -115,7 +122,6 @@ public class GameScreen implements Screen {
         selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.LAKE));
         selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.ROCK));
         selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.TREE));
-        setupSideMenu();
 
         assetManager = new AssetManager();
 
@@ -140,7 +146,21 @@ public class GameScreen implements Screen {
         assetManager.load("LongBoi.png", Texture.class);
         assetManager.load("ActiveEventBg.png", Texture.class);
 
+        assetManager.load("ui/notification_background.png", Texture.class);
+
         assetManager.finishLoading();
+
+        rootTable = new Table();
+        rootTable.setFillParent(true);
+        stage.addActor(rootTable);
+
+        sideMenu = new Table();
+        sideMenu.pad(10);
+        rootTable.add(sideMenu).expandY().fillY().width(SIDE_PANEL_WIDTH);
+        rootTable.right();
+        initSideMenu();
+
+        NotificationHandler.initNotification();
 
         shapeRenderer = new ShapeRenderer();
         gridRenderer = new ShapeRenderer();
@@ -152,11 +172,7 @@ public class GameScreen implements Screen {
         blockRenderer = new ShapeRenderer();
     }
 
-    private void setupSideMenu() {
-        Table rootTable = new Table();
-        rootTable.setFillParent(true);
-        stage.addActor(rootTable);
-
+    private void initSideMenu() {
         Label.LabelStyle labelStyle = skin.get(Label.LabelStyle.class);
         TextButtonStyle textButtonStyle = skin.get(TextButtonStyle.class);
 
@@ -178,8 +194,6 @@ public class GameScreen implements Screen {
                 demolishMode = !demolishMode;
             }
         });
-
-        demolishCursor = new Pixmap(Gdx.files.internal("ui/demolishCursor.png"));
 
         // Initialises the scroll buttons and their actions
         TextButton buildingUpButton = new TextButton("^", textButtonStyle);
@@ -243,10 +257,6 @@ public class GameScreen implements Screen {
 
         satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCap();
 
-        sideMenu = new Table();
-        sideMenu.pad(10);
-        rootTable.right().add(sideMenu).expandY().fillY().width(SIDE_PANEL_WIDTH);
-
         sideMenu.add(countDownLabel).expandX().center().colspan(2).row();
         sideMenu.add(timerLabel).expandX().center().colspan(2).row();
         sideMenu.add(new Label("\nCAMPUS SATISFACTION SUMMARY", labelStyle)).left().colspan(2).row();
@@ -289,12 +299,19 @@ public class GameScreen implements Screen {
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ui/Arial.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
 
-        parameter.size = (int) (0.05f * Gdx.graphics.getHeight());
+        parameter.size = (int) (0.045f * Gdx.graphics.getHeight());
         parameter.shadowColor = Color.BLACK;
         parameter.shadowOffsetX = 2;
         parameter.shadowOffsetY = 2;
         headingFont = generator.generateFont(parameter);
         headingFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
+
+        parameter.size = (int) (0.030f * Gdx.graphics.getHeight());
+        parameter.shadowColor = Color.BLACK;
+        parameter.shadowOffsetX = 0;
+        parameter.shadowOffsetY = 0;
+        bodyFont = generator.generateFont(parameter);
+        bodyFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
 
         parameter.size = (int) (0.04f * Gdx.graphics.getHeight());
         parameter.shadowColor = Color.CLEAR;
@@ -303,8 +320,8 @@ public class GameScreen implements Screen {
         parameter.color = Color.DARK_GRAY;
         parameter.borderColor = Color.WHITE;
         parameter.borderWidth = 1;
-        bodyFont = generator.generateFont(parameter);
-        bodyFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
+        constructionFont = generator.generateFont(parameter);
+        constructionFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
 
         generator.dispose();
     }
@@ -323,6 +340,14 @@ public class GameScreen implements Screen {
 
         isClicked = Gdx.input.isTouched();
 
+        mapDemolitionCheck();
+        selectableObjectsCheck();
+    }
+
+    /**
+     * This method handles map demolition input checks
+     */
+    private void mapDemolitionCheck() {
         // Checks for MapObject demolition
         if (Gdx.input.justTouched() && unprojectedPosIsInsideScreen(unprojectedTouchPos) && demolishMode) {
             GridCoordTuple clickedGridSquare = GridUtils.getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
@@ -341,7 +366,12 @@ public class GameScreen implements Screen {
         else {
             demolishCooldownTimer = 0f;
         }
+    }
 
+    /**
+     * This method handles selectable objects and their placements input checks
+     */
+    private void selectableObjectsCheck() {
         if (Gdx.input.justTouched() && unprojectedPosIsInsideScreen(unprojectedTouchPos)) {
             // Initiates the dragging feature for when a menu building has been selected
             BuildingObject currentBuilding = selectableBuildings.get(selectableBuildingsIndex);
@@ -374,6 +404,7 @@ public class GameScreen implements Screen {
             objectToPlace.updateGridCoords();
         }
     }
+
 
     private void logic() {
         // Ends the game when the timer exceeds 5 minutes.
@@ -432,6 +463,9 @@ public class GameScreen implements Screen {
         drawActiveEvents(batch);
         drawConstructionPercents();
         drawWorldUI();
+
+        NotificationHandler.checkNotificationTTL(world.getCurrentTime());
+        drawNotification(batch);
 
         batch.end();
         stage.draw();
@@ -564,16 +598,24 @@ public class GameScreen implements Screen {
 
         // Changes the cursor and demolish button appearance
         if (!demolishMode) {
+            if (Objects.equals(demolishButton.getColor().toString(), "ff0000ff")) { // Only sets the cursor when the mode has just changed
+                Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
+            }
+
             demolishButton.setText("Demolish Mode: OFF");
             demolishButton.setColor(Color.DARK_GRAY);
 
             Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
         }
         else {
+            if (Objects.equals(demolishButton.getColor().toString(), "3f3f3fff")) { // Only sets the cursor when the mode has just changed
+                Pixmap demolishCursor = new Pixmap(Gdx.files.internal("ui/demolish_cursor.png"));
+                Gdx.graphics.setCursor(Gdx.graphics.newCursor(demolishCursor, 0, 16));
+                demolishCursor.dispose();
+            }
+
             demolishButton.setText("Demolish Mode: ON");
             demolishButton.setColor(Color.RED);
-
-            Gdx.graphics.setCursor(Gdx.graphics.newCursor(demolishCursor, 0, 16));
         }
 
         // Changes the selected label text to whatever is currently selected
@@ -594,6 +636,29 @@ public class GameScreen implements Screen {
     }
 
     /**
+     * Draws the notification, if it is to be displayed.
+     * @param batch The {@link SpriteBatch} used to draw the sprites
+     */
+    private void drawNotification(SpriteBatch batch) {
+        if (NotificationHandler.showNotif && world.getCurrentTime() < NotificationHandler.notifEndDisplayTime) {
+            if (Objects.equals(NotificationHandler.notifImagePath, "")) {
+                notificationBackground.setOriginBasedPosition(0, VIEWPORT_HEIGHT);
+                notificationBackground.draw(batch);
+                headingFont.draw(batch, NotificationHandler.notifTitle, 20, 525);
+                bodyFont.draw(batch, NotificationHandler.notifText, 20, 490);
+            }
+            else {
+                notificationBackground.setOriginBasedPosition(0, VIEWPORT_HEIGHT);
+                notificationBackground.draw(batch);
+                notificationImage.setOriginBasedPosition(10, VIEWPORT_HEIGHT - 10);
+                notificationImage.draw(batch);
+                headingFont.draw(batch, NotificationHandler.notifTitle, 110, 525);
+                bodyFont.draw(batch, NotificationHandler.notifText, 110, 490);
+            }
+        }
+    }
+
+    /**
      * Draws all UI elements that appear in the world
      */
     private void drawWorldUI() {
@@ -603,12 +668,12 @@ public class GameScreen implements Screen {
         // Displays object overlap text
         if (objectToPlace != null) {
             if (world.doesObjectOverlap(objectToPlace)) {
-                headingFont.draw(batch, "Something is already there...", 20, 520);
+                bodyFont.draw(batch, "Something is already there...", 450, 30);
             }
         }
 
         if (paused) {
-            headingFont.draw(batch, "TIMER PAUSED: press P to resume", 20, 460);
+            headingFont.draw(batch, "TIMER PAUSED: press P to resume", 130, 280);
         }
 
         if (gameEnded) {
@@ -636,7 +701,6 @@ public class GameScreen implements Screen {
         }
     }
 
-
     private void showEventPopup(GameEvent event) {
         currentEvent = event;
         timeEventShownAt = world.getCurrentTime();
@@ -649,12 +713,11 @@ public class GameScreen implements Screen {
         paused = true;
     }
 
-
     private void drawConstructionPercents() {
         for (BuildingObject building : world.getBuildings()) {
             if (!building.isBuilt() && !building.toBeDemolished) {
                 Vector2 buildingPos = GridUtils.getGridSquareScreenCoords(building.getGridCoords());
-                bodyFont.draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
+                constructionFont.draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
             }
         }
     }
@@ -673,8 +736,8 @@ public class GameScreen implements Screen {
         batch.dispose();
         headingFont.dispose();
         bodyFont.dispose();
+        constructionFont.dispose();
         assetManager.dispose();
-        demolishCursor.dispose();
     }
 
     @Override
@@ -685,4 +748,124 @@ public class GameScreen implements Screen {
 
     @Override
     public void hide() {}
+
+    /**
+     * This class manages the notification holder that can be displayed. The notification can have text or both text
+     * and an image displayed, and this notification is displayed within a set game time.
+     */
+    public static class NotificationHandler {
+        public static boolean showNotif = false;
+        public static float notifEndDisplayTime;
+
+        public static final int NOTIFICATION_DISPLAY_TIME = 10; // The in-game time that the notification will be displayed for
+
+        public static String notifTitle = "";
+        public static String notifText = "";
+        public static String notifImagePath = "";
+
+        /**
+         * This creates the background image for the notification. It must be called first before any other method
+         * can be.
+         */
+        public static void initNotification() {
+            notificationBackground = new Sprite(assetManager.get("ui/notification_background.png", Texture.class));
+            notificationBackground.setOrigin(0, 100);
+        }
+
+        /**
+         * A new notification is displayed with the given title and text, for the set duration.
+         * @param title The header title for the notification (max. 30 characters)
+         * @param text The body text for the notification (max. 112 characters)
+         * @param currentTime The time that the notification will be start the countdown from
+         */
+        public static void displayNotification(String title, String text, float currentTime) {
+            notifTitle = title;
+            notifText = text;
+            notifImagePath = "";
+
+            // Validation length checks
+            if (notifText.length() > 112) {
+                throw new IllegalArgumentException("Notification text given is more than 112 characters");
+            }
+            else if (notifTitle.length() > 30) {
+                throw new IllegalArgumentException("Notification title given is more than 30 characters");
+            }
+
+            // Responsible for ensuring the text wraps correctly
+            if (notifText.length() > 56) {
+                int firstLineEndIndex = notifText.substring(0, 56).lastIndexOf(" ");
+                StringBuilder stringBuilder = new StringBuilder(notifText);
+                if (firstLineEndIndex == -1) {
+                    stringBuilder.insert(56, "\n");
+                    stringBuilder.replace(57, 58, "");
+                }
+                else {
+                    stringBuilder.insert(firstLineEndIndex, "\n");
+                    stringBuilder.replace(firstLineEndIndex + 1, firstLineEndIndex + 2, "");
+                }
+                notifText = stringBuilder.toString();
+            }
+
+            showNotif = true;
+            notifEndDisplayTime = currentTime + NOTIFICATION_DISPLAY_TIME;
+        }
+
+        /**
+         * A new notification is displayed with the given title, text and icon, for the set duration.
+         * @param title The header title for the notification (max. 20 characters)
+         * @param text The body text for the notification (max. 70 characters)
+         * @param imagePath The image path for the notification icon
+         * @param currentTime The time that the notification will be start the countdown from
+         */
+        public static void displayNotification(String title, String text, String imagePath, float currentTime) {
+            notifTitle = title;
+            notifText = text;
+            notifImagePath = imagePath;
+
+            notificationImage = new Sprite(assetManager.get(notifImagePath, Texture.class));
+            notificationImage.setOrigin(0, 80);
+            notificationImage.setSize(80, 80);
+
+            // Validation length checks
+            if (notifText.length() > 70) {
+                throw new IllegalArgumentException("Notification text given is more than 70 characters");
+            }
+            else if (notifTitle.length() > 20) {
+                throw new IllegalArgumentException("Notification title given is more than 20 characters");
+            }
+
+            // Responsible for ensuring the text wraps correctly
+            if (notifText.length() > 35) {
+                int firstLineEndIndex = notifText.substring(0, 35).lastIndexOf(" ");
+                StringBuilder stringBuilder = new StringBuilder(notifText);
+                if (firstLineEndIndex == -1) {
+                    stringBuilder.insert(35, "\n");
+                    stringBuilder.replace(36, 37, "");
+                }
+                else {
+                    stringBuilder.insert(firstLineEndIndex, "\n");
+                    stringBuilder.replace(firstLineEndIndex + 1, firstLineEndIndex + 2, "");
+                }
+                notifText = stringBuilder.toString();
+            }
+
+            showNotif = true;
+            notifEndDisplayTime = currentTime + NOTIFICATION_DISPLAY_TIME;
+        }
+
+        /**
+         * Checks to see if the current notification has passed it's TTL and thus should be hidden.
+         * @param currentTime The current time
+         */
+        public static void checkNotificationTTL(float currentTime) {
+            if (showNotif && currentTime > notifEndDisplayTime) {
+                notifTitle = "";
+                notifText = "";
+                notifImagePath = "";
+
+                showNotif = false;
+                notifEndDisplayTime = 0;
+            }
+        }
+    }
 }
