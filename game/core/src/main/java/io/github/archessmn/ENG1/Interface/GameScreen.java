@@ -14,6 +14,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
@@ -28,6 +29,11 @@ public class GameScreen implements Screen {
     public static final int VIEWPORT_WIDTH = 960;
     public static final int VIEWPORT_HEIGHT = 540;
     private static final int SIDE_PANEL_WIDTH = 300;
+    public static final int MAP_WIDTH = VIEWPORT_WIDTH - SIDE_PANEL_WIDTH;
+
+    public static final int TILE_WIDTH = MAP_WIDTH / GridUtils.GRID_WIDTH;
+    public static final int TILE_HEIGHT = VIEWPORT_HEIGHT/ GridUtils.GRID_HEIGHT;
+
     private static final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
     private static final float DEMOLISH_COOLDOWN = 0.25f;
 
@@ -241,7 +247,7 @@ public class GameScreen implements Screen {
         satisfactionCountLabels.add(new Label("000%", labelStyle));
         satisfactionCountLabels.add(new Label("000%", labelStyle));
 
-        satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCap();
+        satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCaps();
 
         sideMenu = new Table();
         sideMenu.pad(10);
@@ -310,8 +316,15 @@ public class GameScreen implements Screen {
     }
 
     private void input() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) paused = !paused;
         if (Gdx.input.isKeyJustPressed(Input.Keys.D)) demolishMode = !demolishMode;
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
+            paused = !paused;
+            // If the user pressed p to pause the game, rather than unpause it, then the pause count is incremented.
+            if (paused) {
+                world.getAchievementManager().incrementPauseCount();
+            }
+        }
 
         if (gameEnded) {
             objectToPlace = null;
@@ -381,6 +394,8 @@ public class GameScreen implements Screen {
         if (gameEnded) {
             world.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
         }
+
+        world.getAchievementManager().updateAchievements((int) Math.floor(world.getCurrentTime()));
 
         if (paused || gameEnded) return;
 
@@ -524,7 +539,7 @@ public class GameScreen implements Screen {
 
         gridRenderer.setColor(new Color(0x5b7e13ff));
 
-        float gridWidth = ( VIEWPORT_WIDTH / (float)GridUtils.GRID_WIDTH);
+        float gridWidth = ( (VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) / (float)GridUtils.GRID_WIDTH);
         float gridHeight = ( VIEWPORT_HEIGHT / (float)GridUtils.GRID_HEIGHT);
 
         for (int v = 1; v < 9; v++) {
