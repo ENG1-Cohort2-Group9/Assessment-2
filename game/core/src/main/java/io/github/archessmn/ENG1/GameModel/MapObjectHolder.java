@@ -2,8 +2,6 @@ package io.github.archessmn.ENG1.GameModel;
 
 import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
-import static io.github.archessmn.ENG1.GameModel.GridUtils.GRID_WIDTH;
-import static io.github.archessmn.ENG1.GameModel.GridUtils.GRID_HEIGHT;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -161,7 +159,7 @@ public class MapObjectHolder {
      * @return The MapObject at the specified grid position, null if it is not occupied
      */
     public MapObject getByGrid(int gridX, int gridY) {
-            return gridLookup[gridX][gridY];
+        return gridLookup[gridX][gridY];
     }
 
     /**
@@ -212,9 +210,6 @@ public class MapObjectHolder {
     }
 
     public boolean spaceIsOccupied(int x, int y) {
-        if (x > GRID_WIDTH) {
-            return false;
-        }
-        return !(x < GRID_WIDTH && y < GRID_HEIGHT) || gridLookup[x][y] != null;
+        return !(x < GridUtils.GRID_WIDTH && y < GridUtils.GRID_HEIGHT) || gridLookup[x][y] != null;
     }
 }
