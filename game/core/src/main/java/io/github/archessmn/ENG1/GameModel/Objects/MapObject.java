@@ -49,16 +49,14 @@ public abstract class MapObject implements Cloneable {
     /**
      * Constructor to place the mapObject based on the grid rather than the screen co-ordinates
      * @param gridCoords The grid co-ordinates to place the object at
-     * @param width Width of the object.
-     * @param height Height of the object.
      * @param spriteName The file name of the object's sprite.
      * @param objName The name of the object in the game space
      */
-    public MapObject(GridCoordTuple gridCoords, float width, float height, String spriteName, String objName) {
+    public MapObject(GridCoordTuple gridCoords, String spriteName, String objName) {
         this.gridCoords = new GridCoordTuple(gridCoords.x, gridCoords.y);
 
-        this.width = width;
-        this.height = height;
+        this.width = TILE_WIDTH;
+        this.height = TILE_HEIGHT;
 
         this.screenPosition = GridUtils.getGridSquareScreenCoords(gridCoords);
 

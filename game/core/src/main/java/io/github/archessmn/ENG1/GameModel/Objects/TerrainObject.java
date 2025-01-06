@@ -11,7 +11,7 @@ public class TerrainObject extends MapObject {
     }
 
     public TerrainObject(GridCoordTuple gridCoords, Feature type) {
-        super(gridCoords, 60, 60, type.asset, type.name);
+        super(gridCoords, type.asset, type.name);
         feature = type;
     }
 

@@ -54,7 +54,7 @@ public class BuildingObject extends MapObject {
      * @param type The enum type of the building, storing other associated values for the building.
      */
     public BuildingObject(GridCoordTuple gridCoords, float initialBuildTime, BuildingName type) {
-        super(gridCoords, type.getWidth(), type.getHeight(), type.getSpriteName(), type.getObjName());
+        super(gridCoords, type.getSpriteName(), type.getObjName());
 
         this.initialBuildTime = initialBuildTime;
         this.constructionDuration = type.getBuildingConstructionDuration();
