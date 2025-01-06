@@ -35,7 +35,7 @@ public class GameScreen implements Screen {
 
     private World world;
 
-    private static AssetManager assetManager;
+    private AssetManager assetManager;
 
     private TextureAtlas atlas;
     private Skin skin;
@@ -77,8 +77,9 @@ public class GameScreen implements Screen {
     private final Array<Label> satisfactionCountLabels = new Array<>();
     private final Array<Label> satisfactionVarLabels = new Array<>();
 
-    private static Sprite notificationBackground;
-    private static Sprite notificationImage;
+    // Public and static references for the notification UI
+    public static Sprite notificationBackground;
+    public static Sprite notificationImage;
 
     private float timeEventShownAt = -10f;
     private GameEvent currentEvent = null;
@@ -160,7 +161,7 @@ public class GameScreen implements Screen {
         rootTable.right();
         initSideMenu();
 
-        NotificationHandler.initNotification();
+        NotificationHandler.initNotification(assetManager.get("ui/notification_background.png", Texture.class));
 
         shapeRenderer = new ShapeRenderer();
         gridRenderer = new ShapeRenderer();
@@ -464,7 +465,7 @@ public class GameScreen implements Screen {
         drawConstructionPercents();
         drawWorldUI();
 
-        NotificationHandler.checkNotificationTTL(world.getCurrentTime());
+        NotificationHandler.updateNotificationProcess(world.getCurrentTime());
         drawNotification(batch);
 
         batch.end();
@@ -641,7 +642,7 @@ public class GameScreen implements Screen {
      */
     private void drawNotification(SpriteBatch batch) {
         if (NotificationHandler.showNotif && world.getCurrentTime() < NotificationHandler.notifEndDisplayTime) {
-            if (Objects.equals(NotificationHandler.notifImagePath, "")) {
+            if (NotificationHandler.notifImage == null) {
                 notificationBackground.setOriginBasedPosition(0, VIEWPORT_HEIGHT);
                 notificationBackground.draw(batch);
                 headingFont.draw(batch, NotificationHandler.notifTitle, 20, 525);
@@ -682,6 +683,8 @@ public class GameScreen implements Screen {
 
         if (demolishMode) {
             batch.end();
+
+            NotificationHandler.displayNotification("Test Notification", "This is a test notification for the pub. Please work accordingly.", assetManager.get("pub.png", Texture.class), world.getCurrentTime());
 
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
@@ -748,124 +751,4 @@ public class GameScreen implements Screen {
 
     @Override
     public void hide() {}
-
-    /**
-     * This class manages the notification holder that can be displayed. The notification can have text or both text
-     * and an image displayed, and this notification is displayed within a set game time.
-     */
-    public static class NotificationHandler {
-        public static boolean showNotif = false;
-        public static float notifEndDisplayTime;
-
-        public static final int NOTIFICATION_DISPLAY_TIME = 10; // The in-game time that the notification will be displayed for
-
-        public static String notifTitle = "";
-        public static String notifText = "";
-        public static String notifImagePath = "";
-
-        /**
-         * This creates the background image for the notification. It must be called first before any other method
-         * can be.
-         */
-        public static void initNotification() {
-            notificationBackground = new Sprite(assetManager.get("ui/notification_background.png", Texture.class));
-            notificationBackground.setOrigin(0, 100);
-        }
-
-        /**
-         * A new notification is displayed with the given title and text, for the set duration.
-         * @param title The header title for the notification (max. 30 characters)
-         * @param text The body text for the notification (max. 112 characters)
-         * @param currentTime The time that the notification will be start the countdown from
-         */
-        public static void displayNotification(String title, String text, float currentTime) {
-            notifTitle = title;
-            notifText = text;
-            notifImagePath = "";
-
-            // Validation length checks
-            if (notifText.length() > 112) {
-                throw new IllegalArgumentException("Notification text given is more than 112 characters");
-            }
-            else if (notifTitle.length() > 30) {
-                throw new IllegalArgumentException("Notification title given is more than 30 characters");
-            }
-
-            // Responsible for ensuring the text wraps correctly
-            if (notifText.length() > 56) {
-                int firstLineEndIndex = notifText.substring(0, 56).lastIndexOf(" ");
-                StringBuilder stringBuilder = new StringBuilder(notifText);
-                if (firstLineEndIndex == -1) {
-                    stringBuilder.insert(56, "\n");
-                    stringBuilder.replace(57, 58, "");
-                }
-                else {
-                    stringBuilder.insert(firstLineEndIndex, "\n");
-                    stringBuilder.replace(firstLineEndIndex + 1, firstLineEndIndex + 2, "");
-                }
-                notifText = stringBuilder.toString();
-            }
-
-            showNotif = true;
-            notifEndDisplayTime = currentTime + NOTIFICATION_DISPLAY_TIME;
-        }
-
-        /**
-         * A new notification is displayed with the given title, text and icon, for the set duration.
-         * @param title The header title for the notification (max. 20 characters)
-         * @param text The body text for the notification (max. 70 characters)
-         * @param imagePath The image path for the notification icon
-         * @param currentTime The time that the notification will be start the countdown from
-         */
-        public static void displayNotification(String title, String text, String imagePath, float currentTime) {
-            notifTitle = title;
-            notifText = text;
-            notifImagePath = imagePath;
-
-            notificationImage = new Sprite(assetManager.get(notifImagePath, Texture.class));
-            notificationImage.setOrigin(0, 80);
-            notificationImage.setSize(80, 80);
-
-            // Validation length checks
-            if (notifText.length() > 70) {
-                throw new IllegalArgumentException("Notification text given is more than 70 characters");
-            }
-            else if (notifTitle.length() > 20) {
-                throw new IllegalArgumentException("Notification title given is more than 20 characters");
-            }
-
-            // Responsible for ensuring the text wraps correctly
-            if (notifText.length() > 35) {
-                int firstLineEndIndex = notifText.substring(0, 35).lastIndexOf(" ");
-                StringBuilder stringBuilder = new StringBuilder(notifText);
-                if (firstLineEndIndex == -1) {
-                    stringBuilder.insert(35, "\n");
-                    stringBuilder.replace(36, 37, "");
-                }
-                else {
-                    stringBuilder.insert(firstLineEndIndex, "\n");
-                    stringBuilder.replace(firstLineEndIndex + 1, firstLineEndIndex + 2, "");
-                }
-                notifText = stringBuilder.toString();
-            }
-
-            showNotif = true;
-            notifEndDisplayTime = currentTime + NOTIFICATION_DISPLAY_TIME;
-        }
-
-        /**
-         * Checks to see if the current notification has passed it's TTL and thus should be hidden.
-         * @param currentTime The current time
-         */
-        public static void checkNotificationTTL(float currentTime) {
-            if (showNotif && currentTime > notifEndDisplayTime) {
-                notifTitle = "";
-                notifText = "";
-                notifImagePath = "";
-
-                showNotif = false;
-                notifEndDisplayTime = 0;
-            }
-        }
-    }
 }
