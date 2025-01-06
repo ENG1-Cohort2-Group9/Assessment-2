@@ -6,7 +6,7 @@ package io.github.archessmn.ENG1.GameModel.Objects;
  */
 public enum Use {
     TEACHING("Teaching", "Teaching"),
-    ACCOMMODATION("Accommodation", "Accomm."),
+    ACCOMMODATION("Accommodation", "Accomm"),
     CAFETERIA("Cafeteria", "Cafeteria"),
     RECREATION("Recreation", "Recreation");
 
