@@ -27,7 +27,7 @@ public class TestMapObjectHolder {
 
         buildingObject1 = new BuildingObject(new GridCoordTuple(0,0), 0, BuildingName.PIAZZA);
         buildingObject2 = new BuildingObject(new GridCoordTuple(5,4), 0, BuildingName.GYM);
-        buildingObject3 = new BuildingObject(new GridCoordTuple(15,8), 0, BuildingName.HALLS);
+        buildingObject3 = new BuildingObject(new GridCoordTuple(9,8), 0, BuildingName.HALLS);
         buildingObject1.built = true;
         buildingObject2.built = true;
         buildingObject3.built = false;
@@ -49,7 +49,7 @@ public class TestMapObjectHolder {
     public void testAddNewClass() {
         class NewMapObjectType extends MapObject {
             public NewMapObjectType(GridCoordTuple position) {
-                super(position, 60, 60, "none", "none");
+                super(position, "none", "none");
             }
         }
         NewMapObjectType newMapObject = new NewMapObjectType(new GridCoordTuple(10,1));
@@ -129,7 +129,7 @@ public class TestMapObjectHolder {
     }
 
     @Test
-    public void testRemoveBuildingObject() {
+    public  void testRemoveBuildingObject() {
 
         mapObjectHolder.add(buildingObject1);
         mapObjectHolder.remove(buildingObject1);
@@ -204,14 +204,14 @@ public class TestMapObjectHolder {
         );
 
         assertAll(
-            "3rd building (unbuilt Halls (15,8)) missing from list(s)",
+            "3rd building (unbuilt Halls (9,8)) missing from list(s)",
             () -> assertTrue(mapObjectHolder.getBuildings().contains(buildingObject3, true)),
             () -> assertTrue(mapObjectHolder.getAll().contains(buildingObject3, true)),
             () -> assertTrue(mapObjectHolder.getByType(BuildingName.HALLS).contains(buildingObject3, true)),
             () -> assertTrue(mapObjectHolder.getByType(BuildingObject.class).contains(buildingObject3, true)),
             () -> assertTrue(mapObjectHolder.getByType(MapObject.class).contains(buildingObject3, true)),
             () -> assertTrue(mapObjectHolder.getByUse(Use.ACCOMMODATION).contains(buildingObject3, true)),
-            () -> assertEquals(buildingObject3, mapObjectHolder.getByGrid(15,8))
+            () -> assertEquals(buildingObject3, mapObjectHolder.getByGrid(9,8))
         );
     }
 
@@ -260,6 +260,6 @@ public class TestMapObjectHolder {
 
         assertTrue(mapObjectHolder.spaceIsOccupied(0,0), "Space (0,0) should be occupied");
         assertTrue(mapObjectHolder.spaceIsOccupied(5,2), "Space (5,2) should be occupied");
-        assertTrue(mapObjectHolder.spaceIsOccupied(15,8), "Space (15,8) should be occupied");
+        assertTrue(mapObjectHolder.spaceIsOccupied(9,8), "Space (9,8) should be occupied");
     }
 }
