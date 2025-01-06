@@ -684,8 +684,6 @@ public class GameScreen implements Screen {
         if (demolishMode) {
             batch.end();
 
-            NotificationHandler.displayNotification("Test Notification", "This is a test notification for the pub. Please work accordingly.", assetManager.get("pub.png", Texture.class), world.getCurrentTime());
-
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
             shapeRenderer.rectLine(0, 4, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH + 4, 4, 8, Color.FIREBRICK, Color.FIREBRICK);
