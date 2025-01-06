@@ -23,6 +23,8 @@ public abstract class MapObject implements Cloneable {
     public final String objName;
 
     public boolean placed = false;
+    public boolean toBeDemolished = false;
+    public float demolitionCompletionTime;
 
 
     /**
@@ -45,6 +47,26 @@ public abstract class MapObject implements Cloneable {
     }
 
     /**
+     * Constructor to place the mapObject based on the grid rather than the screen co-ordinates
+     * @param gridCoords The grid co-ordinates to place the object at
+     * @param width Width of the object.
+     * @param height Height of the object.
+     * @param spriteName The file name of the object's sprite.
+     * @param objName The name of the object in the game space
+     */
+    public MapObject(GridCoordTuple gridCoords, float width, float height, String spriteName, String objName) {
+        this.gridCoords = new GridCoordTuple(gridCoords.x, gridCoords.y);
+
+        this.width = width;
+        this.height = height;
+
+        this.screenPosition = GridUtils.getGridSquareScreenCoords(gridCoords);
+
+        this.spriteName = spriteName;
+        this.objName = objName;
+    }
+
+    /**
      * Called when placing the object into the world, will snap the object to
      * the grid and update its grid coordinates to match its position.
      */
@@ -52,6 +74,23 @@ public abstract class MapObject implements Cloneable {
         this.updateGridCoords();
 
         this.placed = true;
+    }
+
+    /**
+     * Called when the object is to begin the process of demolition. This will start a
+     * timer, of which the object will be demolished at the end of it.
+     */
+    public void beginDemolition(float currentTime, float demolitionTime) {
+        this.toBeDemolished = true;
+        this.demolitionCompletionTime = currentTime + demolitionTime;
+    }
+
+    /**
+     * @return True if the building has finished construction
+     * @param currentTime The current game time in seconds
+     */
+    public boolean isDemolished(float currentTime) {
+        return currentTime >= demolitionCompletionTime;
     }
 
     /**
@@ -130,5 +169,10 @@ public abstract class MapObject implements Cloneable {
         ((MapObject)clone).gridCoords = new GridCoordTuple(gridCoords.x, gridCoords.y);
 
         return clone;
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + "at ( " + screenPosition.x + ", " + screenPosition.y + " )";
     }
 }

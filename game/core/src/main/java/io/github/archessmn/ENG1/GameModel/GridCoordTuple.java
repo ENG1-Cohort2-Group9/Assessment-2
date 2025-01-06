@@ -11,4 +11,18 @@ public class GridCoordTuple {
         this.x = x;
         this.y = y;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof GridCoordTuple other) {
+            return x == other.x && y == other.y;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "GridCoordTuple [x=" + x + ", y=" + y + "]";
+    }
 }

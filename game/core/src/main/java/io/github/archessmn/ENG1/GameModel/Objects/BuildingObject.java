@@ -1,5 +1,6 @@
 package io.github.archessmn.ENG1.GameModel.Objects;
 
+import io.github.archessmn.ENG1.GameModel.GridCoordTuple;
 import io.github.archessmn.ENG1.GameModel.World;
 
 /**
@@ -33,6 +34,27 @@ public class BuildingObject extends MapObject {
      */
     public BuildingObject(float x, float y, float initialBuildTime, BuildingName type) {
         super(x, y, type.getSpriteName(), type.getObjName());
+
+        this.initialBuildTime = initialBuildTime;
+        this.constructionDuration = type.getBuildingConstructionDuration();
+        this.buildingCompletionTime = initialBuildTime + type.getBuildingConstructionDuration();
+
+        this.built = false;
+        this.uses = type.getUses();
+        this.capacity = type.getCapacity();
+        this.type = type;
+
+        this.unbuiltSpriteName = "construction.png";
+    }
+
+    /**
+     * Initialises a new building at a grid square rather than screen co-ordinates.
+     * @param gridCoords The grid co-ordinates to place the object at
+     * @param initialBuildTime The time at which the building will start construction
+     * @param type The enum type of the building, storing other associated values for the building.
+     */
+    public BuildingObject(GridCoordTuple gridCoords, float initialBuildTime, BuildingName type) {
+        super(gridCoords, type.getWidth(), type.getHeight(), type.getSpriteName(), type.getObjName());
 
         this.initialBuildTime = initialBuildTime;
         this.constructionDuration = type.getBuildingConstructionDuration();
@@ -115,5 +137,8 @@ public class BuildingObject extends MapObject {
         return false;
     }
 
-
+    @Override
+    public String toString() {
+        return this.objName + " " + super.toString();
+    }
 }
