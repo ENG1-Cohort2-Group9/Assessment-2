@@ -69,7 +69,9 @@ public class GameScreen implements Screen {
     private Label timerLabel;
     private Label selectedBuildingLabel;
     private Label selectedTerrainLabel;
+    private Label selectedBuildingCapacityLabel;
     private TextButton demolishButton;
+    private Pixmap demolishCursor;
     private final Array<Label> satisfactionCountLabels = new Array<>();
     private final Array<Label> satisfactionVarLabels = new Array<>();
     private float timeEventShownAt = -10f;
@@ -104,15 +106,15 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         selectableBuildings = new Array<>();
-        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.HALLS));
-        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.GYM));
-        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.LECTURE_HALL));
-        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.PIAZZA));
-        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.PUB));
+        selectableBuildings.add(new BuildingObject(710, 160, 0, BuildingName.HALLS));
+        selectableBuildings.add(new BuildingObject(710, 160, 0, BuildingName.GYM));
+        selectableBuildings.add(new BuildingObject(710, 160, 0, BuildingName.LECTURE_HALL));
+        selectableBuildings.add(new BuildingObject(710, 160, 0, BuildingName.PIAZZA));
+        selectableBuildings.add(new BuildingObject(710, 160, 0, BuildingName.PUB));
         selectableTerrains = new Array<>();
-        selectableTerrains.add(new TerrainObject(849, 150, TerrainObject.Feature.LAKE));
-        selectableTerrains.add(new TerrainObject(849, 150, TerrainObject.Feature.ROCK));
-        selectableTerrains.add(new TerrainObject(849, 150, TerrainObject.Feature.TREE));
+        selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.LAKE));
+        selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.ROCK));
+        selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.TREE));
         setupSideMenu();
 
         assetManager = new AssetManager();
@@ -163,8 +165,10 @@ public class GameScreen implements Screen {
 
         selectedBuildingLabel = new Label("{Building}", labelStyle);
         selectedTerrainLabel = new Label("{Terrain}", labelStyle);
+        selectedBuildingCapacityLabel = new Label("{Capacity}\n ", labelStyle);
         selectedBuildingLabel.setFontScale(0.9f);
         selectedTerrainLabel.setFontScale(0.9f);
+        selectedBuildingCapacityLabel.setFontScale(0.7f);
 
         demolishButton = new TextButton("Demolish Mode: OFF", textButtonStyle);
         demolishButton.setColor(Color.DARK_GRAY);
@@ -174,6 +178,8 @@ public class GameScreen implements Screen {
                 demolishMode = !demolishMode;
             }
         });
+
+        demolishCursor = new Pixmap(Gdx.files.internal("ui/demolishCursor.png"));
 
         // Initialises the scroll buttons and their actions
         TextButton buildingUpButton = new TextButton("^", textButtonStyle);
@@ -228,7 +234,7 @@ public class GameScreen implements Screen {
         satisfactionVarLabels.add(new Label("Building Distance:", labelStyle));
         satisfactionVarLabels.add(new Label("Campus Completion:", labelStyle));
         satisfactionVarLabels.add(new Label("Event Response:", labelStyle));
-        satisfactionVarLabels.add(new Label("Building Diversity:", labelStyle));
+        satisfactionVarLabels.add(new Label("Building Capacity:", labelStyle));
 
         satisfactionCountLabels.add(new Label("000%", labelStyle));
         satisfactionCountLabels.add(new Label("000%", labelStyle));
@@ -242,7 +248,7 @@ public class GameScreen implements Screen {
         rootTable.right().add(sideMenu).expandY().fillY().width(SIDE_PANEL_WIDTH);
 
         sideMenu.add(countDownLabel).expandX().center().colspan(2).row();
-        sideMenu.add(timerLabel).expandX().center().colspan(2).padBottom(10).row();
+        sideMenu.add(timerLabel).expandX().center().colspan(2).row();
         sideMenu.add(new Label("\nCAMPUS SATISFACTION SUMMARY", labelStyle)).left().colspan(2).row();
         for (int i = 0; i < 4; i++) {
             satisfactionVarLabels.get(i).setFontScale(0.95f);
@@ -252,16 +258,17 @@ public class GameScreen implements Screen {
         }
 
         // Creates the table that contains the build and terrain selection
-        Table mapObjectTable = new Table().padBottom(40).padTop(20);
-        sideMenu.add(mapObjectTable).fillX().colspan(2).row();
-        mapObjectTable.add(new Label("\nBUILDINGS", labelStyle)).expandX().center().padBottom(10);
-        mapObjectTable.add(new Label("\nTERRAIN", labelStyle)).expandX().center().padBottom(10).row();
-        mapObjectTable.add(buildingUpButton).expandX().center().padBottom(40);
-        mapObjectTable.add(terrainUpButton).expandX().center().padBottom(40).row();
-        mapObjectTable.add(selectedBuildingLabel).expandX().center().padTop(40).uniform();
-        mapObjectTable.add(selectedTerrainLabel).expandX().center().padTop(40).uniform().row();
-        mapObjectTable.add(buildingDownButton).expandX().center().padTop(10);
-        mapObjectTable.add(terrainDownButton).expandX().center().padTop(10).row();
+        Table selectableObjectTable = new Table().padBottom(20).padTop(10);
+        sideMenu.add(selectableObjectTable).fillX().colspan(2).row();
+        selectableObjectTable.add(new Label("\nBUILDINGS", labelStyle)).expandX().center().padBottom(10);
+        selectableObjectTable.add(new Label("\nTERRAIN", labelStyle)).expandX().center().padBottom(10).row();
+        selectableObjectTable.add(buildingUpButton).expandX().center().padBottom(30);
+        selectableObjectTable.add(terrainUpButton).expandX().center().padBottom(30).row();
+        selectableObjectTable.add(selectedBuildingLabel).expandX().center().padTop(50).uniform();
+        selectableObjectTable.add(selectedTerrainLabel).expandX().center().padTop(50).uniform().row();
+        selectableObjectTable.add(selectedBuildingCapacityLabel).expandX().center().uniform().row();
+        selectableObjectTable.add(buildingDownButton).expandX().center().padTop(10);
+        selectableObjectTable.add(terrainDownButton).expandX().center().padTop(10).row();
 
         sideMenu.add(demolishButton).colspan(2).expandX().row();
     }
@@ -475,7 +482,6 @@ public class GameScreen implements Screen {
 
         // Draws the currently displayed building and terrain assets, in the side menu
         drawSelectableObject(batch, assetManager, selectableBuildings.get(selectableBuildingsIndex));
-        drawSelectedBuildingCapacities();
         drawSelectableObject(batch, assetManager, selectableTerrains.get(selectableTerrainsIndex));
     }
 
@@ -567,14 +573,24 @@ public class GameScreen implements Screen {
             demolishButton.setText("Demolish Mode: ON");
             demolishButton.setColor(Color.RED);
 
-            Pixmap pm = new Pixmap(Gdx.files.internal("ui/demolishCursor.png"));
-            Gdx.graphics.setCursor(Gdx.graphics.newCursor(pm, 0, 16));
-            pm.dispose();
+            Gdx.graphics.setCursor(Gdx.graphics.newCursor(demolishCursor, 0, 16));
         }
 
         // Changes the selected label text to whatever is currently selected
         selectedBuildingLabel.setText(selectableBuildings.get(selectableBuildingsIndex).objName);
         selectedTerrainLabel.setText(selectableTerrains.get(selectableTerrainsIndex).objName);
+
+        // Updates the building capacity text
+        BuildingObject selectedBuilding = selectableBuildings.get(selectableBuildingsIndex);
+        StringBuilder capacityText = new StringBuilder();
+        for (Use use : selectedBuilding.getUses()) { // Combines the various uses of the selected building, into 1 string
+            capacityText.append(use.getStringShortName()).append(": ").append(selectedBuilding.getUseCapacity(use)).append(" students").append("\n");
+        }
+        if (selectedBuilding.getUses().length > 1) { // Removes the last "new line" of the string
+            capacityText.delete(capacityText.length() - 1, capacityText.length());
+        }
+        selectedBuildingCapacityLabel.setText(capacityText);
+        selectedBuildingCapacityLabel.setAlignment(2);
     }
 
     /**
@@ -643,14 +659,6 @@ public class GameScreen implements Screen {
         }
     }
 
-    private void drawSelectedBuildingCapacities() {
-        BuildingObject building = selectableBuildings.get(selectableBuildingsIndex);
-        for (Use use : building.getUses()) {
-            System.out.println(use.getStringName() + " capacity: " + building.getUseCapacity(use) + " students");
-
-        }
-    }
-
     /**
      * @return True if the given (unprojected) position is within the bounds of the screen (including the UI)
      */
@@ -666,6 +674,7 @@ public class GameScreen implements Screen {
         headingFont.dispose();
         bodyFont.dispose();
         assetManager.dispose();
+        demolishCursor.dispose();
     }
 
     @Override
