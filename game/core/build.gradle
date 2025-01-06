@@ -1,5 +1,10 @@
+plugins {
+  id 'jacoco'
+}
+
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 eclipse.project.name = appName + '-core'
+
 
 dependencies {
   api "com.badlogicgames.gdx-controllers:gdx-controllers-core:$gdxControllersVersion"
@@ -14,6 +19,8 @@ dependencies {
 
   testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
 }
+
+
 
 tasks.test {
   useJUnitPlatform()
