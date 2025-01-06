@@ -40,9 +40,9 @@ jobs:
     - name: Upload JAR
       uses: actions/upload-artifact@v4.5.0
       with:
-        name: core.jar
+        name: core-$projectVersion.jar
         # A file, directory or wildcard pattern that describes what to upload
-        path: game/core/build/libs/core.jar
+        path: game/core/build/libs/core-$projectVersion.jar
         
       
     
