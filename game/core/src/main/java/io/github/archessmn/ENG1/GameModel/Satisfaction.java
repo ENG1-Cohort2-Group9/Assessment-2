@@ -3,10 +3,12 @@ package io.github.archessmn.ENG1.GameModel;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
+import io.github.archessmn.ENG1.GameModel.Objects.Use.*;
+import io.github.archessmn.ENG1.GameModel.GameEvent.*;
 
 public class Satisfaction {
 
-    private World world;
+    private final World world;
 
     // The number of items in the Use enum, this value is used often, so it's stored to prevent repeated calculation.
     private final int USE_LENGTH = Use.values().length;
@@ -30,7 +32,6 @@ public class Satisfaction {
     private float buildingDistancesScore;
     private float completionScore;
     private float eventsScore; // This value can go below 0 and above the cap
-    private float cappedEventsScore; // This is equal to eventsScore with its range restricted
     private float buildingCapacityScore;
 
     // Here the maximum value for each of these scores is set:
@@ -41,8 +42,8 @@ public class Satisfaction {
     private static final float BUILDING_CAPACITY_SCORE_CAP = 20;
 
     // The map currently is 11x9 tiles
-    private static final int GRID_WIDTH = 11;
-    private static final int GRID_HEIGHT = 9;
+    private static final int GRID_WIDTH = GridUtils.GRID_WIDTH;
+    private static final int GRID_HEIGHT = GridUtils.GRID_HEIGHT;
 
     // The coverage goal is the target for what % of the map should have a building on it.
     private static final float MAP_COVERAGE_GOAL = 0.25f;
@@ -52,11 +53,11 @@ public class Satisfaction {
     // The lower limit, is the lowest number of tiles required to be filled with a building, for the user to be able to
     // get the maximum satisfaction score.
     private static final int LOWER_BUILDING_LIMIT = (int) Math.floor((MAP_COVERAGE_GOAL - MAP_COVERAGE_ALLOWANCE) *
-                                                                        GRID_WIDTH * GRID_HEIGHT);
+        GRID_WIDTH * GRID_HEIGHT);
     // The upper limit, is the highest number of tiles allowed to be filled with a building, for the user to be able to
     // get the maximum satisfaction score.
     private static final int UPPER_BUILDING_LIMIT = (int) Math.ceil((MAP_COVERAGE_GOAL + MAP_COVERAGE_ALLOWANCE) *
-                                                                        GRID_WIDTH * GRID_HEIGHT);
+        GRID_WIDTH * GRID_HEIGHT);
     // The lower limit discourages players from placing one singular cluster of buildings, while the upper limit
     // discourages the player from placing buildings in as many tiles as possible.
 
@@ -109,6 +110,10 @@ public class Satisfaction {
 
     // Defines how much satisfaction score is gained for having > 0 of each building use type.
     private final float completionScorePerUse = COMPLETION_SCORE_CAP / USE_LENGTH;
+
+    // These help with eventsScore:
+
+    private float cappedEventsScore; // This is equal to eventsScore with its range restricted
 
     // These help with buildingValuesScore:
 
@@ -180,7 +185,7 @@ public class Satisfaction {
      * Return order: [0] Building Distance | [1] Completion | [2] Events | [3] Building Values
      * @return An array with the 4 summary variable caps.
      */
-    public float[] getSatisfactionScoreCap() {
+    public float[] getSatisfactionScoreCaps() {
         return new float[] { BUILDING_DISTANCES_SCORE_CAP, COMPLETION_SCORE_CAP, EVENTS_SCORE_CAP, BUILDING_CAPACITY_SCORE_CAP};
     }
 
@@ -220,7 +225,7 @@ public class Satisfaction {
             // Used with the multiplier to effect how strong the multiplier is.
             float BALANCE_FACTOR = 0.25f;
             satisfactionScore *= Math.min(1 - (((float)(LOWER_BUILDING_LIMIT - number_of_buildings) / LOWER_BUILDING_LIMIT)* BALANCE_FACTOR),
-                                1 - (((float)(number_of_buildings - UPPER_BUILDING_LIMIT) / UPPER_BUILDING_LIMIT))* BALANCE_FACTOR);
+                1 - (((float)(number_of_buildings - UPPER_BUILDING_LIMIT) / UPPER_BUILDING_LIMIT))* BALANCE_FACTOR);
         }
     }
 
@@ -285,10 +290,10 @@ public class Satisfaction {
                         else {
                             numberOfPairs = averageDistancesCount[use2.ordinal()][use1.ordinal()];
                             if (numberOfPairs + updateFactor > 0) {
-                            averageDistances[use2.ordinal()][use1.ordinal()] = (averageDistances[use2.ordinal()][use1.ordinal()]
-                                * numberOfPairs + distance * updateFactor) / (numberOfPairs + updateFactor);
-                            // Update the number of building pairs used for the average distance between use2 and use1
-                            averageDistancesCount[use2.ordinal()][use1.ordinal()] += updateFactor;
+                                averageDistances[use2.ordinal()][use1.ordinal()] = (averageDistances[use2.ordinal()][use1.ordinal()]
+                                    * numberOfPairs + distance * updateFactor) / (numberOfPairs + updateFactor);
+                                // Update the number of building pairs used for the average distance between use2 and use1
+                                averageDistancesCount[use2.ordinal()][use1.ordinal()] += updateFactor;
                             }
                             else {
                                 averageDistances[use2.ordinal()][use1.ordinal()] = 0;
@@ -314,14 +319,14 @@ public class Satisfaction {
             for (Use use2 : Use.values()) {
                 // Only iterates over the upper triangle of the adjacency matrix
                 if (use2.ordinal() >= use1.ordinal()) {
-                        // score is used to prevent duplicate calculation
-                        float score = calculateScoreBonus(getWeight(use1, use2), use1, use2);
-                        // Add the new score for this use pair, and subtract the previous score for this use pair
-                        // from buildingDistancesScore
-                        buildingDistancesScore += score - averageDistanceScores[use1.ordinal()][use2.ordinal()];
-                        // Save the new score for this use pair so the above line will work when next the use pair is
-                        // next updated.
-                        averageDistanceScores[use1.ordinal()][use2.ordinal()] = score;
+                    // score is used to prevent duplicate calculation
+                    float score = calculateScoreBonus(getWeight(use1, use2), use1, use2);
+                    // Add the new score for this use pair, and subtract the previous score for this use pair
+                    // from buildingDistancesScore
+                    buildingDistancesScore += score - averageDistanceScores[use1.ordinal()][use2.ordinal()];
+                    // Save the new score for this use pair so the above line will work when next the use pair is
+                    // next updated.
+                    averageDistanceScores[use1.ordinal()][use2.ordinal()] = score;
 
                 }
                 // Same logic is used as above, but since only the upper triangle of the adjacency
@@ -392,16 +397,16 @@ public class Satisfaction {
                     else if (use1 == Use.TEACHING && use2 == Use.ACCOMMODATION) {
                         weightMatrix[use1.ordinal()][use2.ordinal()] = 1.25f;
                     }
-                     else if (use1 == Use.ACCOMMODATION && use2 == Use.CAFETERIA) {
+                    else if (use1 == Use.ACCOMMODATION && use2 == Use.CAFETERIA) {
                         weightMatrix[use1.ordinal()][use2.ordinal()] = 2.25f;
                     }
-                     else if (use1 == Use.ACCOMMODATION && use2 == Use.RECREATION) {
+                    else if (use1 == Use.ACCOMMODATION && use2 == Use.RECREATION) {
                         weightMatrix[use1.ordinal()][use2.ordinal()] = 1.5f;
                     }
-                     else if (use1 == Use.CAFETERIA && use2 == Use.RECREATION) {
+                    else if (use1 == Use.CAFETERIA && use2 == Use.RECREATION) {
                         weightMatrix[use1.ordinal()][use2.ordinal()] = 0.25f;
                     }
-                     else {
+                    else {
                         weightMatrix[use1.ordinal()][use2.ordinal()] = 1.0f; // Default weight
                     }
                 }
@@ -541,8 +546,6 @@ public class Satisfaction {
         else {
             buildingCapacityScore = BUILDING_CAPACITY_SCORE_CAP;
         }
-
-
     }
 
 
@@ -556,6 +559,32 @@ public class Satisfaction {
         for(Use use : building.getUses()) {
             useCapacities[use.ordinal()] += updateFactor * building.getUseCapacity(use);
         }
+    }
+
+
+    /**
+     * Checks whether the capacity for each building use is exactly equal to the others, this is used to check if the
+     * player has achieved the FULL_CAPACITY achievement.
+     * @return true if all capacities are equal, false if not, also false if there is 0 accommodation buildings.
+     */
+    public boolean checkExactCapacity() {
+        int[] exactCapacities = new int[USE_LENGTH];
+        for (BuildingObject building : world.getBuildings()) {
+            for (Use use : building.getUses()) {
+                exactCapacities[use.ordinal()] += building.getUseCapacity(use);
+            }
+        }
+        // The number of students attending the university.
+        int students = useCapacities[Use.ACCOMMODATION.ordinal()];
+        if (students == 0) {
+            return false;
+        }
+        for (int capacity : useCapacities) {
+            if (students != capacity) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

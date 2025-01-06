@@ -6,12 +6,12 @@ import io.github.archessmn.ENG1.GameModel.GridCoordTuple;
 public class TerrainObject extends MapObject {
 
     public TerrainObject(float x, float y, Feature type) {
-        super(x, y, 60, 60, type.asset, type.name);
+        super(x, y, type.asset, type.name);
         feature = type;
     }
 
     public TerrainObject(GridCoordTuple gridCoords, Feature type) {
-        super(gridCoords, 60, 60, type.asset, type.name);
+        super(gridCoords, type.asset, type.name);
         feature = type;
     }
 
