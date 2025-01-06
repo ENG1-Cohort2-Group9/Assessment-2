@@ -12,6 +12,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
@@ -26,6 +27,10 @@ public class GameScreen implements Screen {
     public static final int VIEWPORT_WIDTH = 960;
     public static final int VIEWPORT_HEIGHT = 540;
     private static final int SIDE_PANEL_WIDTH = 300;
+    public static final int MAP_WIDTH = VIEWPORT_WIDTH - SIDE_PANEL_WIDTH;
+
+    public static final int TILE_WIDTH = MAP_WIDTH / GridUtils.GRID_WIDTH;
+    public static final int TILE_HEIGHT = VIEWPORT_HEIGHT/ GridUtils.GRID_HEIGHT;
 
     private World world;
 
@@ -243,7 +248,7 @@ public class GameScreen implements Screen {
         satisfactionCountLabel.add(new Label("000%", labelStyle));
         satisfactionCountLabel.add(new Label("000%", labelStyle));
 
-        satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCap();
+        satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCaps();
 
         sideMenu = new Table();
         sideMenu.pad(10);
@@ -287,7 +292,13 @@ public class GameScreen implements Screen {
     }
 
     private void input() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) paused = !paused;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
+            paused = !paused;
+            // If the user pressed p to pause the game, rather than unpause it, then the pause count is incremented.
+            if (paused) {
+                world.getAchievementManager().incrementPauseCount();
+            }
+        }
 
         if (gameEnded) {
             objectToPlace = null;
@@ -301,14 +312,18 @@ public class GameScreen implements Screen {
 
         // A check to see if any building/terrain assets have been clicked
         if (Gdx.input.justTouched() && unprojectedPosIsInsideScreen(unprojectedTouchPos)) {
-            // Loops through all placed map objects to see if they have been clicked
-            GridCoordTuple clickedGridSquare = GridUtils.getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
-            MapObject clickedObject = world.getMapObjectAt(clickedGridSquare);
 
-            if (clickedObject != null) {
-                highlightedTile = clickedObject;
-                highlightTimer = 5f;
+            if (unprojectedTouchPos.x <= MAP_WIDTH) {
+                // Loops through all placed map objects to see if they have been clicked
+                GridCoordTuple clickedGridSquare = GridUtils.getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
+                MapObject clickedObject = world.getMapObjectAt(clickedGridSquare);
+
+                if (clickedObject != null) {
+                    highlightedTile = clickedObject;
+                    highlightTimer = 5f;
+                }
             }
+
 
             // Initiates the dragging feature for when a menu building has been selected
             BuildingObject currentBuilding = selectableBuildings.get(selectableBuildingsIndex);
@@ -355,6 +370,8 @@ public class GameScreen implements Screen {
         float delta = Gdx.graphics.getDeltaTime();
 
         world.process(delta);
+
+        world.getAchievementManager().updateAchievements((int) Math.floor(world.getCurrentTime()));
 
         // Ends the game when the timer exceeds 5 minutes.
         gameEnded = world.getGameEnded();
@@ -496,7 +513,7 @@ public class GameScreen implements Screen {
 
         gridRenderer.setColor(new Color(0x5b7e13ff));
 
-        float gridWidth = ( VIEWPORT_WIDTH / (float)GridUtils.GRID_WIDTH);
+        float gridWidth = ( (VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) / (float)GridUtils.GRID_WIDTH);
         float gridHeight = ( VIEWPORT_HEIGHT / (float)GridUtils.GRID_HEIGHT);
 
         for (int v = 1; v < 9; v++) {
@@ -611,7 +628,7 @@ public class GameScreen implements Screen {
     private void drawSelectedBuildingCapacities() {
         BuildingObject building = selectableBuildings.get(selectableBuildingsIndex);
         for (Use use : building.getUses()) {
-            System.out.println(use.getStringName() + " capacity: " + building.getUseCapacity(use) + " students");
+            // System.out.println(use.getStringName() + " capacity: " + building.getUseCapacity(use) + " students");
         }
     }
 

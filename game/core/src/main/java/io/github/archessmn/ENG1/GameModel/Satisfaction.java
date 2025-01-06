@@ -3,10 +3,12 @@ package io.github.archessmn.ENG1.GameModel;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
+import io.github.archessmn.ENG1.GameModel.Objects.Use.*;
+import io.github.archessmn.ENG1.GameModel.GameEvent.*;
 
 public class Satisfaction {
 
-    private World world;
+    private final World world;
 
     // The number of items in the Use enum, this value is used often, so it's stored to prevent repeated calculation.
     private final int USE_LENGTH = Use.values().length;
@@ -30,7 +32,6 @@ public class Satisfaction {
     private float buildingDistancesScore;
     private float completionScore;
     private float eventsScore; // This value can go below 0 and above the cap
-    private float cappedEventsScore; // This is equal to eventsScore with its range restricted
     private float buildingCapacityScore;
 
     // Here the maximum value for each of these scores is set:
@@ -41,8 +42,8 @@ public class Satisfaction {
     private static final float BUILDING_CAPACITY_SCORE_CAP = 20;
 
     // The map currently is 11x9 tiles
-    private static final int GRID_WIDTH = 11;
-    private static final int GRID_HEIGHT = 9;
+    private static final int GRID_WIDTH = GridUtils.GRID_WIDTH;
+    private static final int GRID_HEIGHT = GridUtils.GRID_HEIGHT;
 
     // The coverage goal is the target for what % of the map should have a building on it.
     private static final float MAP_COVERAGE_GOAL = 0.25f;
@@ -109,6 +110,10 @@ public class Satisfaction {
 
     // Defines how much satisfaction score is gained for having > 0 of each building use type.
     private final float completionScorePerUse = COMPLETION_SCORE_CAP / USE_LENGTH;
+
+    // These help with eventsScore:
+
+    private float cappedEventsScore; // This is equal to eventsScore with its range restricted
 
     // These help with buildingValuesScore:
 
@@ -180,7 +185,7 @@ public class Satisfaction {
      * Return order: [0] Building Distance | [1] Completion | [2] Events | [3] Building Values
      * @return An array with the 4 summary variable caps.
      */
-    public float[] getSatisfactionScoreCap() {
+    public float[] getSatisfactionScoreCaps() {
         return new float[] { BUILDING_DISTANCES_SCORE_CAP, COMPLETION_SCORE_CAP, EVENTS_SCORE_CAP, BUILDING_CAPACITY_SCORE_CAP};
     }
 
@@ -541,8 +546,6 @@ public class Satisfaction {
         else {
             buildingCapacityScore = BUILDING_CAPACITY_SCORE_CAP;
         }
-
-
     }
 
 
@@ -556,6 +559,32 @@ public class Satisfaction {
         for(Use use : building.getUses()) {
             useCapacities[use.ordinal()] += updateFactor * building.getUseCapacity(use);
         }
+    }
+
+
+    /**
+     * Checks whether the capacity for each building use is exactly equal to the others, this is used to check if the
+     * player has achieved the FULL_CAPACITY achievement.
+     * @return true if all capacities are equal, false if not, also false if there is 0 accommodation buildings.
+     */
+    public boolean checkExactCapacity() {
+        int[] exactCapacities = new int[USE_LENGTH];
+        for (BuildingObject building : world.getBuildings()) {
+            for (Use use : building.getUses()) {
+                exactCapacities[use.ordinal()] += building.getUseCapacity(use);
+            }
+        }
+        // The number of students attending the university.
+        int students = useCapacities[Use.ACCOMMODATION.ordinal()];
+        if (students == 0) {
+            return false;
+        }
+        for (int capacity : useCapacities) {
+            if (students != capacity) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

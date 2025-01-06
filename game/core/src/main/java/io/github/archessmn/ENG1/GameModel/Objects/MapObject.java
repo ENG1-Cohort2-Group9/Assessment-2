@@ -4,6 +4,9 @@ import com.badlogic.gdx.math.Vector2;
 import io.github.archessmn.ENG1.GameModel.GridCoordTuple;
 import io.github.archessmn.ENG1.GameModel.GridUtils;
 
+import static io.github.archessmn.ENG1.Interface.GameScreen.TILE_WIDTH;
+import static io.github.archessmn.ENG1.Interface.GameScreen.TILE_HEIGHT;
+
 /**
  * A super-class representing anything that can be placed on a map.
  * It stored information about the object and provides utility classes for interacting with it.
@@ -26,16 +29,14 @@ public abstract class MapObject implements Cloneable {
      * Initialises a new map object.
      * @param x The X coordinate to place the object at.
      * @param y The Y coordinate to place the object at.
-     * @param width Width of the object.
-     * @param height Height of the object.
      * @param spriteName The file name of the object's sprite.
      * @param objName The name of the object in the game space
      */
-    public MapObject(float x, float y, float width, float height, String spriteName, String objName) {
+    public MapObject(float x, float y, String spriteName, String objName) {
         this.screenPosition = new Vector2(x, y);
 
-        this.width = width;
-        this.height = height;
+        this.width = TILE_WIDTH;
+        this.height = TILE_HEIGHT;
 
         updateGridCoords();
 

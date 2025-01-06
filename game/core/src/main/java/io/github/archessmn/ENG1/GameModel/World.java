@@ -34,6 +34,8 @@ public class World {
     private EventManager eventManager;
     private Random random = new Random();
 
+    private AchievementManager achievementManager;
+
     public final int TOO_MANY_LECTURE_BUILDINGS = 15; // How many lecture buildings are needed to allow the "too many buildings" event to occur
     private final int GYMS_FOR_TOURNAMENT_WIN = 10; // The number of gyms needed to allow the university to win a sports event.
 
@@ -49,10 +51,10 @@ public class World {
         System.arraycopy(additionalEventListeners, 0, listeners, 1, additionalEventListeners.length);
         eventManager = new EventManager(listeners, GAME_LENGTH_SECONDS);
 
+        achievementManager = new AchievementManager(this);
+
         this.WIDTH = worldWidth;
         this.HEIGHT = worldHeight;
-
-
 
         // These can only happen when a building is near these terrain types
         eventManager.disableEvent(GameEvent.FLOODING);
@@ -118,7 +120,7 @@ public class World {
             if (mapObject instanceof BuildingObject buildingObject) {
                 buildingObject.resetConstruction(currentTime);
                 mapObjects.add(buildingObject);
-            } else if (mapObject instanceof TerrainObject terrainAsset) {
+                } else if (mapObject instanceof TerrainObject terrainAsset) {
                 mapObjects.add(terrainAsset);
                 // Only do this for terrain since buildings update when construction is completed
                 updateWorldState(terrainAsset, false);
@@ -172,6 +174,7 @@ public class World {
                 // Disable the effect of the event as well if it has occurred
                 activeEvents[GameEvent.TOO_MANY_BUILDINGS.ordinal()] = null;
             }
+            achievementManager.incrementBuildingsDemolished();
         } else {
             if (!eventManager.isEventEnabled(GameEvent.FLOODING) && isBuildingNearTerrain(building, TerrainObject.Feature.LAKE)) {
                 eventManager.enableEvent(GameEvent.FLOODING);
@@ -182,6 +185,7 @@ public class World {
             if (!eventManager.isEventEnabled(GameEvent.TOO_MANY_BUILDINGS) && mapObjects.getUseCount(Use.TEACHING) >= TOO_MANY_LECTURE_BUILDINGS - 1) {
                 eventManager.enableEvent(GameEvent.TOO_MANY_BUILDINGS);
             }
+            achievementManager.incrementBuildingsBuilt();
         }
 
         satisfaction.updateScore(building, !wasRemoved);
@@ -557,6 +561,12 @@ public class World {
         return mapObjects.getBuildings(built);
     }
 
+    /**
+     * @return all Terrain objects
+     */
+    public Array<TerrainObject> getTerrainObjects() {
+        return mapObjects.getTerrainObjects();
+    }
 
     /**
      * Get the game time at which this active event will be removed. If the event is not active, returns {@value GAME_LENGTH_SECONDS} + 1
@@ -565,5 +575,15 @@ public class World {
      */
     public float getEndTimeOfActiveEvent(GameEvent event) {
         return activeEventEndTime[event.ordinal()];
+    }
+
+
+
+    public AchievementManager getAchievementManager() {
+        return achievementManager;
+    }
+
+    public boolean isMapFull() {
+        return getBuildings().size + getTerrainObjects().size == GridUtils.GRID_WIDTH * GridUtils.GRID_HEIGHT;
     }
 }
