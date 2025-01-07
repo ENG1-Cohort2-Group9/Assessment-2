@@ -19,7 +19,7 @@ import java.util.*;
 public class World {
 
     public final int WIDTH, HEIGHT;
-    public static final float GAME_LENGTH_SECONDS = 10;
+    public static final float GAME_LENGTH_SECONDS = 300;
 
     private MapObjectHolder mapObjects = new MapObjectHolder(GridUtils.GRID_WIDTH, GridUtils.GRID_HEIGHT);
 
