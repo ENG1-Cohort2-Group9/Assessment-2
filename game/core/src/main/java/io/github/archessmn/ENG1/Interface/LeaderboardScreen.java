@@ -125,7 +125,7 @@ public class LeaderboardScreen implements Screen {
         for (Map.Entry<String, Float> entry : topScores) {
             Map.Entry<Label, Label> labelEntry = labelTable.get(labelTableIndex);
             labelEntry.getKey().setText(entry.getKey());
-            labelEntry.getValue().setText((entry.getValue() * 100) + "% satisfaction");
+            labelEntry.getValue().setText((entry.getValue()) + "% satisfaction");
 
             labelTableIndex++;
         }

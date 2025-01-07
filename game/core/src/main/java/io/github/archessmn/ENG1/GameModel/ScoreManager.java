@@ -1,5 +1,7 @@
 package io.github.archessmn.ENG1.GameModel;
 
+import com.badlogic.gdx.math.MathUtils;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,16 +11,17 @@ import java.util.Map;
 public class ScoreManager {
 
     /**
-     * Save a user's score with the name into a file. If the name is already in the file, it is overwritten
+     * Save a user's score with the name into a file. If the name is already in the file, the higher score is kept
      * @param name The university name
-     * @param score The satisfaction score, between 0.0 and 1.0
+     * @param score The satisfaction score, between 0.0 and 100.0
      * @param filePath The path (relative to assets/..) of the file to create or save to.
      */
     public static void saveScore(String name, float score, String filePath) {
         HashMap<String, Float> scores = loadScores(filePath);
 
         assert scores != null;
-        scores.put(name, score);
+        // Assume all satisfaction scores are positive and replace any score with the same name with the maximum score.
+        scores.put(name, Math.max(score, scores.getOrDefault(name, 0.0f)));
 
         // Output file
         try {
