@@ -9,6 +9,8 @@ public class AchievementManager {
     // Stores which achievements have been met this game, uses the Achievement enum ordinal values for accessing.
     private final Achievement[] achievements;
 
+    private final AchievementHandler handler;
+
     private final World world;
 
     private float totalScoreBonus;
@@ -26,8 +28,9 @@ public class AchievementManager {
     private int pauseCount;
 
 
-    public AchievementManager(World world) {
+    public AchievementManager(World world, AchievementHandler handler) {
         this.world = world;
+        this.handler = handler;
         // Gets the list of all achievements in the Achievement enum.
         achievements = Achievement.values();
         time = (int) world.getCurrentTime();
@@ -60,7 +63,7 @@ public class AchievementManager {
         // prevents achievements from showing multiple times.
         for (Achievement achievement : achievements) {
             if (achievement.isAchieved() && !achievement.isFinished()) {
-                System.out.println(achievement.getTitle() + ": " + achievement.getDescription());
+                handler.handle(achievement);
                 achievement.finish();
                 totalScoreBonus += achievement.getScoreBonus();
             }

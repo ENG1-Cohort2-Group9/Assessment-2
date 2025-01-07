@@ -545,7 +545,7 @@ public class Satisfaction {
         if (averageCapacity < students) {
             buildingCapacityScore = BUILDING_CAPACITY_SCORE_CAP * (averageCapacity / students);
         }
-        else {
+        else if (students != 0){
             buildingCapacityScore = BUILDING_CAPACITY_SCORE_CAP;
         }
     }

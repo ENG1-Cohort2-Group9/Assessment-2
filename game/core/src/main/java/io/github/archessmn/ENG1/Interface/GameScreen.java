@@ -95,8 +95,6 @@ public class GameScreen implements Screen {
     public static Sprite notificationBackground;
     public static Sprite notificationImage;
 
-    private float timeEventShownAt = -10f;
-    private GameEvent currentEvent = null;
     private Array<Tuple<String, Integer>> displayedActiveEventTimes = new Array<>();
 
     private float[] satisfactionScoreCaps;
@@ -116,7 +114,7 @@ public class GameScreen implements Screen {
     @Override
     public void show() {
         viewport = new FitViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-        world = new World(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, VIEWPORT_HEIGHT, new GameEventListener[] {new GameEventListener(this::showEventPopup)});
+        world = new World(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, VIEWPORT_HEIGHT, new GameEventHandler[] {this::showEventPopup}, this::showAchievementPopup);
 
         atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
@@ -132,9 +130,9 @@ public class GameScreen implements Screen {
         selectableBuildings.add(new BuildingObject(710, 160, 0, PIAZZA));
         selectableBuildings.add(new BuildingObject(710, 160, 0, PUB));
         selectableTerrains = new Array<>();
-        selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.LAKE));
-        selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.ROCK));
-        selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.TREE));
+        selectableTerrains.add(new TerrainObject(849, 160, LAKE));
+        selectableTerrains.add(new TerrainObject(849, 160, ROCK));
+        selectableTerrains.add(new TerrainObject(849, 160, TREE));
 
         assetManager = new AssetManager();
 
@@ -158,6 +156,7 @@ public class GameScreen implements Screen {
         assetManager.load("RockClimbing.png", Texture.class);
         assetManager.load("LongBoi.png", Texture.class);
         assetManager.load("ActiveEventBg.png", Texture.class);
+        assetManager.load("Achievement.png", Texture.class);
 
         assetManager.load("ui/notification_background.png", Texture.class);
 
@@ -270,7 +269,7 @@ public class GameScreen implements Screen {
         satisfactionCountLabels.add(new Label("000%", labelStyle));
         satisfactionCountLabels.add(new Label("000%", labelStyle));
 
-        satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCaps();
+        satisfactionScoreCaps = world.getSatisfaction().getSatisfactionScoreCaps();
 
         sideMenu.add(countDownLabel).expandX().center().colspan(2).row();
         sideMenu.add(timerLabel).expandX().center().colspan(2).row();
@@ -614,7 +613,7 @@ public class GameScreen implements Screen {
         }
 
         // Update the satisfaction summary section
-        float[] scores = world.satisfaction.getSatisfactionScoreBreakdown();
+        float[] scores = world.getSatisfaction().getSatisfactionScoreBreakdown();
         for (int i = 0; i < scores.length; i++) {
             float score = (scores[i] / satisfactionScoreCaps[i]) * 100;
             satisfactionCountLabels.get(i).setText(String.format("%01d", (int) score) + "%");
@@ -685,7 +684,7 @@ public class GameScreen implements Screen {
      */
     private void drawWorldUI() {
         // Update the main satisfaction score
-        headingFont.draw(batch, "Student Satisfaction: " + (int) world.satisfaction.getSatisfactionScore() + "%", 20, 40);
+        headingFont.draw(batch, "Student Satisfaction: " + (int) world.getSatisfaction().getSatisfactionScore() + "%", 20, 40);
 
         // Displays object overlap text
         if (objectToPlace != null) {
@@ -715,17 +714,14 @@ public class GameScreen implements Screen {
 
             batch.begin();
         }
-
-        // Show event text (if there is one)
-        if (currentEvent != null && world.getCurrentTime() < timeEventShownAt + EVENT_NOTIFICATION_TIME) {
-            headingFont.draw(batch, currentEvent.title, 20, 525);
-            headingFont.draw(batch, currentEvent.description, 20, 495);
-        }
     }
 
     private void showEventPopup(GameEvent event) {
-        currentEvent = event;
-        timeEventShownAt = world.getCurrentTime();
+        if (Objects.equals(event.iconName, "missingTexture.png"))
+            NotificationHandler.displayNotification(event.title, event.description, world.getCurrentTime());
+        else
+            NotificationHandler.displayNotification(event.title, event.description, assetManager.get(event.iconName, Texture.class), world.getCurrentTime());
+
         // This is always called AFTER the event is handled by world. Therefore, we can check activeEvents to find out
         // if the new event is an active one
         if (world.hasActiveEvent(event)) {
@@ -733,6 +729,10 @@ public class GameScreen implements Screen {
         }
 
         paused = true;
+    }
+
+    private void showAchievementPopup(Achievement achievement) {
+        NotificationHandler.displayNotification(achievement.getTitle(), achievement.getDescription(), assetManager.get("Achievement.png", Texture.class), world.getCurrentTime());
     }
 
     private void drawConstructionPercents() {
