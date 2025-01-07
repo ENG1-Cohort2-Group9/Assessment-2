@@ -5,7 +5,7 @@ import java.util.Random;
 public class EventManager {
     private boolean[] eventsEnabled = new boolean[GameEvent.values().length]; // Whether each event can happen (assuming it has not already)
     private boolean[] eventsOccurred = new boolean[GameEvent.values().length]; // True if an event has happened
-    private GameEventListener[] listeners;
+    private GameEventHandler[] handlers;
 
     private Random random = new Random();
     private float maxRandomVal = 0f;
@@ -19,10 +19,10 @@ public class EventManager {
 
     /**
      * Assigns the GameEventListener
-     * @param listeners The listeners that will react to events
+     * @param handlers The functions that will react to events
      */
-    public EventManager(GameEventListener[] listeners, float gameLengthSeconds) {
-        this.listeners = listeners;
+    public EventManager(GameEventHandler[] handlers, float gameLengthSeconds) {
+        this.handlers = handlers;
 
         // All events are initially enabled
         for (int i = 0; i < GameEvent.values().length; i++) {
@@ -65,8 +65,8 @@ public class EventManager {
             eventsOccurred[event.ordinal()] = true;
             maxRandomVal -= event.chance;
 
-            for (GameEventListener listener : listeners) {
-                listener.raiseEvent(event);
+            for (GameEventHandler handler : handlers) {
+                handler.handle(event);
             }
         }
     }
