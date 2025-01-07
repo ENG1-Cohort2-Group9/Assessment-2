@@ -28,20 +28,20 @@ public class World {
     public final int WIDTH, HEIGHT;
     public static final float GAME_LENGTH_SECONDS = 300;
 
-    private MapObjectHolder mapObjects = new MapObjectHolder(GRID_WIDTH, GRID_HEIGHT);
+    private final MapObjectHolder mapObjects = new MapObjectHolder(GRID_WIDTH, GRID_HEIGHT);
 
     // An instance of the satisfaction class, this handles the satisfaction score, and all relevant calculations.
-    public Satisfaction satisfaction;
+    private final Satisfaction satisfaction;
 
     // Stores events that have prolonged effects. Indices are preset for quicker lookup, even though instantaneous events are never stored here so the array can never be full.
-    private GameEvent[] activeEvents = new GameEvent[GameEvent.values().length];
-    private float[] activeEventEndTime = new float[GameEvent.values().length];
+    private final GameEvent[] activeEvents = new GameEvent[GameEvent.values().length];
+    private final float[] activeEventEndTime = new float[GameEvent.values().length];
 
     private float currentTime;
-    private EventManager eventManager;
-    private Random random = new Random();
+    private final EventManager eventManager;
+    private final Random random = new Random();
 
-    private AchievementManager achievementManager;
+    private final AchievementManager achievementManager;
 
     public static final int TOO_MANY_LECTURE_BUILDINGS = 15; // How many lecture buildings are needed to allow the "too many buildings" event to occur
     private static final int GYMS_FOR_TOURNAMENT_WIN = 10; // The number of gyms needed to allow the university to win a sports event.

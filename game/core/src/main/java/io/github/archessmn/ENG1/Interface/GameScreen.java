@@ -131,9 +131,9 @@ public class GameScreen implements Screen {
         selectableBuildings.add(new BuildingObject(710, 150, 0, PIAZZA));
         selectableBuildings.add(new BuildingObject(710, 150, 0, PUB));
         selectableTerrains = new Array<>();
-        selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.LAKE));
-        selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.ROCK));
-        selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.TREE));
+        selectableTerrains.add(new TerrainObject(849, 160, LAKE));
+        selectableTerrains.add(new TerrainObject(849, 160, ROCK));
+        selectableTerrains.add(new TerrainObject(849, 160, TREE));
 
         assetManager = new AssetManager();
 
@@ -259,14 +259,14 @@ public class GameScreen implements Screen {
         satisfactionVarLabels.add(new Label("Building Distance:", labelStyle));
         satisfactionVarLabels.add(new Label("Campus Completion:", labelStyle));
         satisfactionVarLabels.add(new Label("Event Response:", labelStyle));
-        satisfactionVarLabels.add(new Label("Building Diversity:", labelStyle));
+        satisfactionVarLabels.add(new Label("Building Capacities:", labelStyle));
 
         satisfactionCountLabels.add(new Label("000%", labelStyle));
         satisfactionCountLabels.add(new Label("000%", labelStyle));
         satisfactionCountLabels.add(new Label("000%", labelStyle));
         satisfactionCountLabels.add(new Label("000%", labelStyle));
 
-        satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCaps();
+        satisfactionScoreCaps = world.getSatisfaction().getSatisfactionScoreCaps();
 
         sideMenu.add(countDownLabel).expandX().center().colspan(2).row();
         sideMenu.add(timerLabel).expandX().center().colspan(2).padBottom(10).row();
@@ -609,7 +609,7 @@ public class GameScreen implements Screen {
         }
 
         // Update the satisfaction summary section
-        float[] scores = world.satisfaction.getSatisfactionScoreBreakdown();
+        float[] scores = world.getSatisfaction().getSatisfactionScoreBreakdown();
         for (int i = 0; i < scores.length; i++) {
             float score = (scores[i] / satisfactionScoreCaps[i]) * 100;
             satisfactionCountLabels.get(i).setText(String.format("%01d", (int) score) + "%");
@@ -670,7 +670,7 @@ public class GameScreen implements Screen {
      */
     private void drawWorldUI() {
         // Update the main satisfaction score
-        headingFont.draw(batch, "Student Satisfaction: " + (int) world.satisfaction.getSatisfactionScore() + "%", 20, 40);
+        headingFont.draw(batch, "Student Satisfaction: " + (int) world.getSatisfaction().getSatisfactionScore() + "%", 20, 40);
 
         // Displays object overlap text
         if (objectToPlace != null) {
