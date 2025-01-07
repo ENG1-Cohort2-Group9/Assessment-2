@@ -4,7 +4,6 @@ import com.badlogic.gdx.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
-import static java.lang.Math.floorDiv;
 
 public class LeaderboardScreen implements Screen {
     public static final Integer VIEWPORT_WIDTH = 960;

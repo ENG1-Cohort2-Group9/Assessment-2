@@ -21,7 +21,7 @@ public enum Achievement {
     EVENTFUL("Eventful","You reached 100% event response score.",
         + 5f, 100, Objects::equals),
 
-    FULL_CAPACITY("Full Capacity","You finished the game with just enough capacity for your students.",
+    FULL_CAPACITY("Full Capacity","You finished the game with exactly enough capacity for your students.",
         10f),
 
     PLANNING("Poor Planning", "You never chose to pause the game.",
@@ -43,7 +43,7 @@ public enum Achievement {
     private float condition;
     private BiPredicate<Float, Float> predicate;
 
-    Achievement(String description, String title, Float scoreBonus) {
+    Achievement( String title, String description, Float scoreBonus) {
         this.description = description;
         this.title = title;
         this.scoreBonus = scoreBonus;

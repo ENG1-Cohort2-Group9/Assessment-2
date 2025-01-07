@@ -1,6 +1,5 @@
 package io.github.archessmn.ENG1.GameModel;
 
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
 import static io.github.archessmn.ENG1.Interface.GameScreen.VIEWPORT_HEIGHT;

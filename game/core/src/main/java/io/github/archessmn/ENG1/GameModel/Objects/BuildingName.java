@@ -5,13 +5,13 @@ package io.github.archessmn.ENG1.GameModel.Objects;
  */
 public enum BuildingName {
     GYM(1f, "gym.png", new Use[] {Use.RECREATION},
-        new int[] {150}, "Gym"),
+        new int[] {200}, "Gym"),
     HALLS(1f, "halls.png", new Use[] {Use.ACCOMMODATION},
         new int[] {500}, "Halls"),
     LECTURE_HALL(1f, "lecturehall.png", new Use[] {Use.TEACHING},
-        new int[] {250}, "Lecture Theatre"),
+        new int[] {200}, "Lecture Theatre"),
     PIAZZA(1f, "piazza.png", new Use[] {Use.TEACHING, Use.CAFETERIA},
-        new int[] {125, 50}, "Piazza"),
+        new int[] {150, 150}, "Piazza"),
     PUB(1f, "pub.png", new Use[] {Use.CAFETERIA, Use.RECREATION},
         new int[] {100, 150}, "Pub");
 

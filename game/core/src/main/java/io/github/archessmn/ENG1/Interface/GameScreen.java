@@ -396,7 +396,7 @@ public class GameScreen implements Screen {
             world.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
         }
 
-        world.getAchievementManager().updateAchievements((int) Math.floor(world.getCurrentTime()));
+        world.getAchievementManager().updateAchievements((int) world.getCurrentTime());
 
         if (paused || gameEnded) return;
 
@@ -669,7 +669,7 @@ public class GameScreen implements Screen {
     private void drawSelectedBuildingCapacities() {
         BuildingObject building = selectableBuildings.get(selectableBuildingsIndex);
         for (Use use : building.getUses()) {
-            System.out.println(use.getStringName() + " capacity: " + building.getUseCapacity(use) + " students");
+            // System.out.println(use.getStringName() + " capacity: " + building.getUseCapacity(use) + " students");
 
         }
     }

@@ -1,11 +1,9 @@
 package io.github.archessmn.ENG1.Interface;
 
 import com.badlogic.gdx.*;
-import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -13,10 +11,6 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import io.github.archessmn.ENG1.GameModel.Objects.BuildingObject;
-import io.github.archessmn.ENG1.GameModel.Objects.MapObject;
-
-import static java.lang.Math.floorDiv;
 
 // I WILL COMMENT THIS EVENTUALLY
 
