@@ -338,7 +338,7 @@ public class GameScreen implements Screen {
         isClicked = Gdx.input.isTouched();
 
         // Checks for MapObject demolition
-        if (Gdx.input.justTouched() && unprojectedPosIsInsideScreen(unprojectedTouchPos) && demolishMode) {
+        if (Gdx.input.justTouched() && unprojectedPosIsInsideWorld(unprojectedTouchPos) && demolishMode) {
             GridCoordTuple clickedGridSquare = getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
             MapObject clickedObject = world.getMapObjectAt(clickedGridSquare);
 
@@ -679,6 +679,13 @@ public class GameScreen implements Screen {
      */
     private boolean unprojectedPosIsInsideScreen(Vector2 position) {
         return position.x < VIEWPORT_WIDTH && position.y < VIEWPORT_HEIGHT && position.x > 0 && position.y > 0;
+    }
+
+    /**
+     * @return True if the given (unprojected) position is within the bounds of the world
+     */
+    private boolean unprojectedPosIsInsideWorld(Vector2 position) {
+        return position.x < VIEWPORT_WIDTH - SIDE_PANEL_WIDTH && position.y < VIEWPORT_HEIGHT && position.x > 0 && position.y > 0;
     }
 
     @Override
