@@ -1,9 +1,5 @@
 package io.github.archessmn.ENG1.GameModel;
 
-import com.badlogic.gdx.utils.Array;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 public class EventManager {

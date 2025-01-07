@@ -2,18 +2,21 @@ package io.github.archessmn.ENG1.Interface;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.assets.AssetManager;
+import static com.badlogic.gdx.graphics.Color.*;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import static com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.*;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
@@ -26,10 +29,21 @@ import java.util.Objects;
 
 import static java.lang.Math.floorDiv;
 
+import static io.github.archessmn.ENG1.GameModel.GridUtils.*;
+import static io.github.archessmn.ENG1.GameModel.Objects.TerrainObject.Feature.*;
+import static io.github.archessmn.ENG1.GameModel.Objects.BuildingName.*;
+import static io.github.archessmn.ENG1.GameModel.World.*;
+
+
 public class GameScreen implements Screen {
     public static final int VIEWPORT_WIDTH = 960;
     public static final int VIEWPORT_HEIGHT = 540;
     private static final int SIDE_PANEL_WIDTH = 300;
+    public static final int MAP_WIDTH = VIEWPORT_WIDTH - SIDE_PANEL_WIDTH;
+
+    public static final int TILE_WIDTH = MAP_WIDTH / GRID_WIDTH;
+    public static final int TILE_HEIGHT = VIEWPORT_HEIGHT/ GRID_HEIGHT;
+
     private static final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
     private static final float DEMOLISH_COOLDOWN = 0.25f;
 
@@ -72,7 +86,6 @@ public class GameScreen implements Screen {
     private Label timerLabel;
     private Label selectedBuildingLabel;
     private Label selectedTerrainLabel;
-    private Label selectedBuildingCapacityLabel;
     private TextButton demolishButton;
     private final Array<Label> satisfactionCountLabels = new Array<>();
     private final Array<Label> satisfactionVarLabels = new Array<>();
@@ -114,11 +127,11 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         selectableBuildings = new Array<>();
-        selectableBuildings.add(new BuildingObject(710, 160, 0, BuildingName.HALLS));
-        selectableBuildings.add(new BuildingObject(710, 160, 0, BuildingName.GYM));
-        selectableBuildings.add(new BuildingObject(710, 160, 0, BuildingName.LECTURE_HALL));
-        selectableBuildings.add(new BuildingObject(710, 160, 0, BuildingName.PIAZZA));
-        selectableBuildings.add(new BuildingObject(710, 160, 0, BuildingName.PUB));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, HALLS));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, GYM));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, LECTURE_HALL));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, PIAZZA));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, PUB));
         selectableTerrains = new Array<>();
         selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.LAKE));
         selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.ROCK));
@@ -182,13 +195,11 @@ public class GameScreen implements Screen {
 
         selectedBuildingLabel = new Label("{Building}", labelStyle);
         selectedTerrainLabel = new Label("{Terrain}", labelStyle);
-        selectedBuildingCapacityLabel = new Label("{Capacity}\n ", labelStyle);
         selectedBuildingLabel.setFontScale(0.9f);
         selectedTerrainLabel.setFontScale(0.9f);
-        selectedBuildingCapacityLabel.setFontScale(0.7f);
 
         demolishButton = new TextButton("Demolish Mode: OFF", textButtonStyle);
-        demolishButton.setColor(Color.DARK_GRAY);
+        demolishButton.setColor(DARK_GRAY);
         demolishButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -249,17 +260,17 @@ public class GameScreen implements Screen {
         satisfactionVarLabels.add(new Label("Building Distance:", labelStyle));
         satisfactionVarLabels.add(new Label("Campus Completion:", labelStyle));
         satisfactionVarLabels.add(new Label("Event Response:", labelStyle));
-        satisfactionVarLabels.add(new Label("Building Capacity:", labelStyle));
+        satisfactionVarLabels.add(new Label("Building Diversity:", labelStyle));
 
         satisfactionCountLabels.add(new Label("000%", labelStyle));
         satisfactionCountLabels.add(new Label("000%", labelStyle));
         satisfactionCountLabels.add(new Label("000%", labelStyle));
         satisfactionCountLabels.add(new Label("000%", labelStyle));
 
-        satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCap();
+        satisfactionScoreCaps = world.satisfaction.getSatisfactionScoreCaps();
 
         sideMenu.add(countDownLabel).expandX().center().colspan(2).row();
-        sideMenu.add(timerLabel).expandX().center().colspan(2).row();
+        sideMenu.add(timerLabel).expandX().center().colspan(2).padBottom(10).row();
         sideMenu.add(new Label("\nCAMPUS SATISFACTION SUMMARY", labelStyle)).left().colspan(2).row();
         for (int i = 0; i < 4; i++) {
             satisfactionVarLabels.get(i).setFontScale(0.95f);
@@ -269,17 +280,16 @@ public class GameScreen implements Screen {
         }
 
         // Creates the table that contains the build and terrain selection
-        Table selectableObjectTable = new Table().padBottom(20).padTop(10);
-        sideMenu.add(selectableObjectTable).fillX().colspan(2).row();
-        selectableObjectTable.add(new Label("\nBUILDINGS", labelStyle)).expandX().center().padBottom(10);
-        selectableObjectTable.add(new Label("\nTERRAIN", labelStyle)).expandX().center().padBottom(10).row();
-        selectableObjectTable.add(buildingUpButton).expandX().center().padBottom(30);
-        selectableObjectTable.add(terrainUpButton).expandX().center().padBottom(30).row();
-        selectableObjectTable.add(selectedBuildingLabel).expandX().center().padTop(50).uniform();
-        selectableObjectTable.add(selectedTerrainLabel).expandX().center().padTop(50).uniform().row();
-        selectableObjectTable.add(selectedBuildingCapacityLabel).expandX().center().uniform().row();
-        selectableObjectTable.add(buildingDownButton).expandX().center().padTop(10);
-        selectableObjectTable.add(terrainDownButton).expandX().center().padTop(10).row();
+        Table mapObjectTable = new Table().padBottom(40).padTop(20);
+        sideMenu.add(mapObjectTable).fillX().colspan(2).row();
+        mapObjectTable.add(new Label("\nBUILDINGS", labelStyle)).expandX().center().padBottom(10);
+        mapObjectTable.add(new Label("\nTERRAIN", labelStyle)).expandX().center().padBottom(10).row();
+        mapObjectTable.add(buildingUpButton).expandX().center().padBottom(40);
+        mapObjectTable.add(terrainUpButton).expandX().center().padBottom(40).row();
+        mapObjectTable.add(selectedBuildingLabel).expandX().center().padTop(40).uniform();
+        mapObjectTable.add(selectedTerrainLabel).expandX().center().padTop(40).uniform().row();
+        mapObjectTable.add(buildingDownButton).expandX().center().padTop(10);
+        mapObjectTable.add(terrainDownButton).expandX().center().padTop(10).row();
 
         sideMenu.add(demolishButton).colspan(2).expandX().row();
     }
@@ -301,25 +311,25 @@ public class GameScreen implements Screen {
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
 
         parameter.size = (int) (0.045f * Gdx.graphics.getHeight());
-        parameter.shadowColor = Color.BLACK;
+        parameter.shadowColor = BLACK;
         parameter.shadowOffsetX = 2;
         parameter.shadowOffsetY = 2;
         headingFont = generator.generateFont(parameter);
         headingFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
 
         parameter.size = (int) (0.030f * Gdx.graphics.getHeight());
-        parameter.shadowColor = Color.BLACK;
+        parameter.shadowColor = BLACK;
         parameter.shadowOffsetX = 0;
         parameter.shadowOffsetY = 0;
         bodyFont = generator.generateFont(parameter);
         bodyFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
 
         parameter.size = (int) (0.04f * Gdx.graphics.getHeight());
-        parameter.shadowColor = Color.CLEAR;
+        parameter.shadowColor = CLEAR;
         parameter.shadowOffsetX = 0;
         parameter.shadowOffsetY = 0;
-        parameter.color = Color.DARK_GRAY;
-        parameter.borderColor = Color.WHITE;
+        parameter.color = DARK_GRAY;
+        parameter.borderColor = WHITE;
         parameter.borderWidth = 1;
         constructionFont = generator.generateFont(parameter);
         constructionFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
@@ -328,8 +338,15 @@ public class GameScreen implements Screen {
     }
 
     private void input() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) paused = !paused;
         if (Gdx.input.isKeyJustPressed(Input.Keys.D)) demolishMode = !demolishMode;
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
+            paused = !paused;
+            // If the user pressed p to pause the game, rather than unpause it, then the pause count is incremented.
+            if (paused) {
+                world.getAchievementManager().incrementPauseCount();
+            }
+        }
 
         if (gameEnded) {
             objectToPlace = null;
@@ -350,13 +367,13 @@ public class GameScreen implements Screen {
      */
     private void mapDemolitionCheck() {
         // Checks for MapObject demolition
-        if (Gdx.input.justTouched() && unprojectedPosIsInsideScreen(unprojectedTouchPos) && demolishMode) {
-            GridCoordTuple clickedGridSquare = GridUtils.getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
+        if (Gdx.input.justTouched() && unprojectedPosIsInsideWorld(unprojectedTouchPos) && demolishMode) {
+            GridCoordTuple clickedGridSquare = getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
             MapObject clickedObject = world.getMapObjectAt(clickedGridSquare);
 
             if (clickedObject != null) {
                 demolishCooldownTimer = DEMOLISH_COOLDOWN;
-                clickedObject.beginDemolition(world.getCurrentTime(), world.DEMOLITION_TIME);
+                clickedObject.beginDemolition(world.getCurrentTime(), DEMOLITION_TIME);
             }
         }
 
@@ -414,6 +431,8 @@ public class GameScreen implements Screen {
             world.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
         }
 
+        world.getAchievementManager().updateAchievements((int) world.getCurrentTime());
+
         if (paused || gameEnded) return;
 
         float delta = Gdx.graphics.getDeltaTime();
@@ -431,7 +450,7 @@ public class GameScreen implements Screen {
     }
 
     private void draw() {
-        ScreenUtils.clear(Color.OLIVE);
+        ScreenUtils.clear(OLIVE);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
 
@@ -441,19 +460,19 @@ public class GameScreen implements Screen {
             if (isClicked) drawGrid(shapeRenderer);
 
             if (world.doesObjectOverlap(objectToPlace)) {
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                shapeRenderer.begin(Filled);
             } else {
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+                shapeRenderer.begin(Line);
             }
-            shapeRenderer.setColor(Color.RED);
-            Vector2 buildingCoords =  GridUtils.getGridSquareScreenCoords(objectToPlace.getGridCoords());
+            shapeRenderer.setColor(RED);
+            Vector2 buildingCoords =  getGridSquareScreenCoords(objectToPlace.getGridCoords());
             shapeRenderer.rect(buildingCoords.x, buildingCoords.y, objectToPlace.width, objectToPlace.height);
             shapeRenderer.end();
         }
 
         // Draws side menu bar
-        blockRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        blockRenderer.setColor(Color.DARK_GRAY);
+        blockRenderer.begin(Filled);
+        blockRenderer.setColor(DARK_GRAY);
         blockRenderer.rect(sideMenu.getX(), sideMenu.getY(), sideMenu.getWidth(), sideMenu.getHeight());
         blockRenderer.end();
 
@@ -496,8 +515,8 @@ public class GameScreen implements Screen {
             sprite.draw(batch);
 
             // Only show the timer if it will end within the game time
-            if (pair.y < World.GAME_LENGTH_SECONDS) {
-                bodyFont.draw(batch, (pair.y - MathUtils.round(world.getCurrentTime())) + "s", leftMargin + screenIconSize, iconYPos);
+            if (pair.y < GAME_LENGTH_SECONDS) {
+                constructionFont.draw(batch, (pair.y - MathUtils.round(world.getCurrentTime())) + "s", leftMargin + screenIconSize, iconYPos);
             }
 
             iconYPos += screenIconSize + iconMargin;
@@ -517,6 +536,7 @@ public class GameScreen implements Screen {
 
         // Draws the currently displayed building and terrain assets, in the side menu
         drawSelectableObject(batch, assetManager, selectableBuildings.get(selectableBuildingsIndex));
+        drawSelectedBuildingCapacities();
         drawSelectableObject(batch, assetManager, selectableTerrains.get(selectableTerrainsIndex));
     }
 
@@ -555,12 +575,12 @@ public class GameScreen implements Screen {
      * @param gridRenderer The {@link ShapeRenderer} used to draw the grid.
      */
     private void drawGrid(ShapeRenderer gridRenderer) {
-        gridRenderer.begin(ShapeRenderer.ShapeType.Line);
+        gridRenderer.begin(Line);
 
         gridRenderer.setColor(new Color(0x5b7e13ff));
 
-        float gridWidth = ( VIEWPORT_WIDTH / (float)GridUtils.GRID_WIDTH);
-        float gridHeight = ( VIEWPORT_HEIGHT / (float)GridUtils.GRID_HEIGHT);
+        float gridWidth = ( (VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) / (float)GRID_WIDTH);
+        float gridHeight = ( VIEWPORT_HEIGHT / (float)GRID_HEIGHT);
 
         for (int v = 1; v < 9; v++) {
             gridRenderer.line(0, gridHeight * v, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, gridHeight * v);
@@ -584,10 +604,10 @@ public class GameScreen implements Screen {
         timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTime / 60) + 1, (int) ((gameTime % 60) / (60 / (double) 365)) + 1));
 
         if (60 - (int) gameTime % 60 == 60) {
-            countDownLabel.setText(floorDiv((int)(World.GAME_LENGTH_SECONDS) - (int) gameTime, 60) + ":00");
+            countDownLabel.setText(floorDiv((int)(GAME_LENGTH_SECONDS) - (int) gameTime, 60) + ":00");
         }
         else {
-            countDownLabel.setText(floorDiv((int)(World.GAME_LENGTH_SECONDS) - (int) gameTime, 60) + ":" + String.format("%02d", 60 - (int) gameTime % 60));
+            countDownLabel.setText(floorDiv((int)(GAME_LENGTH_SECONDS) - (int) gameTime, 60) + ":" + String.format("%02d", 60 - (int) gameTime % 60));
         }
 
         // Update the satisfaction summary section
@@ -604,7 +624,7 @@ public class GameScreen implements Screen {
             }
 
             demolishButton.setText("Demolish Mode: OFF");
-            demolishButton.setColor(Color.DARK_GRAY);
+            demolishButton.setColor(DARK_GRAY);
 
             Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
         }
@@ -616,24 +636,12 @@ public class GameScreen implements Screen {
             }
 
             demolishButton.setText("Demolish Mode: ON");
-            demolishButton.setColor(Color.RED);
+            demolishButton.setColor(RED);
         }
 
         // Changes the selected label text to whatever is currently selected
         selectedBuildingLabel.setText(selectableBuildings.get(selectableBuildingsIndex).objName);
         selectedTerrainLabel.setText(selectableTerrains.get(selectableTerrainsIndex).objName);
-
-        // Updates the building capacity text
-        BuildingObject selectedBuilding = selectableBuildings.get(selectableBuildingsIndex);
-        StringBuilder capacityText = new StringBuilder();
-        for (Use use : selectedBuilding.getUses()) { // Combines the various uses of the selected building, into 1 string
-            capacityText.append(use.getStringShortName()).append(": ").append(selectedBuilding.getUseCapacity(use)).append(" students").append("\n");
-        }
-        if (selectedBuilding.getUses().length > 1) { // Removes the last "new line" of the string
-            capacityText.delete(capacityText.length() - 1, capacityText.length());
-        }
-        selectedBuildingCapacityLabel.setText(capacityText);
-        selectedBuildingCapacityLabel.setAlignment(2);
     }
 
     /**
@@ -684,12 +692,12 @@ public class GameScreen implements Screen {
         if (demolishMode) {
             batch.end();
 
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.begin(Filled);
             shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
-            shapeRenderer.rectLine(0, 4, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH + 4, 4, 8, Color.FIREBRICK, Color.FIREBRICK);
-            shapeRenderer.rectLine(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, 4, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, VIEWPORT_HEIGHT - 4, 8, Color.FIREBRICK, Color.FIREBRICK);
-            shapeRenderer.rectLine(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH + 4, VIEWPORT_HEIGHT - 4, 0, VIEWPORT_HEIGHT - 4, 8, Color.FIREBRICK, Color.FIREBRICK);
-            shapeRenderer.rectLine(4, VIEWPORT_HEIGHT - 4, 4, 4, 8, Color.FIREBRICK, Color.FIREBRICK);
+            shapeRenderer.rectLine(0, 4, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH + 4, 4, 8, FIREBRICK, FIREBRICK);
+            shapeRenderer.rectLine(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, 4, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, VIEWPORT_HEIGHT - 4, 8, FIREBRICK, FIREBRICK);
+            shapeRenderer.rectLine(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH + 4, VIEWPORT_HEIGHT - 4, 0, VIEWPORT_HEIGHT - 4, 8, FIREBRICK, FIREBRICK);
+            shapeRenderer.rectLine(4, VIEWPORT_HEIGHT - 4, 4, 4, 8, FIREBRICK, FIREBRICK);
             shapeRenderer.end();
 
             batch.begin();
@@ -717,9 +725,17 @@ public class GameScreen implements Screen {
     private void drawConstructionPercents() {
         for (BuildingObject building : world.getBuildings()) {
             if (!building.isBuilt() && !building.toBeDemolished) {
-                Vector2 buildingPos = GridUtils.getGridSquareScreenCoords(building.getGridCoords());
-                constructionFont.draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
+                Vector2 buildingPos = getGridSquareScreenCoords(building.getGridCoords());
+                constructionFont .draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
             }
+        }
+    }
+
+    private void drawSelectedBuildingCapacities() {
+        BuildingObject building = selectableBuildings.get(selectableBuildingsIndex);
+        for (Use use : building.getUses()) {
+            // System.out.println(use.getStringName() + " capacity: " + building.getUseCapacity(use) + " students");
+
         }
     }
 
@@ -728,6 +744,13 @@ public class GameScreen implements Screen {
      */
     private boolean unprojectedPosIsInsideScreen(Vector2 position) {
         return position.x < VIEWPORT_WIDTH && position.y < VIEWPORT_HEIGHT && position.x > 0 && position.y > 0;
+    }
+
+    /**
+     * @return True if the given (unprojected) position is within the bounds of the world
+     */
+    private boolean unprojectedPosIsInsideWorld(Vector2 position) {
+        return position.x < VIEWPORT_WIDTH - SIDE_PANEL_WIDTH && position.y < VIEWPORT_HEIGHT && position.x > 0 && position.y > 0;
     }
 
     @Override
