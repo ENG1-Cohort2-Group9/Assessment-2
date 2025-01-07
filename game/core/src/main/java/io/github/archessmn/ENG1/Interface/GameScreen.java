@@ -80,7 +80,6 @@ public class GameScreen implements Screen {
     private boolean gameEnded = false;
 
     private Stage stage;
-    private Table rootTable;
     private Table sideMenu;
     private Label countDownLabel;
     private Label timerLabel;
@@ -103,11 +102,9 @@ public class GameScreen implements Screen {
     private boolean demolishMode = false;
     private float demolishCooldownTimer = 0f;
 
-    private final ScreenManager game;
+    final ScreenManager game;
 
     private String uniName = "Guest";
-
-
 
 
     public GameScreen(ScreenManager main) {
@@ -164,7 +161,7 @@ public class GameScreen implements Screen {
 
         assetManager.finishLoading();
 
-        rootTable = new Table();
+        Table rootTable = new Table();
         rootTable.setFillParent(true);
         stage.addActor(rootTable);
 
@@ -307,7 +304,7 @@ public class GameScreen implements Screen {
         stage.getViewport().update(width, height, true);
 
         // Generates the heading and body font
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ui/Arial.ttf"));
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ui/Product_Sans_Bold.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
 
         parameter.size = (int) (0.045f * Gdx.graphics.getHeight());
@@ -428,7 +425,7 @@ public class GameScreen implements Screen {
         // Ends the game when the timer exceeds 5 minutes.
         gameEnded = world.getGameEnded();
         if (gameEnded) {
-            world.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
+            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
         }
 
         world.getAchievementManager().updateAchievements((int) world.getCurrentTime());
@@ -756,6 +753,7 @@ public class GameScreen implements Screen {
     @Override
     public void dispose() {
         shapeRenderer.dispose();
+        blockRenderer.dispose();
         gridRenderer.dispose();
         batch.dispose();
         headingFont.dispose();

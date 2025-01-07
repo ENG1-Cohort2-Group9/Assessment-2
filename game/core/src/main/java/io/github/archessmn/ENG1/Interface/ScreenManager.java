@@ -5,8 +5,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class ScreenManager extends Game {
 
-    public SpriteBatch batch;
-
     public MenuScreen menuScreen;
     public LeaderboardScreen leaderboardScreen;
     public TutorialScreen tutorialScreen;
@@ -25,10 +23,6 @@ public class ScreenManager extends Game {
         leaderboardScreen = new LeaderboardScreen(this);
         tutorialScreen = new TutorialScreen(this);
         gameScreen = new GameScreen(this);
-
-
-        //Creates the game's sprite batch
-        batch = new SpriteBatch();
 
         fullScreen = false;
         // Initiate game to the game screen.
@@ -53,6 +47,5 @@ public class ScreenManager extends Game {
 
     // Disposes of all textures.
     public void dispose() {
-        batch.dispose();
     }
 }
