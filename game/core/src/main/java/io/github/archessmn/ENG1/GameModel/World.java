@@ -51,15 +51,15 @@ public class World {
      * Initialises the game world with optional extra event listeners for event handling outside of this class
      * @param worldWidth Width to use for the usable world space
      * @param worldHeight Height to use for the usable world space
-     * @param additionalEventListeners Extra event listeners for event handling outside of this class. Can be used for rendering effects
+     * @param additionalEventHandlers Extra event handlers for event handling outside of this class. Can be used for rendering effects
      */
-    public World(int worldWidth, int worldHeight, GameEventListener[] additionalEventListeners) {
-        GameEventListener[] listeners = new GameEventListener[additionalEventListeners.length + 1];
-        listeners[0] = new GameEventListener(this::handleEvent);
-        System.arraycopy(additionalEventListeners, 0, listeners, 1, additionalEventListeners.length);
-        eventManager = new EventManager(listeners, GAME_LENGTH_SECONDS);
+    public World(int worldWidth, int worldHeight, GameEventHandler[] additionalEventHandlers, AchievementHandler achievementHandler) {
+        GameEventHandler[] eventHandlers = new GameEventHandler[additionalEventHandlers.length + 1];
+        eventHandlers[0] = this::handleEvent;
+        System.arraycopy(additionalEventHandlers, 0, eventHandlers, 1, additionalEventHandlers.length);
+        eventManager = new EventManager(eventHandlers, GAME_LENGTH_SECONDS);
 
-        achievementManager = new AchievementManager(this);
+        achievementManager = new AchievementManager(this, achievementHandler);
 
         this.WIDTH = worldWidth;
         this.HEIGHT = worldHeight;

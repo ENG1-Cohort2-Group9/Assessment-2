@@ -93,8 +93,6 @@ public class GameScreen implements Screen {
     public static Sprite notificationBackground;
     public static Sprite notificationImage;
 
-    private float timeEventShownAt = -10f;
-    private GameEvent currentEvent = null;
     private Array<Tuple<String, Integer>> displayedActiveEventTimes = new Array<>();
 
     private float[] satisfactionScoreCaps;
@@ -114,7 +112,7 @@ public class GameScreen implements Screen {
     @Override
     public void show() {
         viewport = new FitViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-        world = new World(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, VIEWPORT_HEIGHT, new GameEventListener[] {new GameEventListener(this::showEventPopup)});
+        world = new World(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, VIEWPORT_HEIGHT, new GameEventHandler[] {this::showEventPopup}, this::showAchievementPopup);
 
         atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
@@ -156,6 +154,7 @@ public class GameScreen implements Screen {
         assetManager.load("RockClimbing.png", Texture.class);
         assetManager.load("LongBoi.png", Texture.class);
         assetManager.load("ActiveEventBg.png", Texture.class);
+        assetManager.load("Achievement.png", Texture.class);
 
         assetManager.load("ui/notification_background.png", Texture.class);
 
@@ -533,7 +532,6 @@ public class GameScreen implements Screen {
 
         // Draws the currently displayed building and terrain assets, in the side menu
         drawSelectableObject(batch, assetManager, selectableBuildings.get(selectableBuildingsIndex));
-        drawSelectedBuildingCapacities();
         drawSelectableObject(batch, assetManager, selectableTerrains.get(selectableTerrainsIndex));
     }
 
@@ -699,17 +697,14 @@ public class GameScreen implements Screen {
 
             batch.begin();
         }
-
-        // Show event text (if there is one)
-        if (currentEvent != null && world.getCurrentTime() < timeEventShownAt + EVENT_NOTIFICATION_TIME) {
-            headingFont.draw(batch, currentEvent.title, 20, 525);
-            headingFont.draw(batch, currentEvent.description, 20, 495);
-        }
     }
 
     private void showEventPopup(GameEvent event) {
-        currentEvent = event;
-        timeEventShownAt = world.getCurrentTime();
+        if (Objects.equals(event.iconName, "missingTexture.png"))
+            NotificationHandler.displayNotification(event.title, event.description, world.getCurrentTime());
+        else
+            NotificationHandler.displayNotification(event.title, event.description, assetManager.get(event.iconName, Texture.class), world.getCurrentTime());
+
         // This is always called AFTER the event is handled by world. Therefore, we can check activeEvents to find out
         // if the new event is an active one
         if (world.hasActiveEvent(event)) {
@@ -719,20 +714,16 @@ public class GameScreen implements Screen {
         paused = true;
     }
 
+    private void showAchievementPopup(Achievement achievement) {
+        NotificationHandler.displayNotification(achievement.getTitle(), achievement.getDescription(), assetManager.get("Achievement.png", Texture.class), world.getCurrentTime());
+    }
+
     private void drawConstructionPercents() {
         for (BuildingObject building : world.getBuildings()) {
             if (!building.isBuilt() && !building.toBeDemolished) {
                 Vector2 buildingPos = getGridSquareScreenCoords(building.getGridCoords());
                 constructionFont .draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
             }
-        }
-    }
-
-    private void drawSelectedBuildingCapacities() {
-        BuildingObject building = selectableBuildings.get(selectableBuildingsIndex);
-        for (Use use : building.getUses()) {
-            // System.out.println(use.getStringName() + " capacity: " + building.getUseCapacity(use) + " students");
-
         }
     }
 
