@@ -21,8 +21,8 @@ import static java.lang.Math.floorDiv;
 // I WILL COMMENT THIS EVENTUALLY
 
 public class MenuScreen implements Screen {
-    public static final Integer VIEWPORT_WIDTH = 960;
-    public static final Integer VIEWPORT_HEIGHT = 540;
+    public static final int VIEWPORT_WIDTH = 960;
+    public static final int VIEWPORT_HEIGHT = 540;
 
     SpriteBatch batch;
     FitViewport viewport;
@@ -100,10 +100,10 @@ public class MenuScreen implements Screen {
                         game.setScreen(game.gameScreen);
                     }
                     else if (button == leaderboardRectangle) {
-                        //game.setScreen(game.leaderboardScreen);
+                        game.setScreen(game.leaderboardScreen);
                     }
                     else {
-                        //game.setScreen(game.tutorialScreen);
+                        game.setScreen(game.tutorialScreen);
                     }
                     break;
                 }
@@ -116,28 +116,31 @@ public class MenuScreen implements Screen {
 
         // All positions have been tuned to look good on the screen; they are not based on anything mathematical
         newGameRectangle.setSize(250, 62.5f);
-        newGameRectangle.setCenter(viewport.getWorldWidth() * 0.7f, viewport.getWorldHeight() * 0.628f);
+        newGameRectangle.setCenter(viewport.getWorldWidth() * 0.7f, viewport.getWorldHeight() * 0.6f);
         leaderboardRectangle.setSize(200, 50);
-        leaderboardRectangle.setCenter(viewport.getWorldWidth() * 0.7f, viewport.getWorldHeight() * 0.5f);
+        leaderboardRectangle.setCenter(viewport.getWorldWidth() * 0.7f, viewport.getWorldHeight() * 0.475f);
         tutorialRectangle.setSize(200, 50);
-        tutorialRectangle.setCenter(viewport.getWorldWidth() * 0.7f, viewport.getWorldHeight() * 0.37f);
+        tutorialRectangle.setCenter(viewport.getWorldWidth() * 0.7f, viewport.getWorldHeight() * 0.36f);
 
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
 
-        // Renders the actual textures
+        // Renders the background and logo
         batch.begin();
         batch.draw(background, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
         batch.draw(logo, viewport.getWorldWidth() * 0.3f - (logoSize/2), viewport.getWorldHeight() / 2 - (logoSize/2), logoSize, logoSize);
 
+        // Renders the buttons
         batch.draw(newGameButton, newGameRectangle.x, newGameRectangle.y, newGameRectangle.width, newGameRectangle.height);
-        //batch.draw(leaderboardButton, leaderboardRectangle.x, leaderboardRectangle.y, leaderboardRectangle.width, leaderboardRectangle.height);
-        //batch.draw(tutorialButton, tutorialRectangle.x, tutorialRectangle.y, tutorialRectangle.width, tutorialRectangle.height);
+        batch.draw(leaderboardButton, leaderboardRectangle.x, leaderboardRectangle.y, leaderboardRectangle.width, leaderboardRectangle.height);
+        batch.draw(tutorialButton, tutorialRectangle.x, tutorialRectangle.y, tutorialRectangle.width, tutorialRectangle.height);
         batch.end();
     }
 
     @Override
     public void dispose() {
+        batch.dispose();
+
     }
 
     @Override
