@@ -7,6 +7,13 @@ import io.github.archessmn.ENG1.GameModel.Objects.TerrainObject;
 import io.github.archessmn.ENG1.OpenSimplexNoise;
 import io.github.archessmn.ENG1.GameModel.Objects.*;
 
+import static io.github.archessmn.ENG1.GameModel.GridUtils.*;
+import static io.github.archessmn.ENG1.GameModel.Objects.Use.*;
+import static io.github.archessmn.ENG1.GameModel.Objects.BuildingName.*;
+import static io.github.archessmn.ENG1.GameModel.GameEvent.*;
+import static io.github.archessmn.ENG1.GameModel.Objects.TerrainObject.Feature.*;
+import static io.github.archessmn.ENG1.GameModel.Objects.TerrainObject.Feature;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -21,7 +28,7 @@ public class World {
     public final int WIDTH, HEIGHT;
     public static final float GAME_LENGTH_SECONDS = 300;
 
-    private MapObjectHolder mapObjects = new MapObjectHolder(GridUtils.GRID_WIDTH, GridUtils.GRID_HEIGHT);
+    private MapObjectHolder mapObjects = new MapObjectHolder(GRID_WIDTH, GRID_HEIGHT);
 
     // An instance of the satisfaction class, this handles the satisfaction score, and all relevant calculations.
     public Satisfaction satisfaction;
@@ -36,9 +43,9 @@ public class World {
 
     private AchievementManager achievementManager;
 
-    public final int TOO_MANY_LECTURE_BUILDINGS = 15; // How many lecture buildings are needed to allow the "too many buildings" event to occur
-    private final int GYMS_FOR_TOURNAMENT_WIN = 10; // The number of gyms needed to allow the university to win a sports event.
-    public final int DEMOLITION_TIME = 3; // How many in game days it will take for an object to be demolished
+    public static final int TOO_MANY_LECTURE_BUILDINGS = 15; // How many lecture buildings are needed to allow the "too many buildings" event to occur
+    private static final int GYMS_FOR_TOURNAMENT_WIN = 10; // The number of gyms needed to allow the university to win a sports event.
+    public static final int DEMOLITION_TIME = 3; // How many in game days it will take for an object to be demolished
 
     /**
      * Initialises the game world with optional extra event listeners for event handling outside of this class
@@ -58,11 +65,11 @@ public class World {
         this.HEIGHT = worldHeight;
 
         // These can only happen when a building is near these terrain types
-        eventManager.disableEvent(GameEvent.FLOODING);
-        eventManager.disableEvent(GameEvent.TREE_DAMAGE);
+        eventManager.disableEvent(FLOODING);
+        eventManager.disableEvent(TREE_DAMAGE);
         // These are conditional on the player's actions
-        eventManager.disableEvent(GameEvent.TOURNAMENT_WON);
-        eventManager.disableEvent(GameEvent.TOO_MANY_BUILDINGS);
+        eventManager.disableEvent(TOURNAMENT_WON);
+        eventManager.disableEvent(TOO_MANY_BUILDINGS);
 
         satisfaction = new Satisfaction(this);
 
@@ -74,13 +81,13 @@ public class World {
      * Responsible for creating all generated world assets, before it is showcased to the player
      */
     public void createWorldAssets() {
-        generateTerrainFeatures(TerrainObject.Feature.LAKE, 0.6f, 100f);
-        generateTerrainFeatures(TerrainObject.Feature.ROCK, 0.75f, 150f);
-        generateTerrainFeatures(TerrainObject.Feature.TREE, 0.65f, 150f);
+        generateTerrainFeatures(LAKE, 0.6f, 100f);
+        generateTerrainFeatures(ROCK, 0.75f, 150f);
+        generateTerrainFeatures(TREE, 0.65f, 150f);
 
         // Places at least one lake tile down on the map - at a randomly generated location - if none were generated in the perlin noise
         if (mapObjects.getTerrainObjects().size == 0) {
-            TerrainObject asset = new TerrainObject(new Random().nextInt(0, WIDTH), new Random().nextInt(0, HEIGHT), TerrainObject.Feature.LAKE);
+            TerrainObject asset = new TerrainObject(new Random().nextInt(0, WIDTH), new Random().nextInt(0, HEIGHT), LAKE);
             addMapObject(asset);
         }
     }
@@ -92,7 +99,7 @@ public class World {
      * @param acceptedValue The minimum value (-1 to 1) from the perlin noise algorithm that will be accepted
      * @param frequency The frequency for the perlin noise algorithm
      */
-    private void generateTerrainFeatures(TerrainObject.Feature feature, float acceptedValue, float frequency) {
+    private void generateTerrainFeatures(Feature feature, float acceptedValue, float frequency) {
         OpenSimplexNoise noise = new OpenSimplexNoise();
         int seed = new Random().nextInt(0, 100000);
 
@@ -116,7 +123,7 @@ public class World {
      */
     public boolean addMapObject(MapObject mapObject) {
         mapObject.updateGridCoords();
-        if (mapObject.getGridCoords().x < GridUtils.GRID_WIDTH && mapObject.getGridCoords().y < GridUtils.GRID_HEIGHT && !doesObjectOverlap(mapObject)) {
+        if (mapObject.getGridCoords().x < GRID_WIDTH && mapObject.getGridCoords().y < GRID_HEIGHT && !doesObjectOverlap(mapObject)) {
             mapObject.place();
             if (mapObject instanceof BuildingObject buildingObject) {
                 buildingObject.resetConstruction(currentTime);
@@ -168,27 +175,27 @@ public class World {
         // Check if this changes which events can happen
         // Additional check (left hand side of &&) so we don't have to run the longer check every time
         if (wasRemoved) {
-            if (isBuildingNearTerrain(building, TerrainObject.Feature.LAKE) && getCountOfTerrainNearBuildings(TerrainObject.Feature.LAKE) <= 1) {
-                eventManager.disableEvent(GameEvent.FLOODING);
+            if (isBuildingNearTerrain(building, LAKE) && getCountOfTerrainNearBuildings(LAKE) <= 1) {
+                eventManager.disableEvent(FLOODING);
             }
-            if (isBuildingNearTerrain(building, TerrainObject.Feature.TREE) && getCountOfTerrainNearBuildings(TerrainObject.Feature.TREE) <= 1) {
-                eventManager.disableEvent(GameEvent.TREE_DAMAGE);
+            if (isBuildingNearTerrain(building, TREE) && getCountOfTerrainNearBuildings(TREE) <= 1) {
+                eventManager.disableEvent(TREE_DAMAGE);
             }
-            if (eventManager.isEventEnabled(GameEvent.TOO_MANY_BUILDINGS) && mapObjects.getUseCount(Use.TEACHING) <= TOO_MANY_LECTURE_BUILDINGS) {
-                eventManager.disableEvent(GameEvent.TOO_MANY_BUILDINGS);
+            if (eventManager.isEventEnabled(TOO_MANY_BUILDINGS) && mapObjects.getUseCount(TEACHING) <= TOO_MANY_LECTURE_BUILDINGS) {
+                eventManager.disableEvent(TOO_MANY_BUILDINGS);
                 // Disable the effect of the event as well if it has occurred
-                activeEvents[GameEvent.TOO_MANY_BUILDINGS.ordinal()] = null;
+                activeEvents[TOO_MANY_BUILDINGS.ordinal()] = null;
             }
             achievementManager.incrementBuildingsDemolished();
         } else {
-            if (!eventManager.isEventEnabled(GameEvent.FLOODING) && isBuildingNearTerrain(building, TerrainObject.Feature.LAKE)) {
-                eventManager.enableEvent(GameEvent.FLOODING);
+            if (!eventManager.isEventEnabled(FLOODING) && isBuildingNearTerrain(building, LAKE)) {
+                eventManager.enableEvent(FLOODING);
             }
-            if (!eventManager.isEventEnabled(GameEvent.TREE_DAMAGE) && isBuildingNearTerrain(building, TerrainObject.Feature.TREE)) {
-                eventManager.enableEvent(GameEvent.TREE_DAMAGE);
+            if (!eventManager.isEventEnabled(TREE_DAMAGE) && isBuildingNearTerrain(building, TREE)) {
+                eventManager.enableEvent(TREE_DAMAGE);
             }
-            if (!eventManager.isEventEnabled(GameEvent.TOO_MANY_BUILDINGS) && mapObjects.getUseCount(Use.TEACHING) >= TOO_MANY_LECTURE_BUILDINGS - 1) {
-                eventManager.enableEvent(GameEvent.TOO_MANY_BUILDINGS);
+            if (!eventManager.isEventEnabled(TOO_MANY_BUILDINGS) && mapObjects.getUseCount(TEACHING) >= TOO_MANY_LECTURE_BUILDINGS - 1) {
+                eventManager.enableEvent(TOO_MANY_BUILDINGS);
             }
             achievementManager.incrementBuildingsBuilt();
         }
@@ -205,16 +212,16 @@ public class World {
     public void updateWorldState(TerrainObject terrain, boolean wasRemoved) {
         // Check if this changes which events can happen if this object is the first or last object next to a building
         if (wasRemoved && getCountOfTerrainNearBuildings(terrain.feature) == 1) {
-            if (terrain.feature == TerrainObject.Feature.LAKE) {
-                eventManager.disableEvent(GameEvent.FLOODING);
-            } else if (terrain.feature == TerrainObject.Feature.TREE) {
-                eventManager.disableEvent(GameEvent.TREE_DAMAGE);
+            if (terrain.feature == LAKE) {
+                eventManager.disableEvent(FLOODING);
+            } else if (terrain.feature == TREE) {
+                eventManager.disableEvent(TREE_DAMAGE);
             }
         } else if (!wasRemoved && getCountOfTerrainNearBuildings(terrain.feature) == 0) {
-            if (terrain.feature == TerrainObject.Feature.LAKE && getCountOfTerrainNearBuildings(TerrainObject.Feature.LAKE) > 0) {
-                eventManager.enableEvent(GameEvent.FLOODING);
-            } else if (terrain.feature == TerrainObject.Feature.TREE && getCountOfTerrainNearBuildings(TerrainObject.Feature.TREE) > 0) {
-                eventManager.enableEvent(GameEvent.TREE_DAMAGE);
+            if (terrain.feature == LAKE && getCountOfTerrainNearBuildings(LAKE) > 0) {
+                eventManager.enableEvent(FLOODING);
+            } else if (terrain.feature == TREE && getCountOfTerrainNearBuildings(TREE) > 0) {
+                eventManager.enableEvent(TREE_DAMAGE);
             }
         }
 
@@ -234,8 +241,8 @@ public class World {
         for (int i = 0; i < activeEventEndTime.length; i++) {
             if (activeEvents[i] != null && currentTime > activeEventEndTime[i]) {
                 // Special effect for "Gym hype" to enable the possibility of winning the tournament if the user has placed enough gyms.
-                if (i == GameEvent.GYM_HYPE.ordinal() && getCountOfSpecificBuilding(BuildingName.GYM) >= GYMS_FOR_TOURNAMENT_WIN) {
-                    eventManager.enableEvent(GameEvent.TOURNAMENT_WON);
+                if (i == GYM_HYPE.ordinal() && getCountOfSpecificBuilding(GYM) >= GYMS_FOR_TOURNAMENT_WIN) {
+                    eventManager.enableEvent(TOURNAMENT_WON);
                 }
 
                 satisfaction.updateScore(activeEvents[i], false);
@@ -274,10 +281,10 @@ public class World {
     public void handleEvent(GameEvent event) {
         switch (event) {
             case FLOODING:
-                for (BuildingObject building : getBuildingsNearTerrain(TerrainObject.Feature.LAKE)) {
+                for (BuildingObject building : getBuildingsNearTerrain(LAKE)) {
                     closeBuilding(building, 30f);
                 }
-                addActiveEvent(GameEvent.FLOODING, 30);
+                addActiveEvent(FLOODING, 30);
                 break;
             case SEAGULL:
                 if (mapObjects.getBuildings().size > 0) {
@@ -285,10 +292,10 @@ public class World {
                 }
                 break;
             case TREE_HYPE:
-                addActiveEvent(GameEvent.TREE_HYPE, 120);
+                addActiveEvent(TREE_HYPE, 120);
                 break;
             case TREE_DAMAGE:
-                Array<BuildingObject> buildingsNearTrees = getBuildingsNearTerrain(TerrainObject.Feature.TREE);
+                Array<BuildingObject> buildingsNearTrees = getBuildingsNearTerrain(TREE);
                 if (buildingsNearTrees.size > 0) {
                     destroyMapObject(getRandomBuilding(buildingsNearTrees));
                 }
@@ -297,22 +304,22 @@ public class World {
                 // Has no effect
                 break;
             case LECTURE_VIEW:
-                addActiveEvent(GameEvent.LECTURE_VIEW);
+                addActiveEvent(LECTURE_VIEW);
                 break;
             case ROCK_CLIMBING:
-                addActiveEvent(GameEvent.ROCK_CLIMBING, 120);
+                addActiveEvent(ROCK_CLIMBING, 120);
                 break;
             case LONG_BOI_SIGHTING:
-                addActiveEvent(GameEvent.LONG_BOI_SIGHTING, 10);
+                addActiveEvent(LONG_BOI_SIGHTING, 10);
                 break;
             case GYM_HYPE:
-                addActiveEvent(GameEvent.GYM_HYPE, 120);
+                addActiveEvent(GYM_HYPE, 120);
                 break;
             case TOURNAMENT_WON:
-                addActiveEvent(GameEvent.TOURNAMENT_WON);
+                addActiveEvent(TOURNAMENT_WON);
                 break;
             case TOO_MANY_BUILDINGS:
-                addActiveEvent(GameEvent.TOO_MANY_BUILDINGS);
+                addActiveEvent(TOO_MANY_BUILDINGS);
                 break;
             default:
                 throw new RuntimeException("Unknown event type: " + event);
@@ -385,7 +392,7 @@ public class World {
      * Returns a list of buildings that are in any of the 8 tiles next to a given terrain feature
      * @param feature The type of feature, e.g. Lake
      */
-    public Array<BuildingObject> getBuildingsNearTerrain(TerrainObject.Feature feature) {
+    public Array<BuildingObject> getBuildingsNearTerrain(Feature feature) {
         Array<BuildingObject> foundBuildings = new Array<>();
 
         for (BuildingObject building : mapObjects.getBuildings()) {
@@ -400,9 +407,9 @@ public class World {
     /**
      * @return True if the building is near this type of terrain feature
      */
-    public boolean isBuildingNearTerrain(BuildingObject building, TerrainObject.Feature feature) {
-        for (int x = Math.max(0, building.getGridCoords().x - 1); x <= Math.min(GridUtils.GRID_WIDTH - 1, building.getGridCoords().x + 1); x++) {
-            for (int y = Math.max(0, building.getGridCoords().y - 1); y <= Math.min(GridUtils.GRID_HEIGHT - 1, building.getGridCoords().y + 1); y++) {
+    public boolean isBuildingNearTerrain(BuildingObject building, Feature feature) {
+        for (int x = Math.max(0, building.getGridCoords().x - 1); x <= Math.min(GRID_WIDTH - 1, building.getGridCoords().x + 1); x++) {
+            for (int y = Math.max(0, building.getGridCoords().y - 1); y <= Math.min(GRID_HEIGHT - 1, building.getGridCoords().y + 1); y++) {
                 if (mapObjects.getByGrid(x,y) instanceof TerrainObject && ((TerrainObject) mapObjects.getByGrid(x,y)).feature == feature) {
                     return true;
                 }
@@ -417,8 +424,8 @@ public class World {
      */
     public Array<MapObject> getMapObjectsAroundPosition(GridCoordTuple coords) {
         Array<MapObject> mapObjects = new Array<>();
-        for (int x = Math.max(0, coords.x - 1); x <= Math.min(GridUtils.GRID_WIDTH - 1, coords.x + 1); x++) {
-            for (int y = Math.max(0, coords.y - 1); y <= Math.min(GridUtils.GRID_HEIGHT - 1, coords.y + 1); y++) {
+        for (int x = Math.max(0, coords.x - 1); x <= Math.min(GRID_WIDTH - 1, coords.x + 1); x++) {
+            for (int y = Math.max(0, coords.y - 1); y <= Math.min(GRID_HEIGHT - 1, coords.y + 1); y++) {
                 if (x != coords.x && y != coords.y) {
                     MapObject mapObject = getMapObjectAt(new GridCoordTuple(x,y));
                     if (mapObject != null) {
@@ -434,11 +441,11 @@ public class World {
      * @param feature e.g. Lake, Trees, etc.
      * @return The number of terrain tiles of type {@code feature} that is adjacent to any building
      */
-    public int getCountOfTerrainNearBuildings(TerrainObject.Feature feature) {
+    public int getCountOfTerrainNearBuildings(Feature feature) {
         int count = 0;
         for (TerrainObject terrainObject : mapObjects.getByFeature(feature)) {
-            for (int x = Math.max(0, terrainObject.getGridCoords().x - 1); x <= Math.min(GridUtils.GRID_WIDTH - 1, terrainObject.getGridCoords().x + 1); x++) {
-                for (int y = Math.max(0, terrainObject.getGridCoords().y - 1); y <= Math.min(GridUtils.GRID_HEIGHT - 1, terrainObject.getGridCoords().y + 1); y++) {
+            for (int x = Math.max(0, terrainObject.getGridCoords().x - 1); x <= Math.min(GRID_WIDTH - 1, terrainObject.getGridCoords().x + 1); x++) {
+                for (int y = Math.max(0, terrainObject.getGridCoords().y - 1); y <= Math.min(GRID_HEIGHT - 1, terrainObject.getGridCoords().y + 1); y++) {
                     if (mapObjects.getByGrid(x,y) instanceof BuildingObject) {
                         count += 1;
                         break;
@@ -586,6 +593,6 @@ public class World {
     }
 
     public boolean isMapFull() {
-        return getBuildings().size + getTerrainObjects().size == GridUtils.GRID_WIDTH * GridUtils.GRID_HEIGHT;
+        return getBuildings().size + getTerrainObjects().size == GRID_WIDTH * GRID_HEIGHT;
     }
 }
