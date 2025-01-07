@@ -6,7 +6,6 @@ import static io.github.archessmn.ENG1.GameModel.GridUtils.GRID_WIDTH;
 import static io.github.archessmn.ENG1.GameModel.GridUtils.GRID_HEIGHT;
 
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Class for managing MapObjects. This class is not concerned with the rules of the game (e.g. checking if an object

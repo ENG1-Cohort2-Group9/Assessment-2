@@ -2,12 +2,14 @@ package io.github.archessmn.ENG1.Interface;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.assets.AssetManager;
+import static com.badlogic.gdx.graphics.Color.*;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import static com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.*;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
@@ -27,14 +29,20 @@ import java.util.Objects;
 
 import static java.lang.Math.floorDiv;
 
+import static io.github.archessmn.ENG1.GameModel.GridUtils.*;
+import static io.github.archessmn.ENG1.GameModel.Objects.TerrainObject.Feature.*;
+import static io.github.archessmn.ENG1.GameModel.Objects.BuildingName.*;
+import static io.github.archessmn.ENG1.GameModel.World.*;
+
+
 public class GameScreen implements Screen {
     public static final int VIEWPORT_WIDTH = 960;
     public static final int VIEWPORT_HEIGHT = 540;
     private static final int SIDE_PANEL_WIDTH = 300;
     public static final int MAP_WIDTH = VIEWPORT_WIDTH - SIDE_PANEL_WIDTH;
 
-    public static final int TILE_WIDTH = MAP_WIDTH / GridUtils.GRID_WIDTH;
-    public static final int TILE_HEIGHT = VIEWPORT_HEIGHT/ GridUtils.GRID_HEIGHT;
+    public static final int TILE_WIDTH = MAP_WIDTH / GRID_WIDTH;
+    public static final int TILE_HEIGHT = VIEWPORT_HEIGHT/ GRID_HEIGHT;
 
     private static final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
     private static final float DEMOLISH_COOLDOWN = 0.25f;
@@ -119,11 +127,11 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         selectableBuildings = new Array<>();
-        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.HALLS));
-        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.GYM));
-        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.LECTURE_HALL));
-        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.PIAZZA));
-        selectableBuildings.add(new BuildingObject(710, 150, 0, BuildingName.PUB));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, HALLS));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, GYM));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, LECTURE_HALL));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, PIAZZA));
+        selectableBuildings.add(new BuildingObject(710, 150, 0, PUB));
         selectableTerrains = new Array<>();
         selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.LAKE));
         selectableTerrains.add(new TerrainObject(849, 160, TerrainObject.Feature.ROCK));
@@ -191,7 +199,7 @@ public class GameScreen implements Screen {
         selectedTerrainLabel.setFontScale(0.9f);
 
         demolishButton = new TextButton("Demolish Mode: OFF", textButtonStyle);
-        demolishButton.setColor(Color.DARK_GRAY);
+        demolishButton.setColor(DARK_GRAY);
         demolishButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -303,25 +311,25 @@ public class GameScreen implements Screen {
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
 
         parameter.size = (int) (0.045f * Gdx.graphics.getHeight());
-        parameter.shadowColor = Color.BLACK;
+        parameter.shadowColor = BLACK;
         parameter.shadowOffsetX = 2;
         parameter.shadowOffsetY = 2;
         headingFont = generator.generateFont(parameter);
         headingFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
 
         parameter.size = (int) (0.030f * Gdx.graphics.getHeight());
-        parameter.shadowColor = Color.BLACK;
+        parameter.shadowColor = BLACK;
         parameter.shadowOffsetX = 0;
         parameter.shadowOffsetY = 0;
         bodyFont = generator.generateFont(parameter);
         bodyFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
 
         parameter.size = (int) (0.04f * Gdx.graphics.getHeight());
-        parameter.shadowColor = Color.CLEAR;
+        parameter.shadowColor = CLEAR;
         parameter.shadowOffsetX = 0;
         parameter.shadowOffsetY = 0;
-        parameter.color = Color.DARK_GRAY;
-        parameter.borderColor = Color.WHITE;
+        parameter.color = DARK_GRAY;
+        parameter.borderColor = WHITE;
         parameter.borderWidth = 1;
         constructionFont = generator.generateFont(parameter);
         constructionFont.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
@@ -359,13 +367,13 @@ public class GameScreen implements Screen {
      */
     private void mapDemolitionCheck() {
         // Checks for MapObject demolition
-        if (Gdx.input.justTouched() && unprojectedPosIsInsideScreen(unprojectedTouchPos) && demolishMode) {
-            GridCoordTuple clickedGridSquare = GridUtils.getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
+        if (Gdx.input.justTouched() && unprojectedPosIsInsideWorld(unprojectedTouchPos) && demolishMode) {
+            GridCoordTuple clickedGridSquare = getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
             MapObject clickedObject = world.getMapObjectAt(clickedGridSquare);
 
             if (clickedObject != null) {
                 demolishCooldownTimer = DEMOLISH_COOLDOWN;
-                clickedObject.beginDemolition(world.getCurrentTime(), world.DEMOLITION_TIME);
+                clickedObject.beginDemolition(world.getCurrentTime(), DEMOLITION_TIME);
             }
         }
 
@@ -423,7 +431,7 @@ public class GameScreen implements Screen {
             world.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
         }
 
-        world.getAchievementManager().updateAchievements((int) Math.floor(world.getCurrentTime()));
+        world.getAchievementManager().updateAchievements((int) world.getCurrentTime());
 
         if (paused || gameEnded) return;
 
@@ -442,7 +450,7 @@ public class GameScreen implements Screen {
     }
 
     private void draw() {
-        ScreenUtils.clear(Color.OLIVE);
+        ScreenUtils.clear(OLIVE);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
 
@@ -452,19 +460,19 @@ public class GameScreen implements Screen {
             if (isClicked) drawGrid(shapeRenderer);
 
             if (world.doesObjectOverlap(objectToPlace)) {
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                shapeRenderer.begin(Filled);
             } else {
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+                shapeRenderer.begin(Line);
             }
-            shapeRenderer.setColor(Color.RED);
-            Vector2 buildingCoords =  GridUtils.getGridSquareScreenCoords(objectToPlace.getGridCoords());
+            shapeRenderer.setColor(RED);
+            Vector2 buildingCoords =  getGridSquareScreenCoords(objectToPlace.getGridCoords());
             shapeRenderer.rect(buildingCoords.x, buildingCoords.y, objectToPlace.width, objectToPlace.height);
             shapeRenderer.end();
         }
 
         // Draws side menu bar
-        blockRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        blockRenderer.setColor(Color.DARK_GRAY);
+        blockRenderer.begin(Filled);
+        blockRenderer.setColor(DARK_GRAY);
         blockRenderer.rect(sideMenu.getX(), sideMenu.getY(), sideMenu.getWidth(), sideMenu.getHeight());
         blockRenderer.end();
 
@@ -507,7 +515,7 @@ public class GameScreen implements Screen {
             sprite.draw(batch);
 
             // Only show the timer if it will end within the game time
-            if (pair.y < World.GAME_LENGTH_SECONDS) {
+            if (pair.y < GAME_LENGTH_SECONDS) {
                 bodyFont.draw(batch, (pair.y - MathUtils.round(world.getCurrentTime())) + "s", leftMargin + screenIconSize, iconYPos);
             }
 
@@ -567,12 +575,12 @@ public class GameScreen implements Screen {
      * @param gridRenderer The {@link ShapeRenderer} used to draw the grid.
      */
     private void drawGrid(ShapeRenderer gridRenderer) {
-        gridRenderer.begin(ShapeRenderer.ShapeType.Line);
+        gridRenderer.begin(Line);
 
         gridRenderer.setColor(new Color(0x5b7e13ff));
 
-        float gridWidth = ( (VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) / (float)GridUtils.GRID_WIDTH);
-        float gridHeight = ( VIEWPORT_HEIGHT / (float)GridUtils.GRID_HEIGHT);
+        float gridWidth = ( (VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) / (float)GRID_WIDTH);
+        float gridHeight = ( VIEWPORT_HEIGHT / (float)GRID_HEIGHT);
 
         for (int v = 1; v < 9; v++) {
             gridRenderer.line(0, gridHeight * v, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, gridHeight * v);
@@ -596,10 +604,10 @@ public class GameScreen implements Screen {
         timerLabel.setText(String.format("Year: %d, Day: %d", (int) (gameTime / 60) + 1, (int) ((gameTime % 60) / (60 / (double) 365)) + 1));
 
         if (60 - (int) gameTime % 60 == 60) {
-            countDownLabel.setText(floorDiv((int)(World.GAME_LENGTH_SECONDS) - (int) gameTime, 60) + ":00");
+            countDownLabel.setText(floorDiv((int)(GAME_LENGTH_SECONDS) - (int) gameTime, 60) + ":00");
         }
         else {
-            countDownLabel.setText(floorDiv((int)(World.GAME_LENGTH_SECONDS) - (int) gameTime, 60) + ":" + String.format("%02d", 60 - (int) gameTime % 60));
+            countDownLabel.setText(floorDiv((int)(GAME_LENGTH_SECONDS) - (int) gameTime, 60) + ":" + String.format("%02d", 60 - (int) gameTime % 60));
         }
 
         // Update the satisfaction summary section
@@ -616,7 +624,7 @@ public class GameScreen implements Screen {
             }
 
             demolishButton.setText("Demolish Mode: OFF");
-            demolishButton.setColor(Color.DARK_GRAY);
+            demolishButton.setColor(DARK_GRAY);
 
             Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
         }
@@ -628,7 +636,7 @@ public class GameScreen implements Screen {
             }
 
             demolishButton.setText("Demolish Mode: ON");
-            demolishButton.setColor(Color.RED);
+            demolishButton.setColor(RED);
         }
 
         // Changes the selected label text to whatever is currently selected
@@ -684,12 +692,12 @@ public class GameScreen implements Screen {
         if (demolishMode) {
             batch.end();
 
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.begin(Filled);
             shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
-            shapeRenderer.rectLine(0, 4, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH + 4, 4, 8, Color.FIREBRICK, Color.FIREBRICK);
-            shapeRenderer.rectLine(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, 4, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, VIEWPORT_HEIGHT - 4, 8, Color.FIREBRICK, Color.FIREBRICK);
-            shapeRenderer.rectLine(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH + 4, VIEWPORT_HEIGHT - 4, 0, VIEWPORT_HEIGHT - 4, 8, Color.FIREBRICK, Color.FIREBRICK);
-            shapeRenderer.rectLine(4, VIEWPORT_HEIGHT - 4, 4, 4, 8, Color.FIREBRICK, Color.FIREBRICK);
+            shapeRenderer.rectLine(0, 4, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH + 4, 4, 8, FIREBRICK, FIREBRICK);
+            shapeRenderer.rectLine(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, 4, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, VIEWPORT_HEIGHT - 4, 8, FIREBRICK, FIREBRICK);
+            shapeRenderer.rectLine(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH + 4, VIEWPORT_HEIGHT - 4, 0, VIEWPORT_HEIGHT - 4, 8, FIREBRICK, FIREBRICK);
+            shapeRenderer.rectLine(4, VIEWPORT_HEIGHT - 4, 4, 4, 8, FIREBRICK, FIREBRICK);
             shapeRenderer.end();
 
             batch.begin();
@@ -717,8 +725,8 @@ public class GameScreen implements Screen {
     private void drawConstructionPercents() {
         for (BuildingObject building : world.getBuildings()) {
             if (!building.isBuilt() && !building.toBeDemolished) {
-                Vector2 buildingPos = GridUtils.getGridSquareScreenCoords(building.getGridCoords());
-                constructionFont.draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
+                Vector2 buildingPos = getGridSquareScreenCoords(building.getGridCoords());
+                bodyFont.draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
             }
         }
     }
@@ -726,7 +734,7 @@ public class GameScreen implements Screen {
     private void drawSelectedBuildingCapacities() {
         BuildingObject building = selectableBuildings.get(selectableBuildingsIndex);
         for (Use use : building.getUses()) {
-            System.out.println(use.getStringName() + " capacity: " + building.getUseCapacity(use) + " students");
+            // System.out.println(use.getStringName() + " capacity: " + building.getUseCapacity(use) + " students");
 
         }
     }
@@ -736,6 +744,13 @@ public class GameScreen implements Screen {
      */
     private boolean unprojectedPosIsInsideScreen(Vector2 position) {
         return position.x < VIEWPORT_WIDTH && position.y < VIEWPORT_HEIGHT && position.x > 0 && position.y > 0;
+    }
+
+    /**
+     * @return True if the given (unprojected) position is within the bounds of the world
+     */
+    private boolean unprojectedPosIsInsideWorld(Vector2 position) {
+        return position.x < VIEWPORT_WIDTH - SIDE_PANEL_WIDTH && position.y < VIEWPORT_HEIGHT && position.x > 0 && position.y > 0;
     }
 
     @Override

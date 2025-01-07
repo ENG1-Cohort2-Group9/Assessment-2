@@ -25,13 +25,12 @@ public class AchievementManager {
     private int buildingsDemolished;
     private int pauseCount;
 
-    private boolean fullMap;
 
     public AchievementManager(World world) {
         this.world = world;
         // Gets the list of all achievements in the Achievement enum.
         achievements = Achievement.values();
-        time = (int) Math.floor(world.getCurrentTime());
+        time = (int) world.getCurrentTime();
 
         scoreQueue = new LinkedList<>();
         scoreThreeMinTotal = 0;
@@ -68,15 +67,15 @@ public class AchievementManager {
         }
 
         if (world.getGameEnded()) {
-            // [DISTANCES.ordinal()].checkCondition(satisfaction.getSatisfactionScoreBreakdown()[0]);
-            // [COMPLETION.ordinal()].checkCondition(satisfaction.getSatisfactionScoreBreakdown()[1]);
+            getAchievement(DISTANCES).checkCondition((scores[0] / scoreCaps[0]) * 100);
+            getAchievement(COMPLETION).checkCondition((scores[1] / scoreCaps[1]) * 100);
             if (world.getSatisfaction().checkExactCapacity()) {
-                // achievements[FULL_CAPACITY.ordinal()].achieve();
+                getAchievement(FULL_CAPACITY).achieve();
             }
-            // achievements[MINIMALIST.ordinal()].checkCondition((buildingsBuilt));
-            // achievements[DESTRUCTION.ordinal()].checkCondition((buildingsDemolished));
-            // achievements[BUILDER.ordinal()].checkCondition((buildingsBuilt));
-            // achievements[PLANNING.ordinal()].checkCondition((pauseCount));
+            getAchievement(MINIMALIST).checkCondition((buildingsBuilt));
+            getAchievement(DESTRUCTION).checkCondition((buildingsDemolished));
+            getAchievement(BUILDER).checkCondition((buildingsBuilt));
+            getAchievement(PLANNING).checkCondition((pauseCount));
             for (Achievement achievement : achievements) {
                 if (achievement.isAchieved() && !achievement.isFinished()) {
                     totalScoreBonus += achievement.getScoreBonus();
