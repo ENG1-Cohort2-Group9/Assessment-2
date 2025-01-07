@@ -516,7 +516,7 @@ public class GameScreen implements Screen {
 
             // Only show the timer if it will end within the game time
             if (pair.y < GAME_LENGTH_SECONDS) {
-                bodyFont.draw(batch, (pair.y - MathUtils.round(world.getCurrentTime())) + "s", leftMargin + screenIconSize, iconYPos);
+                constructionFont.draw(batch, (pair.y - MathUtils.round(world.getCurrentTime())) + "s", leftMargin + screenIconSize, iconYPos);
             }
 
             iconYPos += screenIconSize + iconMargin;
@@ -726,7 +726,7 @@ public class GameScreen implements Screen {
         for (BuildingObject building : world.getBuildings()) {
             if (!building.isBuilt() && !building.toBeDemolished) {
                 Vector2 buildingPos = getGridSquareScreenCoords(building.getGridCoords());
-                bodyFont.draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
+                constructionFont .draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
             }
         }
     }
