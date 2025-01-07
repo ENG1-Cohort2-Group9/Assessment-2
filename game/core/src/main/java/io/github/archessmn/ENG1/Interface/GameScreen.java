@@ -703,7 +703,10 @@ public class GameScreen implements Screen {
     }
 
     private void showEventPopup(GameEvent event) {
-        NotificationHandler.displayNotification(event.title, event.description, assetManager.get(event.iconName, Texture.class), world.getCurrentTime());
+        if (Objects.equals(event.iconName, "missingTexture.png"))
+            NotificationHandler.displayNotification(event.title, event.description, world.getCurrentTime());
+        else
+            NotificationHandler.displayNotification(event.title, event.description, assetManager.get(event.iconName, Texture.class), world.getCurrentTime());
 
         // This is always called AFTER the event is handled by world. Therefore, we can check activeEvents to find out
         // if the new event is an active one
