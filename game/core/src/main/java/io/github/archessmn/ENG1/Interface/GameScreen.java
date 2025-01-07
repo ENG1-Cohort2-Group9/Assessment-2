@@ -409,16 +409,6 @@ public class GameScreen implements Screen {
         gameEnded = world.getGameEnded();
         if (gameEnded) {
             ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
-            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
-            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
-            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
-            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
-            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
-            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
-            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
-            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
-            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
-            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
         }
 
         if (paused || gameEnded) return;
