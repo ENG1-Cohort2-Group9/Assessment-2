@@ -169,7 +169,7 @@ public class TestWorld {
         world.addMapObject(building);
         world.closeBuilding(building, BuildingName.PIAZZA.getBuildingConstructionDuration() / 2f);
 
-        world.process((BuildingName.PIAZZA.getBuildingConstructionDuration() / 2f) + 1);
+        world.process((BuildingName.PIAZZA.getBuildingConstructionDuration() / 2f) + 0.1f);
 
         assertFalse(building.built, "Building was opened too early");
 
@@ -287,7 +287,7 @@ public class TestWorld {
             totalCount += world.getCountOfTerrainNearBuildings(feature);
         }
 
-        assertEquals(world.getMapObjectsAroundPosition(space).size,  totalCount);
+        assertEquals(world.getMapObjectsAroundPosition(space).size,  totalCount, "Terrain objects near buildings did not match terrain objects around placed building");
     }
 
     private GridCoordTuple getEmptySpace() {

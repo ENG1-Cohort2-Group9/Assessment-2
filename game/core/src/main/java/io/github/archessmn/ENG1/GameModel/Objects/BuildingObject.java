@@ -125,8 +125,11 @@ public class BuildingObject extends MapObject {
     }
 
     public float getConstructionPercent(float currentTime) {
-
         return 100 - 100 * (buildingCompletionTime - currentTime)/ constructionDuration;
+    }
+
+    public float getRemainingConstructionTime(float currentTime) {
+        return Math.max(0, buildingCompletionTime - currentTime);
     }
 
     /**

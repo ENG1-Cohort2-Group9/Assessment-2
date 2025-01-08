@@ -336,7 +336,7 @@ public class World {
      * Mark a building as under construction for {@code timeSeconds} seconds
      */
     public void closeBuilding(BuildingObject building, float timeSeconds) {
-        building.resetConstruction(currentTime, timeSeconds);
+        building.resetConstruction(currentTime, building.getRemainingConstructionTime(currentTime) + timeSeconds);
 
         updateWorldState(building, true);
     }
@@ -425,7 +425,7 @@ public class World {
         Array<MapObject> mapObjects = new Array<>();
         for (int x = Math.max(0, coords.x - 1); x <= Math.min(GRID_WIDTH - 1, coords.x + 1); x++) {
             for (int y = Math.max(0, coords.y - 1); y <= Math.min(GRID_HEIGHT - 1, coords.y + 1); y++) {
-                if (x != coords.x && y != coords.y) {
+                if (x != coords.x || y != coords.y) {
                     MapObject mapObject = getMapObjectAt(new GridCoordTuple(x,y));
                     if (mapObject != null) {
                         mapObjects.add(mapObject);

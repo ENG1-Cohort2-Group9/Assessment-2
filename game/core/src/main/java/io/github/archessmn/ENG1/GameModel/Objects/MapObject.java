@@ -171,6 +171,6 @@ public abstract class MapObject implements Cloneable {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + "at ( " + screenPosition.x + ", " + screenPosition.y + " )";
+        return this.getClass().getSimpleName() + " at ( " + screenPosition.x + ", " + screenPosition.y + " )";
     }
 }
