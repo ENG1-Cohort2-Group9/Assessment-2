@@ -96,6 +96,10 @@ public class BuildingObject extends MapObject {
         return currentTime >= buildingCompletionTime;
     }
 
+    public float getConstructionDuration() {
+        return constructionDuration;
+    }
+
     /**
      * Get the uses for the building
      * @return the array of uses the building has.
@@ -120,9 +124,9 @@ public class BuildingObject extends MapObject {
         return built;
     }
 
-    public float getConstructionPercent(World world) {
+    public float getConstructionPercent(float currentTime) {
 
-        return 100 - 100 * (buildingCompletionTime - world.getCurrentTime())/ constructionDuration;
+        return 100 - 100 * (buildingCompletionTime - currentTime)/ constructionDuration;
     }
 
     /**

@@ -78,9 +78,9 @@ public class World {
 
 
     /**
-     * Responsible for creating all generated world assets, before it is showcased to the player
+     * Responsible for creating all generated world assets, before it is shown to the player
      */
-    public void createWorldAssets() {
+    private void createWorldAssets() {
         generateTerrainFeatures(LAKE, 0.6f, 100f);
         generateTerrainFeatures(ROCK, 0.75f, 150f);
         generateTerrainFeatures(TREE, 0.65f, 150f);
@@ -146,9 +146,7 @@ public class World {
     /**
      * Update all MapObjects' states
      */
-    public void updateMapObjects(float deltaTime) {
-        // Some of the methods for satisfaction score use the building, these methods don't edit the building
-        // but libGDX seems to get confused and break if a for (BuildingObject building : buildings) loop is used.
+    private void updateMapObjects(float currentTime) {
         for (MapObject mapObject : mapObjects.getAll()) {
             if (mapObject instanceof BuildingObject buildingObject) {
                 if (!buildingObject.built && buildingObject.isComplete(currentTime)) {
@@ -171,7 +169,7 @@ public class World {
      * @param building The object in question.
      * @param wasRemoved if true, the building has just been removed. If false, the building has just been added.
      */
-    public void updateWorldState(BuildingObject building, boolean wasRemoved) {
+    private void updateWorldState(BuildingObject building, boolean wasRemoved) {
         // Check if this changes which events can happen
         // Additional check (left hand side of &&) so we don't have to run the longer check every time
         if (wasRemoved) {
@@ -209,7 +207,7 @@ public class World {
      * @param terrain The object in question.
      * @param wasRemoved if true, the mapObject has just been removed. If false, the mapObject has just been added.
      */
-    public void updateWorldState(TerrainObject terrain, boolean wasRemoved) {
+    private void updateWorldState(TerrainObject terrain, boolean wasRemoved) {
         // Check if this changes which events can happen if this object is the first or last object next to a building
         if (wasRemoved && getCountOfTerrainNearBuildings(terrain.feature) == 1) {
             if (terrain.feature == LAKE) {
@@ -235,7 +233,7 @@ public class World {
      */
     public void process(float deltaTime) {
         currentTime += deltaTime;
-        updateMapObjects(deltaTime);
+        updateMapObjects(currentTime);
         eventManager.processEvents(currentTime);
         // Maintain active events, removing them when necessary
         for (int i = 0; i < activeEventEndTime.length; i++) {
@@ -278,7 +276,7 @@ public class World {
     }
 
 
-    public void handleEvent(GameEvent event) {
+    private void handleEvent(GameEvent event) {
         switch (event) {
             case FLOODING:
                 for (BuildingObject building : getBuildingsNearTerrain(LAKE)) {
@@ -353,7 +351,7 @@ public class World {
         }
     }
 
-    public BuildingObject getRandomBuilding(Array<BuildingObject> buildings) {
+    private BuildingObject getRandomBuilding(Array<BuildingObject> buildings) {
         if (buildings.size == 0)
             return null;
         return buildings.get(random.nextInt(buildings.size));
@@ -363,7 +361,7 @@ public class World {
      * Adds an effect to the current game indefinitely
      * @param event The event associated with the effect
      */
-    public void addActiveEvent(GameEvent event) {
+    private void addActiveEvent(GameEvent event) {
         addActiveEvent(event, GAME_LENGTH_SECONDS + 1);
     }
 
@@ -372,7 +370,7 @@ public class World {
      * Adds an effect to the current game for {@code timeSeconds} seconds
      * @param event The event associated with the effect
      */
-    public void addActiveEvent(GameEvent event, float timeSeconds) {
+    private void addActiveEvent(GameEvent event, float timeSeconds) {
         activeEvents[event.ordinal()] = event;
         activeEventEndTime[event.ordinal()] = currentTime + timeSeconds;
 

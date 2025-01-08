@@ -736,10 +736,10 @@ public class GameScreen implements Screen {
     }
 
     private void drawConstructionPercents() {
-        for (BuildingObject building : world.getBuildings()) {
-            if (!building.isBuilt() && !building.toBeDemolished) {
+        for (BuildingObject building : world.getBuildings(false)) {
+            if (!building.toBeDemolished && building.getConstructionDuration() < GAME_LENGTH_SECONDS) {
                 Vector2 buildingPos = getGridSquareScreenCoords(building.getGridCoords());
-                constructionFont .draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
+                constructionFont.draw(batch, String.format("%02d", (int) building.getConstructionPercent(world.getCurrentTime())) + "%", buildingPos.x + 8, buildingPos.y + 40);
             }
         }
     }
