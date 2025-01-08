@@ -584,11 +584,11 @@ public class GameScreen implements Screen {
         float gridWidth = ( (VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) / (float)GRID_WIDTH);
         float gridHeight = ( VIEWPORT_HEIGHT / (float)GRID_HEIGHT);
 
-        for (int v = 1; v < 9; v++) {
+        for (int v = 1; v < GRID_HEIGHT; v++) {
             gridRenderer.line(0, gridHeight * v, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, gridHeight * v);
         }
 
-        for (int h = 1; h < 11; h++) {
+        for (int h = 1; h < GRID_WIDTH; h++) {
             gridRenderer.line(gridWidth * h, 0, gridWidth * h, VIEWPORT_HEIGHT);
         }
 
