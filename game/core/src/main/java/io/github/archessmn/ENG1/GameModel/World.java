@@ -254,7 +254,8 @@ public class World {
      * Utility method to check if a building overlaps with any others in the world
      * after being snapped to the grid based on its current location
      * @param overlapObject The building to check for overlaps with others
-     * @return true if the building overlaps with another, else false
+     * @return True if the building overlaps with another, else false
+     * @throws IndexOutOfBoundsException If the mapObject is outside the grid
      */
     public boolean doesObjectOverlap(MapObject overlapObject) {
         GridCoordTuple gridCoords = overlapObject.getGridCoords();
@@ -361,7 +362,7 @@ public class World {
      * Adds an effect to the current game indefinitely
      * @param event The event associated with the effect
      */
-    private void addActiveEvent(GameEvent event) {
+    public void addActiveEvent(GameEvent event) {
         addActiveEvent(event, GAME_LENGTH_SECONDS + 1);
     }
 
@@ -370,7 +371,7 @@ public class World {
      * Adds an effect to the current game for {@code timeSeconds} seconds
      * @param event The event associated with the effect
      */
-    private void addActiveEvent(GameEvent event, float timeSeconds) {
+    public void addActiveEvent(GameEvent event, float timeSeconds) {
         activeEvents[event.ordinal()] = event;
         activeEventEndTime[event.ordinal()] = currentTime + timeSeconds;
 
@@ -510,8 +511,6 @@ public class World {
     public float getEndTimeOfActiveEvent(GameEvent event) {
         return activeEventEndTime[event.ordinal()];
     }
-
-
 
     public AchievementManager getAchievementManager() {
         return achievementManager;
