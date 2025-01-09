@@ -44,7 +44,6 @@ public class GameScreen implements Screen {
     public static final int TILE_WIDTH = MAP_WIDTH / GRID_WIDTH;
     public static final int TILE_HEIGHT = VIEWPORT_HEIGHT/ GRID_HEIGHT;
 
-    private static final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
     private static final float DEMOLISH_COOLDOWN = 0.25f;
 
     private World world;
