@@ -64,9 +64,11 @@ public class NotificationHandler {
             if (notifTimer == NOTIFICATION_DISPLAY_TIME) {
                 currentNotif = getNextNotification();
 
-                GameScreen.notificationImage = new Sprite(currentNotif.notifImage);
-                GameScreen.notificationImage.setOrigin(0, 80);
-                GameScreen.notificationImage.setSize(80, 80);
+                if (currentNotif.notifImage != null) {
+                    GameScreen.notificationImage = new Sprite(currentNotif.notifImage);
+                    GameScreen.notificationImage.setOrigin(0, 80);
+                    GameScreen.notificationImage.setSize(80, 80);
+                }
             }
 
             if (notifTimer > 0f) {
