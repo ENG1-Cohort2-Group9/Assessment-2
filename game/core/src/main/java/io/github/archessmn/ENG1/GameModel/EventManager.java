@@ -74,7 +74,7 @@ public class EventManager {
     /**
      * @return The number of events that can occur when called
      */
-    public int getPossibleEventsCount() {
+    private int getPossibleEventsCount() {
         int count = 0;
         for (int i = 0; i < GameEvent.values().length; i++) {
             if (eventsEnabled[i] && !eventsOccurred[i]) {
@@ -89,7 +89,7 @@ public class EventManager {
      * Given a float where 0 represents the first valid event, return a possible event at that index. The last valid event
      * is given by the sum of all possible event chances when the function is called.
      */
-    public GameEvent getValidEventFromFloat(float value) {
+    private GameEvent getValidEventFromFloat(float value) {
         float distanceToIndex = value;
         int position = 0;
         while (position < GameEvent.values().length && distanceToIndex >= 0) {

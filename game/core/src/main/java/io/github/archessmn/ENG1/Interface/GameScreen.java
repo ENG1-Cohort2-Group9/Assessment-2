@@ -584,11 +584,11 @@ public class GameScreen implements Screen {
         float gridWidth = ( (VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) / (float)GRID_WIDTH);
         float gridHeight = ( VIEWPORT_HEIGHT / (float)GRID_HEIGHT);
 
-        for (int v = 1; v < 9; v++) {
+        for (int v = 1; v < GRID_HEIGHT; v++) {
             gridRenderer.line(0, gridHeight * v, VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, gridHeight * v);
         }
 
-        for (int h = 1; h < 11; h++) {
+        for (int h = 1; h < GRID_WIDTH; h++) {
             gridRenderer.line(gridWidth * h, 0, gridWidth * h, VIEWPORT_HEIGHT);
         }
 
@@ -736,10 +736,10 @@ public class GameScreen implements Screen {
     }
 
     private void drawConstructionPercents() {
-        for (BuildingObject building : world.getBuildings()) {
-            if (!building.isBuilt() && !building.toBeDemolished) {
+        for (BuildingObject building : world.getBuildings(false)) {
+            if (!building.toBeDemolished && building.getConstructionDuration() < GAME_LENGTH_SECONDS) {
                 Vector2 buildingPos = getGridSquareScreenCoords(building.getGridCoords());
-                constructionFont .draw(batch, String.format("%02d", (int) building.getConstructionPercent(world)) + "%", buildingPos.x + 8, buildingPos.y + 40);
+                constructionFont.draw(batch, String.format("%02d", (int) building.getConstructionPercent(world.getCurrentTime())) + "%", buildingPos.x + 8, buildingPos.y + 40);
             }
         }
     }
