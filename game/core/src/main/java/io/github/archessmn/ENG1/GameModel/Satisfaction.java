@@ -82,10 +82,10 @@ public class Satisfaction {
     // (n *(n+1)) / 2 We divide the BUILDING_DISTANCES_SCORE_CAP by this number
     public static final float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) USE_LENGTH * ((float) USE_LENGTH + 1)) / 2);
 
-    public static final float THRESHOLD = 0.4f;
+    public static final float THRESHOLD = 0.3f;
 
     // Allows the user to get the maximum satisfaction for a building use pair, if the pairs' average distance is
-    // under 60% of the maximum possible distance. Anything over will give progressively less satisfaction.
+    // under (THRESHOLD * 100)% of the maximum possible distance. Anything over will give progressively less satisfaction.
     public static final float maxScoreThreshold = maxDistance * THRESHOLD;
 
 

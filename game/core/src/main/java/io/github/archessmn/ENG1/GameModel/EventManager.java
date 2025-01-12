@@ -34,7 +34,6 @@ public class EventManager {
 
         averageEventInterval = gameLengthSeconds / (float)numberOfEventsThisGame;
         nextEventTime = getNextEventTime(averageEventInterval, eventTimeVariation, eventsRaised);
-        System.out.println("a maximum of " + numberOfEventsThisGame + " events will occur this game");
     }
 
     /**
