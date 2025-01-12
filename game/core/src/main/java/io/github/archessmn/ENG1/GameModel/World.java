@@ -14,11 +14,7 @@ import static io.github.archessmn.ENG1.GameModel.GameEvent.*;
 import static io.github.archessmn.ENG1.GameModel.Objects.TerrainObject.Feature.*;
 import static io.github.archessmn.ENG1.GameModel.Objects.TerrainObject.Feature;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
-import java.io.*;
-import java.util.*;
 
 /**
  * Class used to store information about the world and the buildings in it.
@@ -26,7 +22,7 @@ import java.util.*;
 public class World {
 
     public final int WIDTH, HEIGHT;
-    public static final float GAME_LENGTH_SECONDS = 10;
+    public static final float GAME_LENGTH_SECONDS = 300;
 
     private final MapObjectHolder mapObjects = new MapObjectHolder(GRID_WIDTH, GRID_HEIGHT);
 
