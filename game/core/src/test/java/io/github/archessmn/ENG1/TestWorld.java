@@ -229,11 +229,10 @@ public class TestWorld {
                 if (mapObject != null) {
                     world.destroyMapObject(mapObject);
                 }
-                if (x == 0 && y == 0) {
-                    world.addMapObject(buildingObject);
-                }
             }
         }
+        world.addMapObject(new BuildingObject(new GridCoordTuple(0,0), 0, BuildingName.PIAZZA));
+
         assertEquals(0, world.getMapObjectsAroundPosition(new GridCoordTuple(0,0)).size, "No map objects should be found");
 
         for (int x = 0; x <= 1; x++) {
@@ -245,7 +244,7 @@ public class TestWorld {
             }
         }
 
-        assertEquals(3, world.getMapObjectsAroundPosition(new GridCoordTuple(1,1)).size, "3 map objects should be found");
+        assertEquals(3, world.getMapObjectsAroundPosition(new GridCoordTuple(0,0)).size, "3 map objects should be found");
 
 
         for (int x = 3; x <= 4; x++) {
@@ -254,11 +253,9 @@ public class TestWorld {
                 if (mapObject != null) {
                     world.destroyMapObject(mapObject);
                 }
-                if (x == 4 && y == 4) {
-                    world.addMapObject(buildingObject);
-                }
             }
         }
+        world.addMapObject(new BuildingObject(new GridCoordTuple(4,4), 0, BuildingName.PIAZZA));
         assertEquals(0, world.getMapObjectsAroundPosition(new GridCoordTuple(4,4)).size, "No map objects should be found");
 
         for (int x = 3; x <= 4; x++) {
