@@ -24,14 +24,13 @@ public class ScreenManager extends Game {
      * It is effectively the constructor.
      */
     public void create() {
+        loadAssetManager();
 
         //Creates instance of the main menu screen
         menuScreen = new MenuScreen(this);
 
         // Initiate game to the game screen.
         setScreen(menuScreen);
-
-        loadAssetManager();
     }
 
     public void render() {

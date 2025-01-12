@@ -86,14 +86,14 @@ public class MenuScreen implements Screen {
 
         initInputTable();
 
-        background = new Texture(Gdx.files.internal("ui/title_page.png"));
-        logo = new Texture(Gdx.files.internal("ui/logo.png"));
+        background = game.assetManager.get("ui/title_page.png", Texture.class);
+        logo = game.assetManager.get("ui/logo.png", Texture.class);
 
-        newGameButton = new Texture(Gdx.files.internal("ui/new_game_button.png"));
+        newGameButton = game.assetManager.get("ui/new_game_button.png", Texture.class);
         newGameRectangle = new Rectangle();
-        leaderboardButton = new Texture(Gdx.files.internal("ui/leaderboard_button.png"));
+        leaderboardButton = game.assetManager.get("ui/leaderboard_button.png", Texture.class);
         leaderboardRectangle = new Rectangle();
-        tutorialButton = new Texture(Gdx.files.internal("ui/tutorial_button.png"));
+        tutorialButton = game.assetManager.get("ui/tutorial_button.png", Texture.class);
         tutorialRectangle = new Rectangle();
 
         buttons = new Array<>();
