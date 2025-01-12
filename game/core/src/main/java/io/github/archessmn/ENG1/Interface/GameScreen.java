@@ -110,8 +110,9 @@ public class GameScreen implements Screen {
     final ScreenManager game;
 
 
-    public GameScreen(ScreenManager main) {
+    public GameScreen(ScreenManager main, String universityName) {
         this.game = main;
+        this.universityName = universityName;
     }
 
     @Override
@@ -341,12 +342,13 @@ public class GameScreen implements Screen {
 
         sideMenu.add(new Label("Final Score: " + finalScore + "%", labelStyle)).expandX().left().padBottom(20).row();
 
-        TextButton returnButton = new TextButton("MAIN MENU", textButtonStyle);
+        TextButton returnButton = new TextButton("LOCAL LEADERBOARD", textButtonStyle);
         returnButton.setColor(RED);
         returnButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                game.setScreen(game.menuScreen);
+                game.leaderboardScreen = new LeaderboardScreen(game);
+                game.setScreen(game.leaderboardScreen);
             }
         });
         sideMenu.add(returnButton).expandX().center().row();
@@ -363,8 +365,8 @@ public class GameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
-        stage.getViewport().update(width, height, true);
+        viewport.update(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, true);
+        stage.getViewport().update(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, true);
 
         // Generates the heading and body font
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ui/Product_Sans_Bold.ttf"));

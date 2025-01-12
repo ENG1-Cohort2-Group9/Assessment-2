@@ -34,7 +34,6 @@ public class TutorialScreen implements Screen {
     private ShapeRenderer shapeRenderer;
     private FitViewport viewport;
 
-    private TextureAtlas atlas;
     private Skin skin;
     private Stage stage;
     private AssetManager assetManager;
@@ -49,7 +48,8 @@ public class TutorialScreen implements Screen {
     private Image currentTutorialScreen;
     private Label guideNameLabel;
 
-    private boolean clicked = false;
+    private TextButton[] buttons;
+    private int selectedButtonIndex = -1;
 
     private Rectangle returnRectangle;
     private Texture returnButton;
@@ -69,7 +69,7 @@ public class TutorialScreen implements Screen {
         shapeRenderer = new ShapeRenderer();
         viewport = new FitViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
-        atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
+        TextureAtlas atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
         skin.addRegions(atlas);
 
@@ -114,55 +114,57 @@ public class TutorialScreen implements Screen {
     private void initButtonTable() {
         TextButton.TextButtonStyle textButtonStyle = skin.get(TextButton.TextButtonStyle.class);
 
+        buttons = new TextButton[5];
+
         TextButton achievementsButton = new TextButton("Achievements", textButtonStyle);
         achievementsButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(assetManager.get("tutorials/achievements_tutorial.png", Texture.class))));
-                guideNameLabel.setText("Achievements");
-                clicked = true;
+                selectedButtonIndex = 0;
             }
         });
+        buttons[0] = achievementsButton;
 
         TextButton buildingSelectionButton = new TextButton("Placing", textButtonStyle);
         buildingSelectionButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(assetManager.get("tutorials/building_selection_tutorial.png", Texture.class))));
-                guideNameLabel.setText("Placing");
-                clicked = true;
+                selectedButtonIndex = 1;
             }
         });
+        buttons[1] = buildingSelectionButton;
 
         TextButton demolitionButton = new TextButton("Demolition", textButtonStyle);
         demolitionButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(assetManager.get("tutorials/demolition_tutorial.png", Texture.class))));
-                guideNameLabel.setText("Demolition");
-                clicked = true;
+                selectedButtonIndex = 2;
             }
         });
+        buttons[2] = demolitionButton;
 
         TextButton eventButton = new TextButton("Events", textButtonStyle);
         eventButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(assetManager.get("tutorials/event_tutorial.png", Texture.class))));
-                guideNameLabel.setText("Events");
-                clicked = true;
+                selectedButtonIndex = 3;
             }
         });
+        buttons[3] = eventButton;
 
         TextButton satisfactionButton = new TextButton("Student Satisfaction", textButtonStyle);
         satisfactionButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(assetManager.get("tutorials/satisfaction_tutorial.png", Texture.class))));
-                guideNameLabel.setText("Student Satisfaction");
-                clicked = true;
+                selectedButtonIndex = 4;
             }
         });
+        buttons[4] = satisfactionButton;
 
         buttonTable.add(achievementsButton).fillX().pad(10).row();
         buttonTable.add(buildingSelectionButton).fillX().pad(10).row();
@@ -198,8 +200,8 @@ public class TutorialScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
-        stage.getViewport().update(width, height, true);
+        viewport.update(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, true);
+        stage.getViewport().update(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, true);
 
         // Generates the heading and body font
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ui/Product_Sans_Bold.ttf"));
@@ -234,7 +236,6 @@ public class TutorialScreen implements Screen {
         if (Gdx.input.justTouched()) {
             // Checks to see if the Return button is clicked
             if (returnRectangle.contains(touch.x, touch.y)) {
-                clicked = false;
                 game.setScreen(game.menuScreen);
             }
         }
@@ -264,13 +265,19 @@ public class TutorialScreen implements Screen {
         shapeRenderer.end();
 
         // Displays the tutorial screen and title when a button is clicked
-        if (clicked) {
+        if (selectedButtonIndex != -1) {
             guideNameLabel.setVisible(true);
             currentTutorialScreen.setVisible(true);
-        }
-        else {
-            guideNameLabel.setVisible(false);
-            currentTutorialScreen.setVisible(false);
+
+            for (int i = 0; i < buttons.length; i++) {
+                if (i == selectedButtonIndex) {
+                    buttons[i].setColor(Color.GRAY);
+                    guideNameLabel.setText(buttons[i].getText());
+                }
+                else {
+                    buttons[i].setColor(Color.WHITE);
+                }
+            }
         }
 
         stage.draw();

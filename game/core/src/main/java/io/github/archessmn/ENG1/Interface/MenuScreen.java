@@ -111,13 +111,6 @@ public class MenuScreen implements Screen {
         inputField = new TextField("University of York", skin);
         inputField.setAlignment(1);
         inputTable.add(inputField).expandX().fillX();
-
-        inputField.setTextFieldListener(new TextField.TextFieldListener() {
-            @Override
-            public void keyTyped(TextField textField, char c) {
-                game.gameScreen.universityName = inputField.getText();
-            }
-        });
     }
 
     @Override
@@ -129,8 +122,8 @@ public class MenuScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
-        stage.getViewport().update(width, height, true);
+        viewport.update(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, true);
+        stage.getViewport().update(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, true);
     }
 
     private void input() {
@@ -146,8 +139,7 @@ public class MenuScreen implements Screen {
             for (Rectangle button : buttons) {
                 if (button.contains(touch.x, touch.y)) {
                     if (button == newGameRectangle && !Objects.equals(inputField.getText(), "")) {
-                        game.gameScreen = new GameScreen(game);
-                        game.gameScreen.universityName = inputField.getText();
+                        game.gameScreen = new GameScreen(game, inputField.getText());
                         game.setScreen(game.gameScreen);
                     }
                     if (button == leaderboardRectangle) {

@@ -82,7 +82,7 @@ public class LeaderboardScreen implements Screen {
         labelTable = new ArrayList<>();
 
         leaderboardTable.pad(10);
-        rootTable.add(leaderboardTable).width(450).height(370);
+        rootTable.add(leaderboardTable).width(VIEWPORT_WIDTH * 0.75f).height(VIEWPORT_HEIGHT * 0.75f);
         rootTable.center();
 
         initLeaderboard();
@@ -138,8 +138,8 @@ public class LeaderboardScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
-        stage.getViewport().update(width, height, true);
+        viewport.update(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, true);
+        stage.getViewport().update(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, true);
 
         // Generates the heading and body font
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ui/Product_Sans_Bold.ttf"));
@@ -193,7 +193,7 @@ public class LeaderboardScreen implements Screen {
         // Renders the background, title and return button
         batch.begin();
         batch.draw(background, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
-        headingFont.draw(batch, "UNISIM LOCAL LEADERBOARD", 170, 500);
+        headingFont.draw(batch, "UNISIM LOCAL LEADERBOARD", 175, 520);
         batch.draw(returnButton, returnRectangle.x, returnRectangle.y, returnRectangle.width, returnRectangle.height);
         batch.end();
 
