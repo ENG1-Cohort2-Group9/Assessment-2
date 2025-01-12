@@ -28,6 +28,11 @@ public class AchievementManager {
     private int pauseCount;
 
 
+    /**
+     * Constructor for AchievementManager, used to initialise the instance of the class.
+     * @param world The World object this is created within.
+     * @param handler The AchievementHandler object that is stored within the instance of AchievementManager.
+     */
     public AchievementManager(World world, AchievementHandler handler) {
         this.world = world;
         this.handler = handler;
@@ -62,7 +67,7 @@ public class AchievementManager {
         // Any achievements that were achieved in the above checks, are displayed, and isFinished is set to true, this
         // prevents achievements from showing multiple times.
         for (Achievement achievement : achievements) {
-            if (achievement.isAchieved() && !achievement.isFinished()) {
+            if (achievement.isAchieved() && achievement.isNotFinished()) {
                 handler.handle(achievement);
                 achievement.finish();
                 totalScoreBonus += achievement.getScoreBonus();
@@ -80,7 +85,7 @@ public class AchievementManager {
             getAchievement(BUILDER).checkCondition((buildingsBuilt));
             getAchievement(PLANNING).checkCondition((pauseCount));
             for (Achievement achievement : achievements) {
-                if (achievement.isAchieved() && !achievement.isFinished()) {
+                if (achievement.isAchieved() && achievement.isNotFinished()) {
                     totalScoreBonus += achievement.getScoreBonus();
                     achievement.finish();
                 }
@@ -133,6 +138,10 @@ public class AchievementManager {
 
     public void incrementPauseCount() {
         pauseCount += 1;
+    }
+
+    public float getScoreThreeMinAverage() {
+        return scoreThreeMinAverage;
     }
 
 
