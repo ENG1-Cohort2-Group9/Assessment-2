@@ -14,11 +14,7 @@ import static io.github.archessmn.ENG1.GameModel.GameEvent.*;
 import static io.github.archessmn.ENG1.GameModel.Objects.TerrainObject.Feature.*;
 import static io.github.archessmn.ENG1.GameModel.Objects.TerrainObject.Feature;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
-import java.io.*;
-import java.util.*;
 
 /**
  * Class used to store information about the world and the buildings in it.
@@ -49,8 +45,8 @@ public class World {
 
     /**
      * Initialises the game world with optional extra event listeners for event handling outside of this class
-     * @param worldWidth Width to use for the usable world space
-     * @param worldHeight Height to use for the usable world space
+     * @param worldWidth Pixel width to use for the usable world space
+     * @param worldHeight Pixel height to use for the usable world space
      * @param additionalEventHandlers Extra event handlers for event handling outside of this class. Can be used for rendering effects
      */
     public World(int worldWidth, int worldHeight, GameEventHandler[] additionalEventHandlers, AchievementHandler achievementHandler) {
@@ -516,7 +512,12 @@ public class World {
         return achievementManager;
     }
 
+    /**
+     * Checks if the map is full.
+     * @return True if the map is full, false if not.
+     */
     public boolean isMapFull() {
-        return getBuildings().size + getTerrainObjects().size == GRID_WIDTH * GRID_HEIGHT;
+        // -2 accounts for the clickable building and terrain feature on the right menu.
+        return getBuildings().size + getTerrainObjects().size - 2 == GRID_WIDTH * GRID_HEIGHT;
     }
 }

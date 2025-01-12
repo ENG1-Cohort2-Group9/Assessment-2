@@ -3,6 +3,9 @@ package io.github.archessmn.ENG1.GameModel;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 
+/**
+ * An enum storing static instances of all the achievements in the game.
+ */
 public enum Achievement {
     OVER_EIGHTY("I <3 Uni","You maintained a satisfaction score over 80% for the last 3 minutes.",
         5f, 80, (value, condition) -> value > condition),
@@ -43,22 +46,34 @@ public enum Achievement {
     private float condition;
     private BiPredicate<Float, Float> predicate;
 
+
+    /**
+     * Constructor for an achievement.
+     * @param title The name of the achievement the user will see.
+     * @param description The description of the achievement the user will see.
+     * @param scoreBonus The score bonus the achievement provides when the player achieves it.
+     * @param condition The condition checked against in the predicate.
+     * @param predicate The logic used to check when the achievement is achieved.
+     */
+    Achievement(String title, String description, Float scoreBonus, float condition, BiPredicate<Float, Float> predicate) {
+        this(title, description, scoreBonus);
+        this.condition = condition;
+        this.predicate = predicate;
+    }
+
+
+    /**
+     * Constructor for an achievement that doesn't use a predicate, but has a check handled within AchievementManager.
+     * @param title The name of the achievement the user will see.
+     * @param description The description of the achievement the user will see.
+     * @param scoreBonus The score bonus the achievement provides when the player achieves it.
+     */
     Achievement( String title, String description, Float scoreBonus) {
         this.description = description;
         this.title = title;
         this.scoreBonus = scoreBonus;
         achieved = false;
         finished = false;
-    }
-
-    Achievement(String title, String description, Float scoreBonus, float condition, BiPredicate<Float, Float> predicate) {
-        this.description = description;
-        this.title = title;
-        this.scoreBonus = scoreBonus;
-        achieved = false;
-        this.condition = condition;
-        this.predicate = predicate;
-
     }
 
     public String getTitle() {
@@ -81,17 +96,14 @@ public enum Achievement {
         achieved = true;
     }
 
-    public boolean isFinished() {
-        return finished;
+    public boolean isNotFinished() {
+        return !finished;
     }
 
     public void finish() {
         finished = true;
     }
 
-    public float getCondition() {
-        return condition;
-    }
 
     public void checkCondition(float value) {
         if (predicate.test(value, condition)) {
