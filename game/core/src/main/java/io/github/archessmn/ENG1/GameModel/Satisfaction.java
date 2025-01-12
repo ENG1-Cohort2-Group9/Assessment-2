@@ -601,15 +601,9 @@ public class Satisfaction {
         return averageDistanceScores;
     }
 
-    public int[][] getAverageDistancesCount() {
-        return averageDistancesCount;
-    }
 
     public float[][] getAverageDistances() {
         return averageDistances;
     }
 
-    public float[][] getWeightMatrix() {
-        return weightMatrix;
-    }
 }
