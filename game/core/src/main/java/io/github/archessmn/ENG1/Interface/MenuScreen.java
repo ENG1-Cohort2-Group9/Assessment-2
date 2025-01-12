@@ -4,13 +4,25 @@ import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.EventListener;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+
+import java.util.ArrayList;
+import java.util.Objects;
 
 // I WILL COMMENT THIS EVENTUALLY
 
@@ -18,25 +30,32 @@ public class MenuScreen implements Screen {
     public static final int VIEWPORT_WIDTH = 960;
     public static final int VIEWPORT_HEIGHT = 540;
 
-    SpriteBatch batch;
-    FitViewport viewport;
-    Stage stage;
-    final ScreenManager game;
+    private TextureAtlas atlas;
+    private Skin skin;
+    private Stage stage;
 
-    Texture background;
-    Texture logo;
+    private Table inputTable;
+    private TextField inputField;
 
-    Array<Rectangle> buttons;
-    Texture newGameButton;
-    Rectangle newGameRectangle;
-    Texture leaderboardButton;
-    Rectangle leaderboardRectangle;
-    Texture tutorialButton;
-    Rectangle tutorialRectangle;
+    private SpriteBatch batch;
+    private FitViewport viewport;
 
-    Vector2 touchPos;
+    private Texture background;
+    private Texture logo;
 
-    float logoSize = 250f;
+    private Array<Rectangle> buttons;
+    private Texture newGameButton;
+    private Rectangle newGameRectangle;
+    private Texture leaderboardButton;
+    private Rectangle leaderboardRectangle;
+    private Texture tutorialButton;
+    private Rectangle tutorialRectangle;
+
+    private Vector2 touchPos;
+
+    private final float LOGO_SIZE = 250f;
+
+    private final ScreenManager game;
 
     public MenuScreen(ScreenManager main) {
         this.game = main;
@@ -47,7 +66,23 @@ public class MenuScreen implements Screen {
         batch = new SpriteBatch();
         viewport = new FitViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
+        atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
+        skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
+        skin.addRegions(atlas);
+
         stage = new Stage(viewport);
+        Gdx.input.setInputProcessor(stage);
+
+        Table rootTable = new Table();
+        rootTable.setFillParent(true);
+        stage.addActor(rootTable);
+
+        inputTable = new Table();
+        inputTable.pad(10);
+        rootTable.add(inputTable).width((float) VIEWPORT_WIDTH * 0.25f).height((float) VIEWPORT_HEIGHT * 0.2f);
+        rootTable.bottom();
+
+        initInputTable();
 
         background = new Texture(Gdx.files.internal("ui/title_page.png"));
         logo = new Texture(Gdx.files.internal("ui/logo.png"));
@@ -63,6 +98,26 @@ public class MenuScreen implements Screen {
         buttons.add(newGameRectangle, leaderboardRectangle, tutorialRectangle);
 
         touchPos = new Vector2();
+    }
+
+    private void initInputTable() {
+        Label.LabelStyle labelStyle = skin.get(Label.LabelStyle.class);
+
+        Label inputLabel = new Label("Enter Campus Name:", labelStyle);
+        inputLabel.setAlignment(2);
+        inputLabel.setFontScale(1.25f);
+        inputTable.add(inputLabel).expandX().fillX().row();
+
+        inputField = new TextField("University of York", skin);
+        inputField.setAlignment(1);
+        inputTable.add(inputField).expandX().fillX();
+
+        inputField.setTextFieldListener(new TextField.TextFieldListener() {
+            @Override
+            public void keyTyped(TextField textField, char c) {
+                game.gameScreen.universityName = inputField.getText();
+            }
+        });
     }
 
     @Override
@@ -90,19 +145,26 @@ public class MenuScreen implements Screen {
             // Checks to see if any of the buttons were clicked
             for (Rectangle button : buttons) {
                 if (button.contains(touch.x, touch.y)) {
-                    if (button == newGameRectangle) {
+                    if (button == newGameRectangle && !Objects.equals(inputField.getText(), "")) {
+                        game.gameScreen = new GameScreen(game);
+                        game.gameScreen.universityName = inputField.getText();
                         game.setScreen(game.gameScreen);
                     }
-                    else if (button == leaderboardRectangle) {
+                    if (button == leaderboardRectangle) {
+                        game.leaderboardScreen = new LeaderboardScreen(game);
                         game.setScreen(game.leaderboardScreen);
                     }
-                    else {
+                    if (button == tutorialRectangle) {
+                        game.tutorialScreen = new TutorialScreen(game);
                         game.setScreen(game.tutorialScreen);
                     }
                     break;
                 }
             }
         }
+
+        float delta = Gdx.graphics.getDeltaTime();
+        stage.act(delta);
     }
 
     private void draw() {
@@ -122,19 +184,20 @@ public class MenuScreen implements Screen {
         // Renders the background and logo
         batch.begin();
         batch.draw(background, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
-        batch.draw(logo, viewport.getWorldWidth() * 0.3f - (logoSize/2), viewport.getWorldHeight() / 2 - (logoSize/2), logoSize, logoSize);
+        batch.draw(logo, viewport.getWorldWidth() * 0.3f - (LOGO_SIZE/2), viewport.getWorldHeight() / 2 - (LOGO_SIZE/2), LOGO_SIZE, LOGO_SIZE);
 
         // Renders the buttons
         batch.draw(newGameButton, newGameRectangle.x, newGameRectangle.y, newGameRectangle.width, newGameRectangle.height);
         batch.draw(leaderboardButton, leaderboardRectangle.x, leaderboardRectangle.y, leaderboardRectangle.width, leaderboardRectangle.height);
         batch.draw(tutorialButton, tutorialRectangle.x, tutorialRectangle.y, tutorialRectangle.width, tutorialRectangle.height);
         batch.end();
+
+        stage.draw();
     }
 
     @Override
     public void dispose() {
         batch.dispose();
-
     }
 
     @Override

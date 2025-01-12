@@ -93,7 +93,6 @@ public class LeaderboardScreen implements Screen {
 
     private void initLeaderboard() {
         Label.LabelStyle labelStyle = skin.get(Label.LabelStyle.class);
-        TextButton.TextButtonStyle textButtonStyle = skin.get(TextButton.TextButtonStyle.class);
 
         Label uniNameTitle = new Label("UNIVERSITY NAME", labelStyle);
         Label scoreTitle = new Label("SCORE", labelStyle);

@@ -18,11 +18,8 @@ public class ScreenManager extends Game {
      */
     public void create() {
 
-        //Creates instances of the screens, this allows access to non-static variables
+        //Creates instance of the main menu screen
         menuScreen = new MenuScreen(this);
-        leaderboardScreen = new LeaderboardScreen(this);
-        tutorialScreen = new TutorialScreen(this);
-        gameScreen = new GameScreen(this);
 
         fullScreen = false;
         // Initiate game to the game screen.

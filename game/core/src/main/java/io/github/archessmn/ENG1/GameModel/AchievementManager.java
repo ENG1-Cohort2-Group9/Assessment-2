@@ -82,7 +82,6 @@ public class AchievementManager {
             for (Achievement achievement : achievements) {
                 if (achievement.isAchieved() && !achievement.isFinished()) {
                     totalScoreBonus += achievement.getScoreBonus();
-                    System.out.println(achievement.getTitle() + ": " + achievement.getDescription());
                     achievement.finish();
                 }
             }
@@ -113,6 +112,11 @@ public class AchievementManager {
     private Achievement getAchievement(Achievement achievement) {
         return achievements[achievement.ordinal()];
     }
+
+    /**
+     * @return The list of met achievements throughout the game.
+     */
+    public Achievement[] getMetAchievements() { return achievements; }
 
 
     public float getTotalScoreBonus() {

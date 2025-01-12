@@ -45,7 +45,9 @@ public class GameScreen implements Screen {
     public static final int TILE_HEIGHT = VIEWPORT_HEIGHT/ GRID_HEIGHT;
 
     private static final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
-    private static final float DEMOLISH_COOLDOWN = 0.25f;
+    private static final float DEMOLITION_COOLDOWN = 0.25f;
+
+    public String universityName;
 
     private World world;
 
@@ -78,6 +80,10 @@ public class GameScreen implements Screen {
 
     private boolean paused = true;
     private boolean gameEnded = false;
+    private boolean endScreenShown = false;
+
+    private Label.LabelStyle labelStyle;
+    private TextButtonStyle textButtonStyle;
 
     private Stage stage;
     private Table sideMenu;
@@ -86,8 +92,8 @@ public class GameScreen implements Screen {
     private Label selectedBuildingLabel;
     private Label selectedTerrainLabel;
     private Label selectedBuildingCapacityLabel;
-    private TextButton demolishButton;
-    private Pixmap demolishCursor;
+    private TextButton demolitionButton;
+    private Pixmap demolitionCursor;
     private final Array<Label> satisfactionCountLabels = new Array<>();
     private final Array<Label> satisfactionVarLabels = new Array<>();
 
@@ -99,12 +105,10 @@ public class GameScreen implements Screen {
 
     private float[] satisfactionScoreCaps;
 
-    private boolean demolishMode = false;
-    private float demolishCooldownTimer = 0f;
+    private boolean demolitionMode = false;
+    private float demolitionCooldownTimer = 0f;
 
     final ScreenManager game;
-
-    private String uniName = "Guest";
 
 
     public GameScreen(ScreenManager main) {
@@ -184,12 +188,17 @@ public class GameScreen implements Screen {
         blockRenderer = new ShapeRenderer();
     }
 
+    /**
+     * Initialises the side menu, ready for interaction.
+     */
     private void initSideMenu() {
-        Label.LabelStyle labelStyle = skin.get(Label.LabelStyle.class);
-        TextButtonStyle textButtonStyle = skin.get(TextButtonStyle.class);
+        labelStyle = skin.get(Label.LabelStyle.class);
+        textButtonStyle = skin.get(TextButtonStyle.class);
 
-        countDownLabel = new Label("Timer", labelStyle);
-        timerLabel = new Label("Timer", labelStyle);
+        countDownLabel = new Label("{TIMER}", labelStyle);
+        timerLabel = new Label("{DATE}", labelStyle);
+        countDownLabel.setAlignment(2);
+        timerLabel.setAlignment(2);
 
         selectedBuildingLabel = new Label("{Building}", labelStyle);
         selectedTerrainLabel = new Label("{Terrain}", labelStyle);
@@ -198,16 +207,16 @@ public class GameScreen implements Screen {
         selectedTerrainLabel.setFontScale(0.9f);
         selectedBuildingCapacityLabel.setFontScale(0.7f);
 
-        demolishButton = new TextButton("Demolish Mode: OFF", textButtonStyle);
-        demolishButton.setColor(DARK_GRAY);
-        demolishButton.addListener(new ClickListener() {
+        demolitionButton = new TextButton("Demolition Mode: OFF", textButtonStyle);
+        demolitionButton.setColor(DARK_GRAY);
+        demolitionButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                demolishMode = !demolishMode;
+                demolitionMode = !demolitionMode;
             }
         });
 
-        demolishCursor = new Pixmap(Gdx.files.internal("ui/demolish_cursor.png"));
+        demolitionCursor = new Pixmap(Gdx.files.internal("ui/demolish_cursor.png"));
 
         // Initialises the scroll buttons and their actions
         TextButton buildingUpButton = new TextButton("^", textButtonStyle);
@@ -294,7 +303,56 @@ public class GameScreen implements Screen {
         selectableObjectTable.add(buildingDownButton).expandX().center().padTop(10);
         selectableObjectTable.add(terrainDownButton).expandX().center().padTop(10).row();
 
-        sideMenu.add(demolishButton).colspan(2).expandX().row();
+        sideMenu.add(demolitionButton).colspan(2).expandX().row();
+    }
+
+    /**
+     * Changes the side menu to show met achievements and final satisfaction score.
+     */
+    private void showEndSideScreen(int achievementBonus, int studentSatisfaction, int finalScore) {
+        if (endScreenShown) return; // Escapes function if the end screen has already been shown
+
+        sideMenu.clear();
+
+        Label uniNameLabel = new Label(universityName.toUpperCase(), labelStyle);
+        Label campusSummaryLabel = new Label("Campus Summary", labelStyle);
+        uniNameLabel.setFontScale(1.25f);
+        campusSummaryLabel.setFontScale(1.25f);
+        sideMenu.add(uniNameLabel).expandX().top().center().row();
+        sideMenu.add(campusSummaryLabel).expandX().top().center().padBottom(10).row();
+
+        sideMenu.add(new Label("ACHIEVEMENTS MET:", labelStyle)).expandX().left().row();
+
+        Achievement[] metAchievements = world.getAchievementManager().getMetAchievements();
+        int achievementsNotMet = metAchievements.length;
+
+        for (Achievement achievement : metAchievements) {
+            if (achievement.isAchieved()) {
+                sideMenu.add(new Label ("* " + achievement.getTitle(), labelStyle)).expandX().left().row();
+                achievementsNotMet--;
+            }
+        }
+
+        for (int i = 0; i < achievementsNotMet; i++) {
+            sideMenu.add(new Label("", labelStyle)).expandX().left().row();
+        }
+
+        sideMenu.add(new Label("Achievement Bonus: " + achievementBonus + "%", labelStyle)).expandX().left().padTop(20).row();
+        sideMenu.add(new Label("Student Satisfaction: " + studentSatisfaction + "%", labelStyle)).expandX().left().padBottom(10).row();
+
+        sideMenu.add(new Label("Final Score: " + finalScore + "%", labelStyle)).expandX().left().padBottom(20).row();
+
+        TextButton returnButton = new TextButton("MAIN MENU", textButtonStyle);
+        returnButton.setColor(RED);
+        returnButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                game.setScreen(game.menuScreen);
+            }
+        });
+        sideMenu.add(returnButton).expandX().center().row();
+
+        endScreenShown = true;
     }
 
     @Override
@@ -341,7 +399,7 @@ public class GameScreen implements Screen {
     }
 
     private void input() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.D)) demolishMode = !demolishMode;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.D)) demolitionMode = !demolitionMode;
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
             paused = !paused;
@@ -370,22 +428,22 @@ public class GameScreen implements Screen {
      */
     private void mapDemolitionCheck() {
         // Checks for MapObject demolition
-        if (Gdx.input.justTouched() && unprojectedPosIsInsideWorld(unprojectedTouchPos) && demolishMode) {
+        if (Gdx.input.justTouched() && unprojectedPosIsInsideWorld(unprojectedTouchPos) && demolitionMode) {
             GridCoordTuple clickedGridSquare = getGridCoords(unprojectedTouchPos.x, unprojectedTouchPos.y);
             MapObject clickedObject = world.getMapObjectAt(clickedGridSquare);
 
             if (clickedObject != null) {
-                demolishCooldownTimer = DEMOLISH_COOLDOWN;
+                demolitionCooldownTimer = DEMOLITION_COOLDOWN;
                 clickedObject.beginDemolition(world.getCurrentTime(), DEMOLITION_TIME);
             }
         }
 
         // Manages the demolish cooldown timer
-        if (demolishCooldownTimer > 0f) {
-            demolishCooldownTimer -= Gdx.graphics.getDeltaTime();
+        if (demolitionCooldownTimer > 0f) {
+            demolitionCooldownTimer -= Gdx.graphics.getDeltaTime();
         }
         else {
-            demolishCooldownTimer = 0f;
+            demolitionCooldownTimer = 0f;
         }
     }
 
@@ -397,14 +455,14 @@ public class GameScreen implements Screen {
             // Initiates the dragging feature for when a menu building has been selected
             BuildingObject currentBuilding = selectableBuildings.get(selectableBuildingsIndex);
             TerrainObject currentTerrain = selectableTerrains.get(selectableTerrainsIndex);
-            if (currentBuilding.contains(unprojectedTouchPos) && !demolishMode) {
+            if (currentBuilding.contains(unprojectedTouchPos) && !demolitionMode) {
                 try {
                     objectToPlace = (BuildingObject) selectableBuildings.get(selectableBuildingsIndex).clone();
                 } catch (CloneNotSupportedException e) {
                     throw new RuntimeException(e);
                 }
             }
-            else if (currentTerrain.contains(unprojectedTouchPos) && !demolishMode) {
+            else if (currentTerrain.contains(unprojectedTouchPos) && !demolitionMode) {
                 try {
                     objectToPlace = (TerrainObject) selectableTerrains.get(selectableTerrainsIndex).clone();
                 } catch (CloneNotSupportedException e) {
@@ -412,7 +470,7 @@ public class GameScreen implements Screen {
                 }
             }
         }
-        else if (!isClicked && objectToPlace != null && !demolishMode) { // Click released
+        else if (!isClicked && objectToPlace != null && !demolitionMode) { // Click released
             if (unprojectedTouchPos.x <= VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) {
                 world.addMapObject(objectToPlace); // Places the building if it passes all checks
             }
@@ -431,7 +489,12 @@ public class GameScreen implements Screen {
         // Ends the game when the timer exceeds 5 minutes.
         gameEnded = world.getGameEnded();
         if (gameEnded) {
-            ScoreManager.saveScore(uniName, world.getSatisfaction().getSatisfactionScore(), "scores.txt");
+            int achievementBonus = (int) world.getAchievementManager().getTotalScoreBonus();
+            int studentSatisfaction = (int) world.getSatisfaction().getSatisfactionScore();
+            int finalScore = achievementBonus + studentSatisfaction;
+
+            showEndSideScreen(achievementBonus, studentSatisfaction, finalScore);
+            ScoreManager.saveScore(universityName, finalScore, "scores.txt");
         }
 
         world.getAchievementManager().updateAchievements((int) world.getCurrentTime());
@@ -564,6 +627,8 @@ public class GameScreen implements Screen {
      * objects (e.g. they will never be under construction)
      */
     private void drawSelectableObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
+        if (gameEnded) return; // Selectable objects are not drawn if the game is over
+
         Sprite sprite = new Sprite(assetManager.get(mapObject.spriteName, Texture.class));
 
         Vector2 position = mapObject.getUnsnappedScreenPos();
@@ -620,23 +685,23 @@ public class GameScreen implements Screen {
         }
 
         // Changes the cursor and demolish button appearance
-        if (!demolishMode) {
-            if (Objects.equals(demolishButton.getColor().toString(), "ff0000ff")) { // Only sets the cursor when the mode has just changed
+        if (!demolitionMode) {
+            if (Objects.equals(demolitionButton.getColor().toString(), "ff0000ff")) { // Only sets the cursor when the mode has just changed
                 Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
             }
 
-            demolishButton.setText("Demolish Mode: OFF");
-            demolishButton.setColor(DARK_GRAY);
+            demolitionButton.setText("Demolition Mode: OFF");
+            demolitionButton.setColor(DARK_GRAY);
 
             Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
         }
         else {
-            if (Objects.equals(demolishButton.getColor().toString(), "3f3f3fff")) { // Only sets the cursor when the mode has just changed
-                Gdx.graphics.setCursor(Gdx.graphics.newCursor(demolishCursor, 0, 16));
+            if (Objects.equals(demolitionButton.getColor().toString(), "3f3f3fff")) { // Only sets the cursor when the mode has just changed
+                Gdx.graphics.setCursor(Gdx.graphics.newCursor(demolitionCursor, 0, 16));
             }
 
-            demolishButton.setText("Demolish Mode: ON");
-            demolishButton.setColor(RED);
+            demolitionButton.setText("Demolition Mode: ON");
+            demolitionButton.setColor(RED);
         }
 
         // Changes the selected label text to whatever is currently selected
@@ -701,7 +766,7 @@ public class GameScreen implements Screen {
             headingFont.draw(batch, "End of the game!", 20, 460);
         }
 
-        if (demolishMode) {
+        if (demolitionMode) {
             batch.end();
 
             shapeRenderer.begin(Filled);
@@ -744,6 +809,7 @@ public class GameScreen implements Screen {
         }
     }
 
+
     /**
      * @return True if the given (unprojected) position is within the bounds of the screen (including the UI)
      */
@@ -768,7 +834,7 @@ public class GameScreen implements Screen {
         bodyFont.dispose();
         constructionFont.dispose();
         assetManager.dispose();
-        demolishCursor.dispose();
+        demolitionCursor.dispose();
     }
 
     @Override
