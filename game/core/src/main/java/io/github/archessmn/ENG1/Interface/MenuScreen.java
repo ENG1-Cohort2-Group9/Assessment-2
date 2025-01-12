@@ -1,6 +1,7 @@
 package io.github.archessmn.ENG1.Interface;
 
 import com.badlogic.gdx.*;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -24,13 +25,14 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import java.util.ArrayList;
 import java.util.Objects;
 
-// I WILL COMMENT THIS EVENTUALLY
-
+/**
+ * The screen that is displayed when the game is loaded initially, giving the player the option to create a new game,
+ * access the tutorial, or view the local leaderboard.
+ */
 public class MenuScreen implements Screen {
     public static final int VIEWPORT_WIDTH = 960;
     public static final int VIEWPORT_HEIGHT = 540;
 
-    private TextureAtlas atlas;
     private Skin skin;
     private Stage stage;
 
@@ -66,7 +68,7 @@ public class MenuScreen implements Screen {
         batch = new SpriteBatch();
         viewport = new FitViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
-        atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
+        TextureAtlas atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
         skin.addRegions(atlas);
 

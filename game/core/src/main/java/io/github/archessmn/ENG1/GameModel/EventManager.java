@@ -13,7 +13,7 @@ public class EventManager {
     private final int numberOfEventsThisGame = random.nextInt(6, GameEvent.values().length);
     private final float eventTimeVariation = 0.5f; // A value of 1 means that one event can happen immediately after another, 0 means events happen at regular intervals
 
-    private float averageEventInterval;
+    private final float averageEventInterval;
     private float nextEventTime;
     private int eventsRaised = 0;
 

@@ -2,7 +2,18 @@ package io.github.archessmn.ENG1.Interface;
 
 import com.badlogic.gdx.graphics.Texture;
 
+/**
+ * This the holder for all information relating to a notification that can be displayed onto the screen. Notifications
+ * can only be instantiated by the NotificationHandler, which deals with how they are processed and stored.
+ * <p>
+ * Notifications can have an icon or no icon, alongside a title and body to be displayed.
+ */
 public class Notification {
+    /*
+    These constants determine how many characters a notification should be allowed to display
+    IMAGELESS = Notification without an icon
+    IMAGE = Notification with an icon
+     */
     public static final int IMAGELESS_TITLE_MAX_CHARS = 30;
     public static final int IMAGELESS_TEXT_MAX_CHARS = 112;
     public static final int IMAGE_TITLE_MAX_CHARS = 20;
@@ -50,14 +61,16 @@ public class Notification {
      * @return The wrapped text
      */
     private static String wrapText(String text, int maxChar) {
-        if (text.length() > maxChar / 2) {
-            int firstLineEndIndex = text.substring(0, maxChar / 2).lastIndexOf(" ");
+        if (text.length() > maxChar / 2) { // Only wraps the text if it exceeds one line
+            int firstLineEndIndex = text.substring(0, maxChar / 2).lastIndexOf(" "); // Gets the end of the first line without cutting a word off
             StringBuilder stringBuilder = new StringBuilder(text);
-            if (firstLineEndIndex == -1) {
+
+
+            if (firstLineEndIndex == -1) { // If the end of the first line didn't need adjustments for the word cut off
                 stringBuilder.insert(maxChar / 2, "\n");
                 stringBuilder.replace((maxChar / 2) + 1, (maxChar / 2) + 2, "");
             }
-            else {
+            else { // If an adjustment was made to ensure a word wasn't cut off
                 stringBuilder.insert(firstLineEndIndex, "\n");
                 stringBuilder.replace(firstLineEndIndex + 1, firstLineEndIndex + 2, "");
             }

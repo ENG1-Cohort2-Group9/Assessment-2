@@ -1,13 +1,14 @@
 package io.github.archessmn.ENG1.GameModel;
 
-import com.badlogic.gdx.math.MathUtils;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Manages how the scores are stored in scores.txt and how they are received out of the file.
+ */
 public class ScoreManager {
 
     /**

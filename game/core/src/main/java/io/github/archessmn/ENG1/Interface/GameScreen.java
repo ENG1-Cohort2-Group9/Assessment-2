@@ -1,7 +1,6 @@
 package io.github.archessmn.ENG1.Interface;
 
 import com.badlogic.gdx.*;
-import com.badlogic.gdx.assets.AssetManager;
 import static com.badlogic.gdx.graphics.Color.*;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Cursor;
@@ -44,15 +43,13 @@ public class GameScreen implements Screen {
     public static final int TILE_WIDTH = MAP_WIDTH / GRID_WIDTH;
     public static final int TILE_HEIGHT = VIEWPORT_HEIGHT/ GRID_HEIGHT;
 
+    // The timer for how long you shouldn't be allowed to demolish something, after a previous demolition
     private static final float DEMOLITION_COOLDOWN = 0.25f;
 
     public String universityName;
 
     private World world;
 
-    private AssetManager assetManager;
-
-    private TextureAtlas atlas;
     private Skin skin;
 
     private ShapeRenderer gridRenderer;
@@ -120,7 +117,7 @@ public class GameScreen implements Screen {
         viewport = new FitViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
         world = new World(VIEWPORT_WIDTH - SIDE_PANEL_WIDTH, VIEWPORT_HEIGHT, new GameEventHandler[] {this::showEventPopup}, this::showAchievementPopup);
 
-        atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
+        TextureAtlas atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
         skin.addRegions(atlas);
 
@@ -138,34 +135,6 @@ public class GameScreen implements Screen {
         selectableTerrains.add(new TerrainObject(849, 160, ROCK));
         selectableTerrains.add(new TerrainObject(849, 160, TREE));
 
-        assetManager = new AssetManager();
-
-        assetManager.load("gym.png", Texture.class);
-        assetManager.load("halls.png", Texture.class);
-        assetManager.load("lecturehall.png", Texture.class);
-        assetManager.load("pub.png", Texture.class);
-        assetManager.load("piazza.png", Texture.class);
-        assetManager.load("lake.jpg", Texture.class);
-        assetManager.load("rock.png", Texture.class);
-        assetManager.load("tree.png", Texture.class);
-        assetManager.load("construction.png", Texture.class);
-        assetManager.load("rubble.png", Texture.class);
-        assetManager.load("missingTexture.png", Texture.class);
-        assetManager.load("LectureView.png", Texture.class);
-        assetManager.load("Flooding.png", Texture.class);
-        assetManager.load("GymHype.png", Texture.class);
-        assetManager.load("TournamentWon.png", Texture.class);
-        assetManager.load("TreeHype.png", Texture.class);
-        assetManager.load("TooManyBuildings.png", Texture.class);
-        assetManager.load("RockClimbing.png", Texture.class);
-        assetManager.load("LongBoi.png", Texture.class);
-        assetManager.load("ActiveEventBg.png", Texture.class);
-        assetManager.load("Achievement.png", Texture.class);
-
-        assetManager.load("ui/notification_background.png", Texture.class);
-
-        assetManager.finishLoading();
-
         Table rootTable = new Table();
         rootTable.setFillParent(true);
         stage.addActor(rootTable);
@@ -176,7 +145,7 @@ public class GameScreen implements Screen {
         rootTable.right();
         initSideMenu();
 
-        NotificationHandler.initNotification(assetManager.get("ui/notification_background.png", Texture.class));
+        NotificationHandler.initNotification(game.assetManager.get("ui/notification_background.png", Texture.class));
 
         shapeRenderer = new ShapeRenderer();
         gridRenderer = new ShapeRenderer();
@@ -494,7 +463,10 @@ public class GameScreen implements Screen {
             int studentSatisfaction = (int) world.getSatisfaction().getSatisfactionScore();
             int finalScore = achievementBonus + studentSatisfaction;
 
+            // Changes the side menu to show the end screen summary
             showEndSideScreen(achievementBonus, studentSatisfaction, finalScore);
+
+            // Saves the final score to scores.txt
             ScoreManager.saveScore(universityName, finalScore, "scores.txt");
         }
 
@@ -521,10 +493,37 @@ public class GameScreen implements Screen {
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
 
-        // Collision detection for buildings already placed
+        checkForObjectCollision();
+
+        // Draws side menu bar
+        blockRenderer.begin(Filled);
+        blockRenderer.setColor(DARK_GRAY);
+        blockRenderer.rect(sideMenu.getX(), sideMenu.getY(), sideMenu.getWidth(), sideMenu.getHeight());
+        blockRenderer.end();
+
+        batch.begin();
+
+        drawAssets();
+        updateSideMenu();
+        drawActiveEvents();
+        drawConstructionPercents();
+        drawWorldUI();
+
+        NotificationHandler.updateNotificationProcess();
+        drawNotification();
+
+        batch.end();
+        stage.draw();
+    }
+
+    /**
+     * Checks to see if there is a collision when placing an object, thus drawing an outline around the potential
+     * collision and the placed object.
+     */
+    private void checkForObjectCollision() {
         if (objectToPlace != null) {
             // If placing building, draw the grid
-            if (isClicked) drawGrid(shapeRenderer);
+            if (isClicked) drawGrid();
 
             if (world.doesObjectOverlap(objectToPlace)) {
                 shapeRenderer.begin(Filled);
@@ -536,38 +535,18 @@ public class GameScreen implements Screen {
             shapeRenderer.rect(buildingCoords.x, buildingCoords.y, objectToPlace.width, objectToPlace.height);
             shapeRenderer.end();
         }
-
-        // Draws side menu bar
-        blockRenderer.begin(Filled);
-        blockRenderer.setColor(DARK_GRAY);
-        blockRenderer.rect(sideMenu.getX(), sideMenu.getY(), sideMenu.getWidth(), sideMenu.getHeight());
-        blockRenderer.end();
-
-        batch.begin();
-
-        drawAssets(batch, assetManager);
-        updateSideMenu();
-        drawActiveEvents(batch);
-        drawConstructionPercents();
-        drawWorldUI();
-
-        NotificationHandler.updateNotificationProcess();
-        drawNotification(batch);
-
-        batch.end();
-        stage.draw();
     }
 
     /**
      * Renders icons on the left hand side of the screen to show what events are in effect. Draws from bottom to top,
      * bottom justified, so the most recent icon will be at the top a descending list
      */
-    private void drawActiveEvents(SpriteBatch batch) {
+    private void drawActiveEvents() {
         float bottomMargin = 35f;
         float leftMargin = 5f;
         float iconMargin = 5f;
         float screenIconSize = 80f;
-        Sprite bgSprite = new Sprite(assetManager.get("ActiveEventBg.png", Texture.class));
+        Sprite bgSprite = new Sprite(game.assetManager.get("ui/active_event_background.png", Texture.class));
         bgSprite.setSize(screenIconSize * 1.05f, screenIconSize * 1.05f);
 
         float iconYPos = bottomMargin + screenIconSize / 2f;
@@ -576,7 +555,7 @@ public class GameScreen implements Screen {
             bgSprite.draw(batch);
 
 
-            Sprite sprite = new Sprite(assetManager.get(pair.x, Texture.class));
+            Sprite sprite = new Sprite(game.assetManager.get(pair.x, Texture.class));
             sprite.setSize(screenIconSize, screenIconSize);
             sprite.setCenter(leftMargin + screenIconSize / 2f, iconYPos);
             sprite.draw(batch);
@@ -590,31 +569,39 @@ public class GameScreen implements Screen {
         }
     }
 
-    private void drawAssets(Batch batch, AssetManager assetManager) {
+    /**
+     * Draws all map object assets that are displayed in the world and in the UI.
+     */
+    private void drawAssets() {
         // Draws all placed buildings and terrain assets
         for (MapObject mapObject : world.getMapObjects()) {
-            drawObject(batch, assetManager, mapObject);
+            drawObject(mapObject);
         }
 
         // Snaps the dragged object to the grid and draws it, if selected
         if (objectToPlace != null && unprojectedTouchPos.x <= VIEWPORT_WIDTH - SIDE_PANEL_WIDTH) {
-            drawObject(batch, assetManager, objectToPlace);
+            drawObject(objectToPlace);
         }
 
         // Draws the currently displayed building and terrain assets, in the side menu
-        drawSelectableObject(batch, assetManager, selectableBuildings.get(selectableBuildingsIndex));
-        drawSelectableObject(batch, assetManager, selectableTerrains.get(selectableTerrainsIndex));
+        drawSelectableObject(selectableBuildings.get(selectableBuildingsIndex));
+        drawSelectableObject(selectableTerrains.get(selectableTerrainsIndex));
     }
 
-    private void drawObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
-        Sprite sprite = new Sprite(assetManager.get(mapObject.spriteName, Texture.class));
+    /**
+     * Checks the state of the given map object and draws it.
+     *
+     * @param mapObject The map object to draw
+     */
+    private void drawObject(MapObject mapObject) {
+        Sprite sprite = new Sprite(game.assetManager.get(mapObject.spriteName, Texture.class));
         if (mapObject instanceof BuildingObject buildingObject && mapObject.placed) {
             if (!buildingObject.built) {
-                sprite = new Sprite(assetManager.get(buildingObject.unbuiltSpriteName, Texture.class));
+                sprite = new Sprite(game.assetManager.get(buildingObject.unbuiltSpriteName, Texture.class));
             }
         }
         if (mapObject.placed && mapObject.toBeDemolished) {
-            sprite = new Sprite(assetManager.get("rubble.png", Texture.class));
+            sprite = new Sprite(game.assetManager.get("rubble.png", Texture.class));
         }
 
         Vector2 position = mapObject.getSnappedScreenPosition();
@@ -625,12 +612,14 @@ public class GameScreen implements Screen {
 
     /**
      * Unique drawing function required to draw buildings offset from the grid. Fewer checks are required for selectable
-     * objects (e.g. they will never be under construction)
+     * objects (e.g. they will never be under construction).
+     *
+     * @param mapObject The selectable object to draw
      */
-    private void drawSelectableObject(Batch batch, AssetManager assetManager, MapObject mapObject) {
+    private void drawSelectableObject(MapObject mapObject) {
         if (gameEnded) return; // Selectable objects are not drawn if the game is over
 
-        Sprite sprite = new Sprite(assetManager.get(mapObject.spriteName, Texture.class));
+        Sprite sprite = new Sprite(game.assetManager.get(mapObject.spriteName, Texture.class));
 
         Vector2 position = mapObject.getUnsnappedScreenPos();
         sprite.setSize(mapObject.width, mapObject.height);
@@ -639,10 +628,9 @@ public class GameScreen implements Screen {
     }
 
     /**
-     * Draws a grid into the viewport using the {@link ShapeRenderer} passed to it.
-     * @param gridRenderer The {@link ShapeRenderer} used to draw the grid.
+     * Draws a grid into the viewport using the {@link ShapeRenderer}.
      */
-    private void drawGrid(ShapeRenderer gridRenderer) {
+    private void drawGrid() {
         gridRenderer.begin(Line);
 
         gridRenderer.setColor(new Color(0x5b7e13ff));
@@ -723,10 +711,9 @@ public class GameScreen implements Screen {
     }
 
     /**
-     * Draws the notification, if it is to be displayed.
-     * @param batch The {@link SpriteBatch} used to draw the sprites
+     * Draws the current notification in the notification queue, if any are to be displayed.
      */
-    private void drawNotification(SpriteBatch batch) {
+    private void drawNotification() {
         if (NotificationHandler.hasNotifications()) {
             Notification notification = NotificationHandler.getCurrentNotification();
 
@@ -757,18 +744,21 @@ public class GameScreen implements Screen {
         // Displays object overlap text
         if (objectToPlace != null) {
             if (world.doesObjectOverlap(objectToPlace)) {
-                bodyFont.draw(batch, "Something is already there...", 450, 30);
+                bodyFont.draw(batch, "Something is already there...", 425, 30);
             }
         }
 
+        // Draws pause text
         if (paused) {
-            headingFont.draw(batch, "TIMER PAUSED: press P to resume", 130, 280);
+            headingFont.draw(batch, "TIMER PAUSED: press P to resume", 140, 280);
         }
 
+        // Draws end game text
         if (gameEnded) {
-            headingFont.draw(batch, "GAME OVER", 255, 280);
+            headingFont.draw(batch, "GAME OVER", 260, 280);
         }
 
+        // Draws the red outline around the world, when in demolition mode
         if (demolitionMode) {
             batch.end();
 
@@ -784,12 +774,17 @@ public class GameScreen implements Screen {
         }
     }
 
+    /**
+     * Draws an event popup for a given event and creates a notification the given event as well.
+     *
+     * @param event Newly created event
+     */
     private void showEventPopup(GameEvent event) {
-        if (Objects.equals(event.iconName, "missingTexture.png")) {
+        if (Objects.equals(event.iconName, "missing_texture.png")) {
             NotificationHandler.displayNotification(event.title, event.description);
         }
         else {
-            NotificationHandler.displayNotification(event.title, event.description, assetManager.get(event.iconName, Texture.class));
+            NotificationHandler.displayNotification(event.title, event.description, game.assetManager.get(event.iconName, Texture.class));
         }
 
         // This is always called AFTER the event is handled by world. Therefore, we can check activeEvents to find out
@@ -801,10 +796,18 @@ public class GameScreen implements Screen {
         paused = true;
     }
 
+    /**
+     * Creates a notification for the given achievement.
+     *
+     * @param achievement The newly achieved achievement
+     */
     private void showAchievementPopup(Achievement achievement) {
-        NotificationHandler.displayNotification(achievement.getTitle(), achievement.getDescription(), assetManager.get("Achievement.png", Texture.class));
+        NotificationHandler.displayNotification(achievement.getTitle(), achievement.getDescription(), game.assetManager.get("achievement.png", Texture.class));
     }
 
+    /**
+     * Draws construction percentages for all buildings that are currently under construction.
+     */
     private void drawConstructionPercents() {
         for (BuildingObject building : world.getBuildings(false)) {
             if (!building.toBeDemolished && building.getConstructionDuration() < GAME_LENGTH_SECONDS) {
@@ -838,7 +841,7 @@ public class GameScreen implements Screen {
         headingFont.dispose();
         bodyFont.dispose();
         constructionFont.dispose();
-        assetManager.dispose();
+        game.assetManager.dispose();
         demolitionCursor.dispose();
     }
 

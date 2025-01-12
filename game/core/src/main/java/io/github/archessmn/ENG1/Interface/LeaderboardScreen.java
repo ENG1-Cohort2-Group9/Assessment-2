@@ -1,6 +1,7 @@
 package io.github.archessmn.ENG1.Interface;
 
 import com.badlogic.gdx.*;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -24,7 +25,9 @@ import io.github.archessmn.ENG1.GameModel.ScoreManager;
 import java.util.ArrayList;
 import java.util.Map;
 
-
+/**
+ * The screen showing the local leaderboard of the top ten scores recorded in scores.txt.
+ */
 public class LeaderboardScreen implements Screen {
     public static final int VIEWPORT_WIDTH = 960;
     public static final int VIEWPORT_HEIGHT = 540;
@@ -33,7 +36,6 @@ public class LeaderboardScreen implements Screen {
     private ShapeRenderer shapeRenderer;
     private FitViewport viewport;
 
-    private TextureAtlas atlas;
     private Skin skin;
     private Stage stage;
 
@@ -41,7 +43,7 @@ public class LeaderboardScreen implements Screen {
     private BitmapFont bodyFont;
 
     private Table leaderboardTable;
-    private ArrayList<Map.Entry<Label, Label>> labelTable;
+    private ArrayList<Map.Entry<Label, Label>> labelTable; // Each label that will be displayed in the leaderboard
 
     private Rectangle returnRectangle;
     private Texture returnButton;
@@ -62,14 +64,13 @@ public class LeaderboardScreen implements Screen {
         shapeRenderer = new ShapeRenderer();
         viewport = new FitViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
-        atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
+        TextureAtlas atlas = new TextureAtlas(Gdx.files.internal("ui/uiskin.atlas"));
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
         skin.addRegions(atlas);
 
-        background = new Texture(Gdx.files.internal("ui/title_page.png"));
-
         returnRectangle = new Rectangle();
-        returnButton = new Texture(Gdx.files.internal("ui/return_button.png"));
+        returnButton = game.assetManager.get("ui/return_button.png", Texture.class);
+        background = game.assetManager.get("ui/title_page.png", Texture.class);
 
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
@@ -91,6 +92,9 @@ public class LeaderboardScreen implements Screen {
         touchPos = new Vector2();
     }
 
+    /**
+     * Creates the leaderboard and fills the table with ten empty entries
+     */
     private void initLeaderboard() {
         Label.LabelStyle labelStyle = skin.get(Label.LabelStyle.class);
 
@@ -101,6 +105,11 @@ public class LeaderboardScreen implements Screen {
         leaderboardTable.add(uniNameTitle).padBottom(15).expandX().top();
         leaderboardTable.add(scoreTitle).padBottom(15).expandX().top().row();
 
+        /*
+        Ten empty entries are added so that the structure of the table isn't compromised
+        For example, if there were only three entries, the table would shrink in size, without the empty seven
+        underneath to keep it structured.
+         */
         for (int i = 0; i < 10; i++) {
             Label nameLabel = new Label("", labelStyle);
             Label scoreLabel = new Label("", labelStyle);
@@ -111,9 +120,13 @@ public class LeaderboardScreen implements Screen {
         }
     }
 
+    /**
+     * Edits the empty label entries to reflect the entries stored in scores.txt.
+     */
     private void displayScores() {
         ArrayList<Map.Entry<String, Float>> topScores = ScoreManager.getTopScores("scores.txt");
 
+        // Ensures that only the first ten entries are displayed
         int size = topScores.size();
         if (size > 10) {
             topScores.subList(10, size).clear();
@@ -171,8 +184,8 @@ public class LeaderboardScreen implements Screen {
         Vector3 touch = new Vector3(touchPos.x, touchPos.y, 0);
         viewport.getCamera().unproject(touch);
 
+        // Checks to see if the Return button is clicked
         if (Gdx.input.justTouched()) {
-            // Checks to see if the Return button is clicked
             if (returnRectangle.contains(touch.x, touch.y)) {
                 game.setScreen(game.menuScreen);
             }

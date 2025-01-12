@@ -25,7 +25,9 @@ import io.github.archessmn.ENG1.GameModel.ScoreManager;
 import java.util.ArrayList;
 import java.util.Map;
 
-
+/**
+ * The screen showing the various guides that the player can read through.
+ */
 public class TutorialScreen implements Screen {
     public static final int VIEWPORT_WIDTH = 960;
     public static final int VIEWPORT_HEIGHT = 540;
@@ -36,7 +38,6 @@ public class TutorialScreen implements Screen {
 
     private Skin skin;
     private Stage stage;
-    private AssetManager assetManager;
 
     private BitmapFont headingFont;
     private BitmapFont bodyFont;
@@ -73,22 +74,9 @@ public class TutorialScreen implements Screen {
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
         skin.addRegions(atlas);
 
-        assetManager = new AssetManager();
-
-        assetManager.load("tutorials/achievements_tutorial.png", Texture.class);
-        assetManager.load("tutorials/building_selection_tutorial.png", Texture.class);
-        assetManager.load("tutorials/demolition_tutorial.png", Texture.class);
-        assetManager.load("tutorials/event_tutorial.png", Texture.class);
-        assetManager.load("tutorials/satisfaction_tutorial.png", Texture.class);
-        assetManager.load("ui/title_page.png", Texture.class);
-        assetManager.load("ui/return_button.png", Texture.class);
-
-        assetManager.finishLoading();
-
-        background = assetManager.get("ui/title_page.png", Texture.class);
-
         returnRectangle = new Rectangle();
-        returnButton = assetManager.get("ui/return_button.png", Texture.class);
+        returnButton = game.assetManager.get("ui/return_button.png", Texture.class);
+        background = game.assetManager.get("ui/title_page.png", Texture.class);
 
         stage = new Stage();
         Gdx.input.setInputProcessor(stage);
@@ -97,11 +85,13 @@ public class TutorialScreen implements Screen {
         rootTable.setFillParent(true);
         stage.addActor(rootTable);
 
+        // The main table that contains the buttons on the left and the guides on the right
         tutorialTable = new Table();
         tutorialTable.pad(10);
         rootTable.add(tutorialTable).width(VIEWPORT_WIDTH * 0.75f).height(VIEWPORT_HEIGHT * 0.75f);
         rootTable.center();
 
+        // The table that contains all guide buttons in vertical order
         buttonTable = new Table();
         tutorialTable.pad(10);
 
@@ -111,16 +101,18 @@ public class TutorialScreen implements Screen {
         touchPos = new Vector2();
     }
 
+    /**
+     * Creates all the buttons for the guides, and consequentially, their event listeners are added as well.
+     */
     private void initButtonTable() {
         TextButton.TextButtonStyle textButtonStyle = skin.get(TextButton.TextButtonStyle.class);
-
         buttons = new TextButton[5];
 
         TextButton achievementsButton = new TextButton("Achievements", textButtonStyle);
         achievementsButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(assetManager.get("tutorials/achievements_tutorial.png", Texture.class))));
+                currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(game.assetManager.get("tutorials/achievements_tutorial.png", Texture.class))));
                 selectedButtonIndex = 0;
             }
         });
@@ -130,7 +122,7 @@ public class TutorialScreen implements Screen {
         buildingSelectionButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(assetManager.get("tutorials/building_selection_tutorial.png", Texture.class))));
+                currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(game.assetManager.get("tutorials/building_selection_tutorial.png", Texture.class))));
                 selectedButtonIndex = 1;
             }
         });
@@ -140,7 +132,7 @@ public class TutorialScreen implements Screen {
         demolitionButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(assetManager.get("tutorials/demolition_tutorial.png", Texture.class))));
+                currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(game.assetManager.get("tutorials/demolition_tutorial.png", Texture.class))));
                 selectedButtonIndex = 2;
             }
         });
@@ -150,7 +142,7 @@ public class TutorialScreen implements Screen {
         eventButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(assetManager.get("tutorials/event_tutorial.png", Texture.class))));
+                currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(game.assetManager.get("tutorials/event_tutorial.png", Texture.class))));
                 selectedButtonIndex = 3;
             }
         });
@@ -160,12 +152,13 @@ public class TutorialScreen implements Screen {
         satisfactionButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(assetManager.get("tutorials/satisfaction_tutorial.png", Texture.class))));
+                currentTutorialScreen.setDrawable(new TextureRegionDrawable(new TextureRegion(game.assetManager.get("tutorials/satisfaction_tutorial.png", Texture.class))));
                 selectedButtonIndex = 4;
             }
         });
         buttons[4] = satisfactionButton;
 
+        // Adds all the buttons the button table
         buttonTable.add(achievementsButton).fillX().pad(10).row();
         buttonTable.add(buildingSelectionButton).fillX().pad(10).row();
         buttonTable.add(demolitionButton).fillX().pad(10).row();
@@ -173,6 +166,9 @@ public class TutorialScreen implements Screen {
         buttonTable.add(satisfactionButton).fillX().pad(10).row();
     }
 
+    /**
+     * Creates the various parts of the main tutorial table, alongside adding the button table to the left.
+     */
     private void initTutorialTable() {
         Label.LabelStyle labelStyle = skin.get(Label.LabelStyle.class);
 
@@ -186,7 +182,8 @@ public class TutorialScreen implements Screen {
 
         tutorialTable.add(buttonTable);
 
-        currentTutorialScreen = new Image(assetManager.get("tutorials/achievements_tutorial.png", Texture.class));
+        // Although not displayed, the achievements guide is set initially as a placeholder to structure the table
+        currentTutorialScreen = new Image(game.assetManager.get("tutorials/achievements_tutorial.png", Texture.class));
         currentTutorialScreen.setVisible(false);
         tutorialTable.add(currentTutorialScreen);
     }
@@ -233,10 +230,27 @@ public class TutorialScreen implements Screen {
         Vector3 touch = new Vector3(touchPos.x, touchPos.y, 0);
         viewport.getCamera().unproject(touch);
 
+        // Checks to see if the "Return" button is clicked
         if (Gdx.input.justTouched()) {
-            // Checks to see if the Return button is clicked
             if (returnRectangle.contains(touch.x, touch.y)) {
                 game.setScreen(game.menuScreen);
+            }
+        }
+
+        if (selectedButtonIndex != -1) {
+            // Displays the tutorial screen and title when a button is clicked
+            guideNameLabel.setVisible(true);
+            currentTutorialScreen.setVisible(true);
+
+            // Changes the button colour and guide name respective of what button was clicked
+            for (int i = 0; i < buttons.length; i++) {
+                if (i == selectedButtonIndex) {
+                    buttons[i].setColor(Color.GRAY);
+                    guideNameLabel.setText(buttons[i].getText());
+                }
+                else {
+                    buttons[i].setColor(Color.WHITE);
+                }
             }
         }
 
@@ -263,22 +277,6 @@ public class TutorialScreen implements Screen {
         shapeRenderer.setColor(Color.DARK_GRAY);
         shapeRenderer.rect(tutorialTable.getX(), tutorialTable.getY(), tutorialTable.getWidth(), tutorialTable.getHeight());
         shapeRenderer.end();
-
-        // Displays the tutorial screen and title when a button is clicked
-        if (selectedButtonIndex != -1) {
-            guideNameLabel.setVisible(true);
-            currentTutorialScreen.setVisible(true);
-
-            for (int i = 0; i < buttons.length; i++) {
-                if (i == selectedButtonIndex) {
-                    buttons[i].setColor(Color.GRAY);
-                    guideNameLabel.setText(buttons[i].getText());
-                }
-                else {
-                    buttons[i].setColor(Color.WHITE);
-                }
-            }
-        }
 
         stage.draw();
     }
