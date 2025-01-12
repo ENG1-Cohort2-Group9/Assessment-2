@@ -14,10 +14,10 @@ import static io.github.archessmn.ENG1.GameModel.World.*;
 
 public class Satisfaction {
 
-    private final World world;
+    public final World world;
 
     // The number of items in the Use enum, this value is used often, so it's stored to prevent repeated calculation.
-    private final int USE_LENGTH = Use.values().length;
+    public final int USE_LENGTH = Use.values().length;
 
     // Between 0 and 100 percent
     //
@@ -49,19 +49,22 @@ public class Satisfaction {
 
 
     // The coverage goal is the target for what % of the map should have a building on it.
-    private static final float MAP_COVERAGE_GOAL = 0.25f;
+    public static final float MAP_COVERAGE_GOAL = 0.25f;
     // The coverage allowance gives a set leeway for the coverage, so that getting the maximum satisfaction isn't
     // practically impossible.
-    private static final float MAP_COVERAGE_ALLOWANCE = 0.05f;
+    public static final float MAP_COVERAGE_ALLOWANCE = 0.05f;
     // The lower limit, is the lowest number of tiles required to be filled with a building, for the user to be able to
     // get the maximum satisfaction score.
-    private static final int LOWER_BUILDING_LIMIT = (int) ((MAP_COVERAGE_GOAL - MAP_COVERAGE_ALLOWANCE) * GRID_WIDTH * GRID_HEIGHT);
+    public static final int LOWER_BUILDING_LIMIT = (int) ((MAP_COVERAGE_GOAL - MAP_COVERAGE_ALLOWANCE) * GRID_WIDTH * GRID_HEIGHT);
     // The upper limit, is the highest number of tiles allowed to be filled with a building, for the user to be able to
     // get the maximum satisfaction score.
-    private static final int UPPER_BUILDING_LIMIT = MathUtils.ceil((MAP_COVERAGE_GOAL + MAP_COVERAGE_ALLOWANCE) *
+    public static final int UPPER_BUILDING_LIMIT = MathUtils.ceil((MAP_COVERAGE_GOAL + MAP_COVERAGE_ALLOWANCE) *
                                                                         GRID_WIDTH * GRID_HEIGHT);
     // The lower limit discourages players from placing one singular cluster of buildings, while the upper limit
     // discourages the player from placing buildings in as many tiles as possible.
+
+    // Used with the multiplier to effect how strong the multiplier is.
+    public static final float BALANCE_FACTOR = 0.25f;
 
 
     // Some of these scores need/have more variables to help calculate them:
@@ -70,20 +73,20 @@ public class Satisfaction {
 
     // The maximum possible distance between two buildings, is the diagonal distance 1 less in both x and y,
     // than the number of tiles on the map
-    private final float maxDistance = (float) (Math.sqrt(Math.pow(GRID_WIDTH-1, 2) + Math.pow(GRID_HEIGHT-1, 2)));
+    public final float maxDistance = (float) (Math.sqrt(Math.pow(GRID_WIDTH-1, 2) + Math.pow(GRID_HEIGHT-1, 2)));
 
     // This is how much of the satisfaction score each building use pair accounts for.
     // The number of undirected use pairs is of the form n + n-1 + n-2... + n-n, as we want the first use connected to
     // all uses, then the second needs to connect to all uses except the first, as that's already been counted, the
     // third use ignores the first and second, and so on. So we use the sum of 1 to n formula for this, which is
     // (n *(n+1)) / 2 We divide the BUILDING_DISTANCES_SCORE_CAP by this number
-    private final float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) USE_LENGTH * ((float) USE_LENGTH + 1)) / 2);
+    public final float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) USE_LENGTH * ((float) USE_LENGTH + 1)) / 2);
 
-    private static final float THRESHOLD = 0.4f;
+    public static final float THRESHOLD = 0.4f;
 
     // Allows the user to get the maximum satisfaction for a building use pair, if the pairs' average distance is
     // under 60% of the maximum possible distance. Anything over will give progressively less satisfaction.
-    private final float maxScoreThreshold = maxDistance * THRESHOLD;
+    public final float maxScoreThreshold = maxDistance * THRESHOLD;
 
 
     // This 2D array stores the average distance between a pair of building types as an adjacency matrix
@@ -111,7 +114,7 @@ public class Satisfaction {
 
 
     // Defines how much satisfaction score is gained for having > 0 of each building use type.
-    private final float completionScorePerUse = COMPLETION_SCORE_CAP / USE_LENGTH;
+    public final float completionScorePerUse = COMPLETION_SCORE_CAP / USE_LENGTH;
 
     // These help with eventsScore:
 
@@ -201,9 +204,6 @@ public class Satisfaction {
         cappedEventsScore = MathUtils.clamp(eventsScore, 0f, EVENTS_SCORE_CAP);
         buildingCapacityScore = MathUtils.clamp(buildingCapacityScore, 0f, BUILDING_CAPACITY_SCORE_CAP);
 
-
-
-
         // If no accommodation buildings are placed, the buildingDistancesScore and buildingCapacityScore are ignored.
         // (Since no one lives on campus to care about them)
         if (world.getBuildingUseCount(ACCOMMODATION) == 0) {
@@ -215,20 +215,27 @@ public class Satisfaction {
 
         int number_of_buildings = world.getBuildings(true).size;
 
-        // The final satisfactionScore is multiplied relative to the amount of buildings expected on the map, as shown
-        // in the 2 examples below.
+        satisfactionScore *= calculateMultiplier(number_of_buildings);
 
-        // Example 1: lower limit = 30, upper limit = 40, buildings placed = 25, Balance = 0.25:
-        // Multiplier = min(1-((30-25)/30)*0.25,1-((25-40)/40)*0.25) = min(1-1/24,1--3/32) = min(23/24,35/32) = 23/24
-        // Example 2: lower limit = 30, upper limit = 40, buildings placed = 60, Balance = 0.25:
-        // Multiplier = min(1-((30-60)/30)*0.25,1-((60-40)/40)*0.25) = min(1--1/4,1-1/8) = min(5/4, 7/8) = 7/8
+    }
 
-        if (!(number_of_buildings >= LOWER_BUILDING_LIMIT && number_of_buildings <= UPPER_BUILDING_LIMIT)) {
-            // Used with the multiplier to effect how strong the multiplier is.
-            float BALANCE_FACTOR = 0.25f;
-            satisfactionScore *= Math.min(1 - (((float)(LOWER_BUILDING_LIMIT - number_of_buildings) / LOWER_BUILDING_LIMIT)* BALANCE_FACTOR),
-                1 - (((float)(number_of_buildings - UPPER_BUILDING_LIMIT) / UPPER_BUILDING_LIMIT))* BALANCE_FACTOR);
+    /**
+     * The final satisfactionScore is multiplied relative to the amount of buildings expected on the map, as shown
+     * in the 2 examples below.
+     * <p>
+     * Example 1: lower limit = 30, upper limit = 40, buildings placed = 25, Balance = 0.25:
+     * Multiplier = min(1-((30-25)/30)*0.25,1-((25-40)/40)*0.25) = min(1-1/24,1--3/32) = min(23/24,35/32) = 23/24
+     * Example 2: lower limit = 30, upper limit = 40, buildings placed = 60, Balance = 0.25:
+     * Multiplier = min(1-((30-60)/30)*0.25,1-((60-40)/40)*0.25) = min(1--1/4,1-1/8) = min(5/4, 7/8) = 7/8
+     * @param number_of_buildings The number of buildings currently built on the map.
+     * @return The calculated multiplier to be used on the overall score.
+     */
+    public float calculateMultiplier(int number_of_buildings) {
+        if (number_of_buildings >= LOWER_BUILDING_LIMIT && number_of_buildings <= UPPER_BUILDING_LIMIT ) {
+            return 1;
         }
+        return Math.min(1 - (((float)(LOWER_BUILDING_LIMIT - number_of_buildings) / LOWER_BUILDING_LIMIT)* BALANCE_FACTOR),
+            1 - (((float)(number_of_buildings - UPPER_BUILDING_LIMIT) / UPPER_BUILDING_LIMIT))* BALANCE_FACTOR);
     }
 
 

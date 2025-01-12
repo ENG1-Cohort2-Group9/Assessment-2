@@ -38,7 +38,7 @@ import static io.github.archessmn.ENG1.GameModel.World.*;
 public class GameScreen implements Screen {
     public static final int VIEWPORT_WIDTH = 960;
     public static final int VIEWPORT_HEIGHT = 540;
-    private static final int SIDE_PANEL_WIDTH = 300;
+    public static final int SIDE_PANEL_WIDTH = 300;
     public static final int MAP_WIDTH = VIEWPORT_WIDTH - SIDE_PANEL_WIDTH;
 
     public static final int TILE_WIDTH = MAP_WIDTH / GRID_WIDTH;

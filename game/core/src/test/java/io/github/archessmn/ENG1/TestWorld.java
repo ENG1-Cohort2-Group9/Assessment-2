@@ -11,6 +11,7 @@ import io.github.archessmn.ENG1.GameModel.World;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static io.github.archessmn.ENG1.GameModel.GridUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestWorld {
@@ -20,7 +21,7 @@ public class TestWorld {
 
     @BeforeEach
     public void setUp() {
-        world = new World(5,5, new GameEventHandler[] {}, null);
+        world = new World(100,100, new GameEventHandler[] {}, null);
     }
 
     @Test
@@ -43,8 +44,8 @@ public class TestWorld {
     @Test
     public void testAddBuildingOccupied() {
         boolean tested = false;
-        for (int x = 0; x < 5; x++) {
-            for (int y = 0; y < 5; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            for (int y = 0; y < GRID_HEIGHT; y++) {
                 if (world.getMapObjectAt(new GridCoordTuple(x, y)) != null) {
                     BuildingObject building = new BuildingObject(new GridCoordTuple(x, y), 0, BuildingName.PIAZZA);
                     assertFalse(world.addMapObject(building), "Building placed on occupied space did not fail");
@@ -291,8 +292,8 @@ public class TestWorld {
     }
 
     private GridCoordTuple getEmptySpace() {
-        for (int x = 0; x < 5; x++) {
-            for (int y = 0; y < 5; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            for (int y = 0; y < GRID_HEIGHT; y++) {
                 if (world.getMapObjectAt(new GridCoordTuple(x, y)) == null) {
                     return new GridCoordTuple(x, y);
                 }
