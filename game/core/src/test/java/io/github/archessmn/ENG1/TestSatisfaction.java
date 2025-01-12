@@ -19,8 +19,18 @@ public class TestSatisfaction {
 
     @BeforeEach
     public void setUp() {
-        world = new World(100, 100, new GameEventHandler[] {}, null);
+        world = new World(960, 540, new GameEventHandler[] {}, null);
         satisfaction = new Satisfaction(world);
+
+        // Clears the map of any terrain generated.
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            for (int y = 0; y < GRID_HEIGHT; y++) {
+                if (world.getMapObjectAt(new GridCoordTuple(x, y)) != null) {
+                    world.destroyMapObject(world.getMapObjectAt(new GridCoordTuple(x, y)));
+                }
+            }
+        }
+
     }
 
     /**
@@ -86,7 +96,27 @@ public class TestSatisfaction {
 
         setUp(); // Reset the map
         placeNBuildingsOfTypeX(GRID_HEIGHT * GRID_WIDTH, HALLS);
-        world.process(HALLS.getBuildingConstructionDuration()  + 1);
-        assertEquals(1 - ((float) (world.getBuildings(true).size - UPPER_BUILDING_LIMIT) / UPPER_BUILDING_LIMIT) * BALANCE_FACTOR, satisfaction.calculateMultiplier(world.getBuildings(true).size), "The calculated multiplier is not as expected.");
+        world.process(HALLS.getBuildingConstructionDuration()  + 10);
+        assertEquals(1 - ((float) (GRID_HEIGHT * GRID_WIDTH - UPPER_BUILDING_LIMIT) / UPPER_BUILDING_LIMIT) * BALANCE_FACTOR, satisfaction.calculateMultiplier(world.getBuildings(true).size), "The calculated multiplier is not as expected.");
+    }
+
+    @Test
+    public void testUpdateAverageDistances() {
+        int count = 0;
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            for (int y = 0; y < GRID_HEIGHT; y++) {
+                if (world.getMapObjectAt(new GridCoordTuple(x, y)) != null) {
+                    System.out.println(x + ", "  + y);
+                }
+            }
+        }
+        System.out.println(count);
+
+        placeNBuildingsOfTypeX(2, HALLS);
+        placeNBuildingsOfTypeX(2, PIAZZA);
+        placeNBuildingsOfTypeX(94, GYM);
+        world.process(HALLS.getBuildingConstructionDuration()  + 10);
+
+        System.out.println(world.getBuildings(true).size);
     }
 }
