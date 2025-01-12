@@ -108,11 +108,4 @@ public class TestBuildingObject {
             fail("Clone not supported");
         }
     }
-
-    static class AchievementTest {
-
-        @Test
-        void checkCondition() {
-        }
-    }
 }
