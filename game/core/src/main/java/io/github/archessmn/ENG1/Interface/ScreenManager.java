@@ -26,19 +26,7 @@ public class ScreenManager extends Game {
         setScreen(menuScreen);
     }
 
-    /**
-     * Doesn't actually render anything, but instead is used to check for the user pressing F11 at any time.
-     */
     public void render() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F11)){
-            fullScreen = Gdx.graphics.isFullscreen();
-            Graphics.DisplayMode currentMode = Gdx.graphics.getDisplayMode();
-            if (fullScreen)
-                Gdx.graphics.setWindowedMode(960, 540);
-            else
-                Gdx.graphics.setFullscreenMode(currentMode);
-        }
-
         super.render();
     }
 
