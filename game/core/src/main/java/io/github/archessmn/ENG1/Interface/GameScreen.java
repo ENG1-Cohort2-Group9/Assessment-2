@@ -44,7 +44,6 @@ public class GameScreen implements Screen {
     public static final int TILE_WIDTH = MAP_WIDTH / GRID_WIDTH;
     public static final int TILE_HEIGHT = VIEWPORT_HEIGHT/ GRID_HEIGHT;
 
-    private static final float EVENT_NOTIFICATION_TIME = 5f; // How long event notifications are shown before disappearing
     private static final float DEMOLITION_COOLDOWN = 0.25f;
 
     public String universityName;
@@ -550,7 +549,7 @@ public class GameScreen implements Screen {
         drawConstructionPercents();
         drawWorldUI();
 
-        NotificationHandler.updateNotificationProcess(world.getCurrentTime());
+        NotificationHandler.updateNotificationProcess();
         drawNotification(batch);
 
         batch.end();
@@ -726,20 +725,22 @@ public class GameScreen implements Screen {
      * @param batch The {@link SpriteBatch} used to draw the sprites
      */
     private void drawNotification(SpriteBatch batch) {
-        if (NotificationHandler.showNotif && world.getCurrentTime() < NotificationHandler.notifEndDisplayTime) {
-            if (NotificationHandler.notifImage == null) {
+        if (NotificationHandler.hasNotifications()) {
+            Notification notification = NotificationHandler.getCurrentNotification();
+
+            if (notification.notifImage == null) {
                 notificationBackground.setOriginBasedPosition(0, VIEWPORT_HEIGHT);
                 notificationBackground.draw(batch);
-                headingFont.draw(batch, NotificationHandler.notifTitle, 20, 525);
-                bodyFont.draw(batch, NotificationHandler.notifText, 20, 490);
+                headingFont.draw(batch, notification.notifTitle, 20, 525);
+                bodyFont.draw(batch, notification.notifText, 20, 490);
             }
             else {
                 notificationBackground.setOriginBasedPosition(0, VIEWPORT_HEIGHT);
                 notificationBackground.draw(batch);
                 notificationImage.setOriginBasedPosition(10, VIEWPORT_HEIGHT - 10);
                 notificationImage.draw(batch);
-                headingFont.draw(batch, NotificationHandler.notifTitle, 110, 525);
-                bodyFont.draw(batch, NotificationHandler.notifText, 110, 490);
+                headingFont.draw(batch, notification.notifTitle, 110, 525);
+                bodyFont.draw(batch, notification.notifText, 110, 490);
             }
         }
     }
@@ -763,7 +764,7 @@ public class GameScreen implements Screen {
         }
 
         if (gameEnded) {
-            headingFont.draw(batch, "End of the game!", 20, 460);
+            headingFont.draw(batch, "GAME OVER", 255, 280);
         }
 
         if (demolitionMode) {
@@ -782,10 +783,12 @@ public class GameScreen implements Screen {
     }
 
     private void showEventPopup(GameEvent event) {
-        if (Objects.equals(event.iconName, "missingTexture.png"))
-            NotificationHandler.displayNotification(event.title, event.description, world.getCurrentTime());
-        else
-            NotificationHandler.displayNotification(event.title, event.description, assetManager.get(event.iconName, Texture.class), world.getCurrentTime());
+        if (Objects.equals(event.iconName, "missingTexture.png")) {
+            NotificationHandler.displayNotification(event.title, event.description);
+        }
+        else {
+            NotificationHandler.displayNotification(event.title, event.description, assetManager.get(event.iconName, Texture.class));
+        }
 
         // This is always called AFTER the event is handled by world. Therefore, we can check activeEvents to find out
         // if the new event is an active one
@@ -797,7 +800,7 @@ public class GameScreen implements Screen {
     }
 
     private void showAchievementPopup(Achievement achievement) {
-        NotificationHandler.displayNotification(achievement.getTitle(), achievement.getDescription(), assetManager.get("Achievement.png", Texture.class), world.getCurrentTime());
+        NotificationHandler.displayNotification(achievement.getTitle(), achievement.getDescription(), assetManager.get("Achievement.png", Texture.class));
     }
 
     private void drawConstructionPercents() {

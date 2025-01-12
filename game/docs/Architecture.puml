@@ -11,9 +11,10 @@ Package "Game model" {
         process()
         handleEvent()
         closeBuilding()
-        modifyEfficiency()
-        addActiveEvent()
+    }
+    class ScoreManager {
         saveScore()
+        loadScores()
     }
     class MapObjectHolder {
         add()
@@ -30,7 +31,6 @@ Package "Game model" {
         gridCoords
         width
         height
-        bounds
         spriteName
         snapToGrid()
         clone()
@@ -44,11 +44,6 @@ Package "Game model" {
         uses
         resetConstruction()
     }
-    class GymBuilding
-    class HallsBuilding
-    class LectureHallBuilding
-    class Pub
-    class PiazzaBuilding
     class EventManager {
         processEvents(deltaTime)
         disableEvent()
@@ -56,7 +51,8 @@ Package "Game model" {
     }
 
     class AchievementManager {
-
+        totalScoreBonus
+        updateAchievements()
     }
 
     class Satisfaction {
@@ -112,6 +108,7 @@ World -- EventManager
 World -- AchievementManager
 World -- MapObjectHolder
 World -- Satisfaction
+World -- ScoreManager
 
 MapObjectHolder -- MapObject
 MapObjectHolder -- BuildingObject
@@ -119,11 +116,5 @@ MapObjectHolder -- TerrainObject
 
 MapObject -- BuildingObject
 MapObject -- TerrainObject
-
-BuildingObject -- GymBuilding
-BuildingObject -- HallsBuilding
-BuildingObject -- LectureHallBuilding
-BuildingObject -- Pub
-BuildingObject -- PiazzaBuilding
 
 @enduml
