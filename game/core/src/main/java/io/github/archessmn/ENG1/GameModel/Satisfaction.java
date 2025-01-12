@@ -17,7 +17,7 @@ public class Satisfaction {
     public final World world;
 
     // The number of items in the Use enum, this value is used often, so it's stored to prevent repeated calculation.
-    public final int USE_LENGTH = Use.values().length;
+    public static final int USE_LENGTH = Use.values().length;
 
     // Between 0 and 100 percent
     //
@@ -73,20 +73,20 @@ public class Satisfaction {
 
     // The maximum possible distance between two buildings, is the diagonal distance 1 less in both x and y,
     // than the number of tiles on the map
-    public final float maxDistance = (float) (Math.sqrt(Math.pow(GRID_WIDTH-1, 2) + Math.pow(GRID_HEIGHT-1, 2)));
+    public static final float maxDistance = (float) (Math.sqrt(Math.pow(GRID_WIDTH-1, 2) + Math.pow(GRID_HEIGHT-1, 2)));
 
     // This is how much of the satisfaction score each building use pair accounts for.
     // The number of undirected use pairs is of the form n + n-1 + n-2... + n-n, as we want the first use connected to
     // all uses, then the second needs to connect to all uses except the first, as that's already been counted, the
     // third use ignores the first and second, and so on. So we use the sum of 1 to n formula for this, which is
     // (n *(n+1)) / 2 We divide the BUILDING_DISTANCES_SCORE_CAP by this number
-    public final float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) USE_LENGTH * ((float) USE_LENGTH + 1)) / 2);
+    public static final float percentPerUsePair = BUILDING_DISTANCES_SCORE_CAP / (((float) USE_LENGTH * ((float) USE_LENGTH + 1)) / 2);
 
     public static final float THRESHOLD = 0.4f;
 
     // Allows the user to get the maximum satisfaction for a building use pair, if the pairs' average distance is
     // under 60% of the maximum possible distance. Anything over will give progressively less satisfaction.
-    public final float maxScoreThreshold = maxDistance * THRESHOLD;
+    public static final float maxScoreThreshold = maxDistance * THRESHOLD;
 
 
     // This 2D array stores the average distance between a pair of building types as an adjacency matrix
@@ -431,7 +431,7 @@ public class Satisfaction {
      * @param use2 The second use in the pair, should be larger (listed later in the Use enum) than use1.
      * @return The weighting associated with the use pair use1 --> use2.
      */
-    private float getWeight(Use use1, Use use2) {
+    public float getWeight(Use use1, Use use2) {
         return weightMatrix[use1.ordinal()][use2.ordinal()];
     }
 
@@ -596,4 +596,20 @@ public class Satisfaction {
         return true;
     }
 
+
+    public float[][] getAverageDistanceScores() {
+        return averageDistanceScores;
+    }
+
+    public int[][] getAverageDistancesCount() {
+        return averageDistancesCount;
+    }
+
+    public float[][] getAverageDistances() {
+        return averageDistances;
+    }
+
+    public float[][] getWeightMatrix() {
+        return weightMatrix;
+    }
 }
