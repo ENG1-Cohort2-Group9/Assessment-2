@@ -155,6 +155,10 @@ public class GameScreen implements Screen {
         unprojectedTouchPos = new Vector2();
 
         blockRenderer = new ShapeRenderer();
+
+        Gdx.graphics.setWindowedMode(1920, 1080);
+        resize(1920, 1080);
+
     }
 
     /**
@@ -334,8 +338,8 @@ public class GameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, true);
-        stage.getViewport().update(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, true);
+        viewport.update(width, height, true);
+        stage.getViewport().update(width, height, true);
 
         // Generates the heading and body font
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ui/Product_Sans_Bold.ttf"));
