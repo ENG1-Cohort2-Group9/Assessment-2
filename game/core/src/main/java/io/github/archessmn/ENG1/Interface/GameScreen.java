@@ -156,8 +156,8 @@ public class GameScreen implements Screen {
 
         blockRenderer = new ShapeRenderer();
 
-        Gdx.graphics.setWindowedMode(1920, 1080);
-        resize(1920, 1080);
+        Gdx.graphics.setWindowedMode(1280, 720);
+        resize(1280, 720);
 
     }
 
