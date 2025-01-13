@@ -88,7 +88,6 @@ public class World {
         }
     }
 
-
     /**
      * Generates a perlin noise map of a particular terrain feature and places the assets into the world
      * @param feature The type of terrain feature to generate
@@ -114,7 +113,7 @@ public class World {
     /**
      * Adds a mapObject to the world if allowed, updating the relevant store(s)
      *
-     * @param mapObject Building to add to the world
+     * @param mapObject Object to add to the world
      * @return true if the placement was successful
      */
     public boolean addMapObject(MapObject mapObject) {
@@ -138,6 +137,35 @@ public class World {
         return false;
     }
 
+    /**
+     * Removes the given map object from the world and updates any world processes relating to the destruction of the
+     * map object.
+     *
+     * @param mapObject Object to remove from the world
+     */
+    public void destroyMapObject(MapObject mapObject) {
+        if (mapObject instanceof BuildingObject buildingObject){
+            mapObjects.remove(buildingObject);
+            if (buildingObject.built) updateWorldState(buildingObject, true);
+        }
+        else if (mapObject instanceof TerrainObject terrainObject) {
+            mapObjects.remove(terrainObject);
+            updateWorldState(terrainObject, true);
+        }
+    }
+
+    /**
+     * Utility method to check if a building overlaps with any others in the world
+     * after being snapped to the grid based on its current location
+     * @param overlapObject The building to check for overlaps with others
+     * @return True if the building overlaps with another, else false
+     * @throws IndexOutOfBoundsException If the mapObject is outside the grid
+     */
+    public boolean doesObjectOverlap(MapObject overlapObject) {
+        GridCoordTuple gridCoords = overlapObject.getGridCoords();
+
+        return mapObjects.spaceIsOccupied(gridCoords.x, gridCoords.y);
+    }
 
     /**
      * Update all MapObjects' states
@@ -157,7 +185,6 @@ public class World {
             }
         }
     }
-
 
     /**
      * Called when a world object has been added or removed to provide more information to the update the world's state.
@@ -222,7 +249,6 @@ public class World {
         satisfaction.updateScore(terrain, !wasRemoved);
     }
 
-
     /**
      * Keeps the world running, updating its internal clock and buildings
      * @param deltaTime time since the last frame in seconds
@@ -246,23 +272,11 @@ public class World {
         }
     }
 
+
     /**
-     * Utility method to check if a building overlaps with any others in the world
-     * after being snapped to the grid based on its current location
-     * @param overlapObject The building to check for overlaps with others
-     * @return True if the building overlaps with another, else false
-     * @throws IndexOutOfBoundsException If the mapObject is outside the grid
+     * @return Whether the game time has surpassed the limit.
      */
-    public boolean doesObjectOverlap(MapObject overlapObject) {
-        GridCoordTuple gridCoords = overlapObject.getGridCoords();
-
-        return mapObjects.spaceIsOccupied(gridCoords.x, gridCoords.y);
-    }
-
-    public boolean getGameEnded() {
-        return currentTime >= GAME_LENGTH_SECONDS;
-    }
-
+    public boolean getGameEnded() { return currentTime >= GAME_LENGTH_SECONDS; }
 
     /**
      * Gets the current game time.
@@ -273,6 +287,11 @@ public class World {
     }
 
 
+    /**
+     * Calls the respective processes that are needed for the given event.
+     *
+     * @param event The event that requires a process to be called
+     */
     private void handleEvent(GameEvent event) {
         switch (event) {
             case FLOODING:
@@ -337,17 +356,12 @@ public class World {
         updateWorldState(building, true);
     }
 
-    public void destroyMapObject(MapObject mapObject) {
-        if (mapObject instanceof BuildingObject buildingObject){
-            mapObjects.remove(buildingObject);
-            if (buildingObject.built) updateWorldState(buildingObject, true);
-        }
-        else if (mapObject instanceof TerrainObject terrainObject) {
-            mapObjects.remove(terrainObject);
-            updateWorldState(terrainObject, true);
-        }
-    }
-
+    /**
+     * Returns a randomly selected building out of all that have placed in the world.
+     *
+     * @param buildings The array that contains all placed buildings
+     * @return A randomly selected building from the placed buildings
+     */
     private BuildingObject getRandomBuilding(Array<BuildingObject> buildings) {
         if (buildings.size == 0)
             return null;
@@ -362,7 +376,6 @@ public class World {
         addActiveEvent(event, GAME_LENGTH_SECONDS + 1);
     }
 
-
     /**
      * Adds an effect to the current game for {@code timeSeconds} seconds
      * @param event The event associated with the effect
@@ -375,13 +388,29 @@ public class World {
         satisfaction.updateScore(event, true);
     }
 
-    public boolean hasActiveEvent(GameEvent event) {
-        return activeEvents[event.ordinal()] != null;
-    }
+    /**
+     * Returns whether an event is currently active or not.
+     *
+     * @param event The given event
+     * @return Is the event active?
+     */
+    public boolean hasActiveEvent(GameEvent event) { return activeEvents[event.ordinal()] != null; }
 
-    public int getCountOfSpecificBuilding(BuildingName name) {
-        return mapObjects.getByType(name).size;
-    }
+    /**
+     * Get the game time at which this active event will be removed. If the event is not active, returns {@value GAME_LENGTH_SECONDS} + 1
+     * @param event The event to check
+     * @return Time in seconds
+     */
+    public float getEndTimeOfActiveEvent(GameEvent event) { return activeEventEndTime[event.ordinal()]; }
+
+
+    /**
+     * Returns a count of a specific building type that have been placed.
+     *
+     * @param buildingType The type of building that is required for the count
+     * @return The number of buildings of the given building type that have been placed
+     */
+    public int getCountOfSpecificBuilding(BuildingName buildingType) { return mapObjects.getByType(buildingType).size; }
 
     /**
      * Returns a list of buildings that are in any of the 8 tiles next to a given terrain feature
@@ -452,21 +481,15 @@ public class World {
     }
 
     /**
-     * Does not return the satisfaction score, but rather the satisfaction object.
-     * To retrieve the score from a class such as GameScreen, do world.getSatisfaction().getSatisfactionScore().
-     * @return The satisfaction object responsible for satisfaction storage and calculations.
-     */
-    public Satisfaction getSatisfaction() {
-        return satisfaction;
-    }
-
-    /**
      * @return The number of built buildings that provide a given use
      */
     public int getBuildingUseCount(Use use) {
         return mapObjects.getUseCount(use);
     }
 
+    /**
+     * @return All map objects
+     */
     public Array<MapObject> getMapObjects() {
         return mapObjects.getAll();
     }
@@ -500,16 +523,19 @@ public class World {
     }
 
     /**
-     * Get the game time at which this active event will be removed. If the event is not active, returns {@value GAME_LENGTH_SECONDS} + 1
-     * @param event The event to check
-     * @return Time in seconds
+     * @return The Achievement Manager
      */
-    public float getEndTimeOfActiveEvent(GameEvent event) {
-        return activeEventEndTime[event.ordinal()];
-    }
-
     public AchievementManager getAchievementManager() {
         return achievementManager;
+    }
+
+    /**
+     * Does not return the satisfaction score, but rather the satisfaction object.
+     * To retrieve the score from a class such as GameScreen, do world.getSatisfaction().getSatisfactionScore().
+     * @return The satisfaction object responsible for satisfaction storage and calculations.
+     */
+    public Satisfaction getSatisfaction() {
+        return satisfaction;
     }
 
     /**
@@ -517,7 +543,6 @@ public class World {
      * @return True if the map is full, false if not.
      */
     public boolean isMapFull() {
-        // -2 accounts for the clickable building and terrain feature on the right menu.
-        return getBuildings().size + getTerrainObjects().size - 2 == GRID_WIDTH * GRID_HEIGHT;
+        return getBuildings().size + getTerrainObjects().size == GRID_WIDTH * GRID_HEIGHT;
     }
 }

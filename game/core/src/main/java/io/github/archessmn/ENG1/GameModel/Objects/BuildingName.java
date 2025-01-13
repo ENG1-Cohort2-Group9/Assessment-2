@@ -8,7 +8,7 @@ public enum BuildingName {
         new int[] {250}, "Gym"),
     HALLS(12f, "halls.png", new Use[] {Use.ACCOMMODATION},
         new int[] {250}, "Halls"),
-    LECTURE_HALL(7f, "lecturehall.png", new Use[] {Use.TEACHING},
+    LECTURE_HALL(7f, "lecture_hall.png", new Use[] {Use.TEACHING},
         new int[] {500}, "Lecture Theatre"),
     PIAZZA(15f, "piazza.png", new Use[] {Use.TEACHING, Use.CAFETERIA},
         new int[] {250, 250}, "Piazza"),

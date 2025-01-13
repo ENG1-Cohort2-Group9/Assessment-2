@@ -15,7 +15,7 @@ public class NotificationHandler {
     // The in-game time that the notification will be displayed for
     public static final int NOTIFICATION_DISPLAY_TIME = 10;
 
-    // The timer for each notification
+    // The timer for the active notification
     private static float notifTimer = NOTIFICATION_DISPLAY_TIME;
 
     // Storage for all active notifications
